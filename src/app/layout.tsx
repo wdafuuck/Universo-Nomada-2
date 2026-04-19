@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Universo Nomada | Viajes que Dejan Huella",
   description:
-    "Vive experiencias que transforman. Viajes personalizados a Rapa Nui, Atacama, Machu Picchu, Patagonia y mas. Cotiza tu viaje gratis con Universo Nomada.",
+    "Universo Nomada - Agencia de viajes boutique especializada en experiencias personalizadas y autenticas en Chile y Sudamerica. Rapa Nui, Atacama, Machu Picchu, Florianopolis, Rio de Janeiro, Buenos Aires, Mendoza y mas.",
   keywords: [
     "Universo Nomada",
     "viajes personalizados",
@@ -27,6 +27,12 @@ export const metadata: Metadata = {
     "Machu Picchu",
     "Patagonia",
     "Uyuni",
+    "Florianopolis",
+    "Rio de Janeiro",
+    "Buenos Aires",
+    "Mendoza",
+    "Brasil",
+    "Argentina",
     "turismo vivencial",
     "experiencias de viaje",
     "destinos autenticos",
@@ -37,7 +43,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Universo Nomada | Viajes que Dejan Huella",
-    description: "Vive experiencias que transforman. Viajes personalizados a destinos autenticos en Chile y Sudamerica.",
+    description: "Universo Nomada - Agencia de viajes boutique. Experiencias personalizadas y autenticas en Chile y Sudamerica.",
     siteName: "Universo Nomada",
     type: "website",
   },

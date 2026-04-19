@@ -45,28 +45,14 @@ function FadeIn({ children, delay = 0, direction = "up", className = "" }: {
   );
 }
 
-function AnimatedCounter({ target }: { target: string }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-  const [count, setCount] = useState(0);
-  const numericTarget = parseInt(target.replace(/[^0-9]/g, ""));
-  useEffect(() => {
-    if (!isInView || numericTarget === 0) return;
-    let start = 0;
-    const stepTime = Math.max(Math.floor(2000 / numericTarget), 20);
-    const timer = setInterval(() => { start += 1; setCount(start); if (start >= numericTarget) clearInterval(timer); }, stepTime);
-    return () => clearInterval(timer);
-  }, [isInView, numericTarget]);
-  if (target === "24/7" || target === "100%") return <span ref={ref}>{isInView ? target : "0"}</span>;
-  return <span ref={ref}>{target.includes("+") ? `${count}+` : target.includes("%") ? `${count}%` : count}</span>;
-}
+// AnimatedCounter removed - stats section eliminated per user request
 
 /* ═══════════════════ DATA ═══════════════════ */
-interface Destination { name: string; subtitle: string; image: string; description: string; tag: string; tagColor: string; icon: LucideIcon; category: string; price: number; duration: string; }
+interface Destination { name: string; subtitle: string; image: string; description: string; tag: string; tagColor: string; icon: LucideIcon; category: string; price: number; duration: string; originalPrice?: number; }
 
 const destinations: Destination[] = [
-  { name: "Rapa Nui", subtitle: "Isla de Pascua, Chile", image: "/images/rapanui.png", description: "Misteriosos moais guardians del Pacifico. Vive la cultura ancestral rapanui en medio del oceano mas remoto del planeta.", tag: "Cultura & Misterio", tagColor: "bg-violet-500/20 text-violet-300", icon: Compass, category: "internacional", price: 890000, duration: "5 dias" },
-  { name: "San Pedro de Atacama + Uyuni", subtitle: "Chile - Bolivia", image: "/images/uyuni.png", description: "Del desierto mas arido al espejo de sal mas grande del mundo. Geisers, lagunas altiplanicas y el Salar de Uyuni.", tag: "Expedicion", tagColor: "bg-amber-500/20 text-amber-300", icon: Mountain, category: "internacional", price: 650000, duration: "4 dias" },
+  { name: "Rapa Nui", subtitle: "Isla de Pascua, Chile", image: "/images/rapanui.png", description: "Misteriosos moais guardians del Pacifico. Vive la cultura ancestral rapanui en medio del oceano mas remoto del planeta. Tapati 2027 con 15% OFF.", tag: "Cultura & Misterio", tagColor: "bg-violet-500/20 text-violet-300", icon: Compass, category: "internacional", price: 957100, duration: "5 dias", originalPrice: 1126000 },
+  { name: "San Pedro de Atacama + Uyuni", subtitle: "Chile - Bolivia", image: "/images/uyuni.png", description: "Del desierto mas arido al espejo de sal mas grande del mundo. Geisers, lagunas altiplanicas y el Salar de Uyuni. Viaje grupal 10 dias.", tag: "Expedicion", tagColor: "bg-amber-500/20 text-amber-300", icon: Mountain, category: "internacional", price: 1658600, duration: "10 dias" },
   { name: "Cusco + Machu Picchu", subtitle: "Peru", image: "/images/cusco.png", description: "La ciudadela inca entre las nubes. Recorre el Camino Inca, explora Cusco imperial y conecta con la historia viva.", tag: "Historia & Trekking", tagColor: "bg-emerald-500/20 text-emerald-300", icon: Binoculars, category: "internacional", price: 1200000, duration: "7 dias" },
   { name: "Turismo Vivencial", subtitle: "Chile", image: "/images/vivencial.png", description: "Conecta con comunidades locales, vive sus tradiciones, saborea su cocina y descubre Chile desde adentro.", tag: "Autentico", tagColor: "bg-orange-500/20 text-orange-300", icon: Users, category: "experiencial", price: 350000, duration: "3 dias" },
   { name: "Ballenas + Valle del Elqui", subtitle: "Chile", image: "/images/ballenas.png", description: "Avistamiento de ballenas en Caleta Chanaral de Aceituno y noches magicas bajo los cielos mas limpios del mundo.", tag: "Naturaleza & Astro", tagColor: "bg-cyan-500/20 text-cyan-300", icon: Waves, category: "chile", price: 450000, duration: "3 dias" },
@@ -75,34 +61,33 @@ const destinations: Destination[] = [
   { name: "Region de Atacama", subtitle: "Chile", image: "/images/atacama-new.png", description: "Valle de la Luna, Lagunas Altiplanicas, Geisers del Tatio y estrellas infinitas en el desierto mas antiguo del planeta.", tag: "Desierto & Estrellas", tagColor: "bg-yellow-500/20 text-yellow-300", icon: Star, category: "chile", price: 520000, duration: "4 dias" },
   { name: "Valle del Aconcagua", subtitle: "Chile", image: "/images/aconcagua.png", description: "Vinedos boutique al pie del techo de America. Montanismo, enoturismo y paisajes que inspiran.", tag: "Montana & Vino", tagColor: "bg-sky-500/20 text-sky-300", icon: Mountain, category: "chile", price: 320000, duration: "2 dias" },
   { name: "Catedrales de Marmol + Carretera Austral", subtitle: "Patagonia, Chile", image: "/images/marmol.png", description: "Cuevas de marmol esculpidas por el agua turquesa y la ruta mas salvaje de Patagonia. Aventura pura en el fin del mundo.", tag: "Patagonia Extrema", tagColor: "bg-teal-500/20 text-teal-300", icon: Waves, category: "chile", price: 1500000, duration: "8 dias" },
+  { name: "Rio de Janeiro", subtitle: "Brasil", image: "/images/rio_janeiro.png", description: "La ciudad maravillosa. Cristo Redentor, Copacabana, Ipanema y la energia carioca que lo contagia todo. Samba, playas y una cultura vibrante.", tag: "City & Playa", tagColor: "bg-yellow-500/20 text-yellow-300", icon: Palmtree, category: "internacional", price: 698000, duration: "5 dias" },
+  { name: "Florianopolis", subtitle: "Brasil", image: "/images/florianopolis.png", description: "La isla de la magia. 42 playas paradisiacas, dunas, selva atlantica y una gastronomia que enamora. El destino brasileno perfecto.", tag: "Playa & Naturaleza", tagColor: "bg-cyan-500/20 text-cyan-300", icon: Waves, category: "internacional", price: 593000, duration: "5 dias", originalPrice: 698000 },
+  { name: "Buenos Aires", subtitle: "Argentina", image: "/images/buenos_aires.png", description: "La paris de Sudamerica. Tango en La Boca, arquitectura europea, bodegones y una noche portena que no tiene fin.", tag: "Cultura & Gastronomia", tagColor: "bg-rose-500/20 text-rose-300", icon: Compass, category: "internacional", price: 450000, duration: "4 dias" },
+  { name: "Mendoza", subtitle: "Argentina", image: "/images/mendoza.png", description: "Vinos de altura al pie de los Andes. Bodegas boutique, Aconcagua imponente y la ruta del malbec mas famosa del continente. 15% OFF en abril.", tag: "Vino & Montana", tagColor: "bg-purple-500/20 text-purple-300", icon: Mountain, category: "internacional", price: 586700, duration: "5 dias", originalPrice: 690300 },
 ];
 
 const destinoOptions = destinations.map((d) => d.name).concat(["Otro destino"]);
 
 const promotions = [
-  { title: "Semana Santa", subtitle: "Rapa Nui", discount: "20% OFF", emoji: "🐣", destination: "Rapa Nui" },
-  { title: "Verano Chile", subtitle: "Atacama + Uyuni", discount: "15% OFF", emoji: "☀️", destination: "Atacama" },
-  { title: "Parejas", subtitle: "Cusco + Machu Picchu", discount: "2x1", emoji: "💕", destination: "Cusco" },
+  { title: "Destino del Mes ABRIL", subtitle: "Mendoza, Argentina", discount: "15% OFF", emoji: "🍷", destination: "Mendoza" },
+  { title: "Travel SALE", subtitle: "Florianopolis, Brasil", discount: "15% OFF", emoji: "🌴", destination: "Florianopolis" },
+  { title: "Tapati 2027", subtitle: "Rapa Nui", discount: "15% OFF", emoji: "🗿", destination: "Rapa Nui" },
+  { title: "Viaje Grupal", subtitle: "Atacama + Uyuni", discount: "Reserva $200.000", emoji: "🏜️", destination: "Atacama" },
   { title: "Temporada Ballenas", subtitle: "Ballenas + Elqui", discount: "25% OFF", emoji: "🐋", destination: "Ballenas" },
-  { title: "Aventura Amazonas", subtitle: "Bolivia Amazonica", discount: "10% OFF", emoji: "🌿", destination: "Bolivia" },
   { title: "Patagonia Extrema", subtitle: "Catedrales + Carretera", discount: "20% OFF", emoji: "🏔️", destination: "Patagonia" },
 ];
 
 const promoDetails = [
-  { title: "Semana Santa", subtitle: "Rapa Nui", discount: "20% OFF", destination: "Rapa Nui", validUntil: "30 Abril 2026", originalPrice: 890000, discountPrice: 712000, emoji: "🐣", image: "/images/rapanui.png" },
-  { title: "Verano Chile", subtitle: "Atacama + Uyuni", discount: "15% OFF", destination: "Atacama", validUntil: "31 Marzo 2026", originalPrice: 650000, discountPrice: 552500, emoji: "☀️", image: "/images/uyuni.png" },
-  { title: "Parejas", subtitle: "Cusco + Machu Picchu", discount: "2x1", destination: "Cusco", validUntil: "30 Junio 2026", originalPrice: 1200000, discountPrice: 600000, emoji: "💕", image: "/images/cusco.png" },
+  { title: "Destino del Mes ABRIL", subtitle: "Mendoza, Argentina", discount: "15% OFF", destination: "Mendoza", validUntil: "30 Abril 2026", originalPrice: 690300, discountPrice: 586700, emoji: "🍷", image: "/images/mendoza.png" },
+  { title: "Travel SALE", subtitle: "Florianopolis, Brasil", discount: "15% OFF", destination: "Florianopolis", validUntil: "31 Mayo 2026", originalPrice: 698000, discountPrice: 593000, emoji: "🌴", image: "/images/florianopolis.png" },
+  { title: "Tapati 2027", subtitle: "Rapa Nui", discount: "15% OFF", destination: "Rapa Nui", validUntil: "Febrero 2027", originalPrice: 1126000, discountPrice: 957100, emoji: "🗿", image: "/images/rapanui.png" },
+  { title: "Viaje Grupal Agosto", subtitle: "Atacama + Uyuni", discount: "10 dias", destination: "Atacama", validUntil: "03 Agosto 2026", originalPrice: 1658600, discountPrice: 1658600, emoji: "🏜️", image: "/images/uyuni.png" },
   { title: "Temporada Ballenas", subtitle: "Ballenas + Elqui", discount: "25% OFF", destination: "Ballenas", validUntil: "30 Sept 2026", originalPrice: 450000, discountPrice: 337500, emoji: "🐋", image: "/images/ballenas.png" },
-  { title: "Aventura Amazonas", subtitle: "Bolivia Amazonica", discount: "10% OFF", destination: "Bolivia", validUntil: "31 Julio 2026", originalPrice: 980000, discountPrice: 882000, emoji: "🌿", image: "/images/bolivia.png" },
   { title: "Patagonia Extrema", subtitle: "Catedrales + Carretera", discount: "20% OFF", destination: "Patagonia", validUntil: "31 Dic 2026", originalPrice: 1500000, discountPrice: 1200000, emoji: "🏔️", image: "/images/marmol.png" },
 ];
 
-const stats = [
-  { number: "500+", label: "Viajeros felices", icon: Users },
-  { number: "10+", label: "Destinos unicos", icon: MapPin },
-  { number: "24/7", label: "Asistencia", icon: Clock },
-  { number: "100%", label: "Personalizable", icon: Sparkles },
-];
+// Stats section removed per user request
 
 const benefits = [
   { icon: Compass, title: "Experiencias a Medida", description: "Cada viaje se diseña exclusivamente para ti. Sin paquetes genericos, solo experiencias unicas." },
@@ -553,10 +538,8 @@ export default function LandingPage() {
         className={`fixed top-10 left-0 right-0 z-50 transition-all duration-500 ${
           navScrolled ? "bg-navy/95 backdrop-blur-xl shadow-2xl shadow-black/20 border-b border-white/5" : "bg-transparent"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-          <div className="flex items-center gap-3">
-            <div className="relative h-8 w-8 rounded-xl bg-gradient-to-br from-teal to-amber flex items-center justify-center shadow-lg shadow-teal/30">
-              <Globe className="h-4 w-4 text-navy" />
-            </div>
+          <div className="flex items-center gap-2.5">
+            <Image src="/images/logo-un.png" alt="Universo Nomada" width={40} height={40} className="rounded-full shadow-lg shadow-teal/20 ring-1 ring-white/10" />
             <div className="flex flex-col">
               <span className="text-base sm:text-lg font-extrabold text-white tracking-tight leading-none">UNIVERSO</span>
               <span className="text-[10px] sm:text-xs font-bold text-teal tracking-[0.2em] leading-none">NOMADA</span>
@@ -651,7 +634,7 @@ export default function LandingPage() {
           </motion.div>
           <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.6 }}
             className="mt-6 sm:mt-8 text-lg sm:text-xl md:text-2xl text-white/70 max-w-2xl mx-auto leading-relaxed font-light">
-            Vive viajes que dejan huella. Destinos autenticos en Chile y Sudamerica, disenados solo para ti.
+Agencia de viajes boutique especializada en experiencias personalizadas y autenticas en destinos cuidadosamente seleccionados de Chile y Sudamerica.
           </motion.p>
 
           {/* Search Bar like geoterra */}
@@ -697,24 +680,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════ STATS ═══════ */}
-      <section className="bg-navy-light border-y border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
-            {stats.map((stat, i) => (
-              <FadeIn key={stat.label} delay={i * 0.1}>
-                <div className="text-center group">
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal/10 text-teal group-hover:bg-teal group-hover:text-navy transition-all duration-300">
-                    <stat.icon className="h-6 w-6" />
-                  </div>
-                  <div className="text-3xl sm:text-4xl font-black text-white mb-1"><AnimatedCounter target={stat.number} /></div>
-                  <div className="text-sm text-white/50 font-medium">{stat.label}</div>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Stats section removed per user request */}
 
       {/* ═══════ DESTINATIONS WITH FILTERS ═══════ */}
       <section id="destinos" className="py-16 sm:py-24 bg-navy">
@@ -760,7 +726,14 @@ export default function LandingPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-white/40 text-xs">Desde</span>
-                        <p className="text-teal font-bold">{formatCLP(dest.price)}</p>
+                        {dest.originalPrice ? (
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-white/30 line-through text-xs">{formatCLP(dest.originalPrice)}</span>
+                            <p className="text-teal font-bold">{formatCLP(dest.price)}</p>
+                          </div>
+                        ) : (
+                          <p className="text-teal font-bold">{formatCLP(dest.price)}</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-1 text-white/40 text-xs">
                         <Clock className="h-3 w-3" />{dest.duration}
@@ -830,10 +803,10 @@ export default function LandingPage() {
                 <span className="text-teal font-semibold text-sm uppercase tracking-[0.2em]">Quienes Somos</span>
                 <h2 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">Somos Universo Nomada</h2>
                 <p className="mt-6 text-white/60 text-lg leading-relaxed">
-                  Nacimos en La Serena con una mision: crear viajes que transformen. No somos una agencia mas, somos un equipo apasionado que cree que cada viaje debe ser una experiencia unica e irrepetible.
+                  Universo Nomada es una agencia de viajes boutique especializada en disenar experiencias personalizadas y autenticas en destinos cuidadosamente seleccionados de Chile y Sudamerica.
                 </p>
                 <p className="mt-4 text-white/60 text-lg leading-relaxed">
-                  Desde los cielos mas limpios del Elqui hasta la inmensidad de la Patagonia, conectamos a viajeros con destinos autenticos y comunidades locales que enriquecen cada experiencia.
+                  Nuestro enfoque combina naturaleza, cultura y aprendizaje, conectando a los viajeros con comunidades locales, paisajes unicos y vivencias significativas, todo con un alto estandar de calidad, sostenibilidad y atencion cercana.
                 </p>
                 <div className="mt-8 grid grid-cols-2 gap-4">
                   {benefits.slice(0, 4).map((b) => (
@@ -851,8 +824,8 @@ export default function LandingPage() {
                   <Image src="/images/vivencial.png" alt="Universo Nomada equipo" fill className="object-cover" />
                 </div>
                 <div className="absolute -bottom-4 -right-4 bg-teal rounded-2xl px-6 py-4 shadow-xl shadow-teal/20">
-                  <p className="text-navy font-black text-2xl">500+</p>
-                  <p className="text-navy/70 text-sm font-medium">Viajeros felices</p>
+                  <p className="text-navy font-black text-2xl">14+</p>
+                  <p className="text-navy/70 text-sm font-medium">Destinos unicos</p>
                 </div>
               </div>
             </FadeIn>
@@ -1000,15 +973,13 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
             <div>
               <div className="flex items-center gap-3 mb-5">
-                <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-teal to-amber flex items-center justify-center shadow-lg shadow-teal/20">
-                  <Globe className="h-6 w-6 text-navy" />
-                </div>
+                <Image src="/images/logo-un.png" alt="Universo Nomada" width={44} height={44} className="rounded-full shadow-lg shadow-teal/20 ring-1 ring-white/10" />
                 <div className="flex flex-col">
                   <span className="text-lg font-extrabold text-white leading-none">UNIVERSO</span>
                   <span className="text-xs font-bold text-teal tracking-[0.2em] leading-none">NOMADA</span>
                 </div>
               </div>
-              <p className="text-white/40 text-sm leading-relaxed max-w-xs">Creamos experiencias de viaje personalizadas que transforman la manera de explorar Chile y Sudamerica.</p>
+              <p className="text-white/40 text-sm leading-relaxed max-w-xs">Agencia de viajes boutique especializada en experiencias personalizadas y autenticas en Chile y Sudamerica.</p>
             </div>
             <div>
               <h4 className="text-white font-bold mb-5 text-sm uppercase tracking-wider">Contacto</h4>
@@ -1027,7 +998,7 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-bold mb-5 text-sm uppercase tracking-wider">Destinos</h4>
               <ul className="space-y-2 text-sm">
-                {destinations.slice(0, 6).map((d) => (
+                {destinations.slice(0, 8).map((d) => (
                   <li key={d.name}><button onClick={() => setIsPopupOpen(true)} className="text-white/50 hover:text-teal transition-colors">{d.name}</button></li>
                 ))}
               </ul>
