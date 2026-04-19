@@ -14,6 +14,8 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
+  password  String?
+  role      String   @default("user")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -36,4 +38,19 @@ model Lead {
   destino   String?
   mensaje   String?
   createdAt DateTime @default(now())
+}
+
+model Promotion {
+  id            Int      @id @default(autoincrement())
+  title         String
+  subtitle      String
+  discount      String
+  destination   String
+  validUntil    String
+  originalPrice Int
+  discountPrice Int
+  emoji         String   @default("🔥")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
