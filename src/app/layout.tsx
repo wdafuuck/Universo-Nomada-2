@@ -14,26 +14,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Universo Nómada - Viajes Personalizados | La Serena, Chile",
+  title: "Universo Nomada | Viajes que Dejan Huella",
   description:
-    "Vive experiencias que dejan huella. Viajes personalizados a destinos auténticos en Chile y el mundo. Cotiza tu viaje gratis con Universo Nómada.",
+    "Vive experiencias que transforman. Viajes personalizados a Rapa Nui, Atacama, Machu Picchu, Patagonia y mas. Cotiza tu viaje gratis con Universo Nomada.",
   keywords: [
-    "Universo Nómada",
+    "Universo Nomada",
     "viajes personalizados",
     "La Serena",
     "Chile",
-    "turismo",
-    "experiencias",
-    "destinos auténticos",
+    "Rapa Nui",
+    "Atacama",
+    "Machu Picchu",
+    "Patagonia",
+    "Uyuni",
+    "turismo vivencial",
+    "experiencias de viaje",
+    "destinos autenticos",
   ],
-  authors: [{ name: "Universo Nómada" }],
+  authors: [{ name: "Universo Nomada" }],
   icons: {
     icon: "/logo.svg",
   },
   openGraph: {
-    title: "Universo Nómada - Viajes Personalizados",
-    description: "Vive experiencias que dejan huella. Viajes personalizados a destinos auténticos en Chile y el mundo.",
-    siteName: "Universo Nómada",
+    title: "Universo Nomada | Viajes que Dejan Huella",
+    description: "Vive experiencias que transforman. Viajes personalizados a destinos autenticos en Chile y Sudamerica.",
+    siteName: "Universo Nomada",
     type: "website",
   },
 };
