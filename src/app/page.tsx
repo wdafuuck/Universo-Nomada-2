@@ -106,8 +106,8 @@ const testimonials = [
 
 const navLinks = [
   { label: "Inicio", href: "#inicio" },
-  { label: "Destinos", href: "#destinos" },
   { label: "Ofertas", href: "#ofertas" },
+  { label: "Destinos", href: "#destinos" },
   { label: "Nosotros", href: "#nosotros" },
   { label: "Contacto", href: "#contacto" },
 ];
@@ -536,7 +536,7 @@ export default function LandingPage() {
       <motion.nav initial={{ y: -80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className={`fixed top-10 left-0 right-0 z-50 transition-all duration-500 ${
-          navScrolled ? "bg-navy/95 backdrop-blur-xl shadow-2xl shadow-black/20 border-b border-white/5" : "bg-transparent"}`}>
+          navScrolled ? "bg-gradient-to-r from-navy/95 via-[#0F2440]/95 to-navy/95 backdrop-blur-xl shadow-2xl shadow-black/20 border-b border-teal/10" : "bg-transparent"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <div className="flex items-center gap-2.5">
             <Image src="/images/logo-un.png" alt="Universo Nomada" width={40} height={40} className="rounded-full shadow-lg shadow-teal/20 ring-1 ring-white/10" />
@@ -569,8 +569,8 @@ export default function LandingPage() {
               </>
             ) : (
               <Button onClick={() => setIsAuthOpen(true)} size="sm" variant="outline"
-                className="bg-white/5 border-white/10 text-white/80 hover:bg-teal hover:text-navy rounded-full text-xs">
-                <LogIn className="h-3.5 w-3.5 mr-1" />Iniciar Sesion
+                className="border-teal/40 text-teal hover:bg-teal hover:text-navy rounded-full text-sm px-4 h-9 shadow-md shadow-teal/10 transition-all hover:scale-105 font-semibold">
+                <LogIn className="h-4 w-4 mr-1.5" />Iniciar Sesion
               </Button>
             )}
             <Button onClick={() => setIsPopupOpen(true)} size="sm"
@@ -587,7 +587,7 @@ export default function LandingPage() {
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden bg-navy-light border-t border-white/5 overflow-hidden">
+              className="lg:hidden bg-gradient-to-b from-navy-light to-[#0D1B2A] border-t border-white/5 overflow-hidden">
               <div className="px-4 py-4 space-y-1">
                 {navLinks.map((link) => (
                   <a key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)}
@@ -595,7 +595,7 @@ export default function LandingPage() {
                 ))}
                 {!user && (
                   <button onClick={() => { setIsAuthOpen(true); setMobileMenuOpen(false); }}
-                    className="w-full text-left px-4 py-2.5 text-white/70 hover:text-teal hover:bg-white/5 rounded-xl transition-colors text-sm font-medium flex items-center gap-2">
+                    className="w-full text-left px-4 py-3 text-teal hover:bg-teal/10 border border-teal/30 rounded-xl transition-all text-sm font-semibold flex items-center gap-2">
                     <LogIn className="h-4 w-4" />Iniciar Sesion
                   </button>
                 )}
@@ -612,15 +612,15 @@ export default function LandingPage() {
       </motion.nav>
 
       {/* ═══════ HERO ═══════ */}
-      <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-navy">
+      <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-hero-adventure">
         <div className="absolute inset-0">
           <Image src="/images/hero-new.png" alt="Paisaje Patagonia Chile" fill className="object-cover" priority quality={95} />
-          <div className="absolute inset-0 bg-gradient-to-b from-navy/70 via-navy-glow/30 to-navy" />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy/60 via-transparent to-navy-glow/20" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0D1B2A]/70 via-[#0E2D4A]/30 to-[#0D1B2A]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0D1B2A]/60 via-transparent to-[#0B3D5E]/20" />
         </div>
         <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-teal/5 rounded-full blur-3xl float-animation" />
-        <div className="absolute bottom-1/3 left-1/5 w-48 h-48 bg-amber/5 rounded-full blur-3xl float-animation" style={{ animationDelay: "1s" }} />
-        <div className="absolute top-1/2 left-1/3 w-96 h-96 bg-navy-glow/10 rounded-full blur-[100px] float-animation" style={{ animationDelay: "2s" }} />
+        <div className="absolute bottom-1/3 left-1/5 w-48 h-48 bg-sunset/5 rounded-full blur-3xl float-animation" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-1/2 left-1/3 w-96 h-96 bg-mountain/5 rounded-full blur-[100px] float-animation" style={{ animationDelay: "2s" }} />
 
         <div className="relative z-10 text-center px-4 sm:px-6 max-w-5xl mx-auto pt-28">
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }}>
@@ -681,11 +681,72 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
         </div>
       </section>
 
+      {/* Mountain divider - Hero to Ofertas */}
+      <div className="mountain-divider bg-hero-adventure">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,80 L0,60 Q120,20 360,45 Q600,70 840,30 Q1080,0 1260,35 Q1380,55 1440,40 L1440,80 Z" fill="#1A1207" />
+        </svg>
+      </div>
+
       {/* Stats section removed per user request */}
 
+      {/* ═══════ OFERTAS / PROMOCIONES ═══════ */}
+      <section id="ofertas" className="py-16 sm:py-24 bg-ofertas-adventure relative overflow-hidden texture-topo texture-grain">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(217,119,6,0.08)_0%,_transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(0,201,167,0.05)_0%,_transparent_50%)]" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <FadeIn>
+            <div className="text-center mb-12">
+              <span className="text-amber font-semibold text-sm uppercase tracking-[0.2em]">Ofertas Exclusivas</span>
+              <h2 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">Descuentos del mes</h2>
+              <p className="mt-4 text-white/50 text-lg max-w-xl mx-auto">Promociones por tiempo limitado que no puedes dejar pasar.</p>
+            </div>
+          </FadeIn>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {promoDetails.map((promo, i) => (
+              <FadeIn key={promo.title} delay={i * 0.1}>
+                <Card className="group overflow-hidden border-white/5 bg-[#1A1207]/80 hover:bg-[#2D1B06]/80 shadow-none hover:shadow-xl hover:shadow-amber/5 card-depth gradient-card-border transition-all duration-500 rounded-2xl cursor-pointer"
+                  onClick={() => setIsPopupOpen(true)}>
+                  <div className="relative h-48 overflow-hidden">
+                    <Image src={promo.image} alt={promo.title} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1A1207] via-[#1A1207]/30 to-transparent" />
+                    <div className="absolute top-3 right-3 bg-coral text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">{promo.discount}</div>
+                    <div className="absolute bottom-3 left-3">
+                      <span className="text-2xl">{promo.emoji}</span>
+                    </div>
+                  </div>
+                  <CardContent className="p-5">
+                    <h3 className="text-white font-bold text-lg mb-1">{promo.title}</h3>
+                    <p className="text-white/50 text-sm mb-3">{promo.subtitle}</p>
+                    <div className="flex items-baseline gap-3 mb-3">
+                      <span className="text-white/30 line-through text-sm">{formatCLP(promo.originalPrice)}</span>
+                      <span className="text-teal font-bold text-xl">{formatCLP(promo.discountPrice)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/30 text-xs flex items-center gap-1"><Clock className="h-3 w-3" />Hasta {promo.validUntil}</span>
+                      <Button size="sm" className="bg-teal hover:bg-teal-dark text-navy font-bold rounded-full text-xs px-4 shadow-lg shadow-teal/20">
+                        Ver Oferta
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Mountain divider */}
+      <div className="mountain-divider bg-ofertas-adventure">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,80 L0,50 Q120,10 240,40 Q360,70 480,30 Q600,-5 720,35 Q840,65 960,25 Q1080,0 1200,40 Q1320,70 1440,45 L1440,80 Z" fill="#0A1A14" />
+        </svg>
+      </div>
+
       {/* ═══════ DESTINATIONS WITH FILTERS ═══════ */}
-      <section id="destinos" className="py-16 sm:py-24 bg-navy-depth relative overflow-hidden ambient-glow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="destinos" className="py-16 sm:py-24 bg-destinos-adventure relative overflow-hidden texture-topo texture-grain">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <FadeIn>
             <div className="text-center mb-10">
               <span className="text-teal font-semibold text-sm uppercase tracking-[0.2em]">Destinos</span>
@@ -711,11 +772,11 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredDestinations.map((dest, i) => (
               <FadeIn key={dest.name} delay={i * 0.05}>
-                <Card className="group overflow-hidden border-white/5 bg-navy-light hover:bg-navy-mid shadow-none hover:shadow-xl hover:shadow-teal/5 card-depth transition-all duration-500 rounded-2xl cursor-pointer"
+                <Card className="group overflow-hidden border-white/5 bg-[#0D2818]/80 hover:bg-[#0A1F14]/80 shadow-none hover:shadow-xl hover:shadow-emerald-500/5 card-depth gradient-card-border transition-all duration-500 rounded-2xl cursor-pointer"
                   onClick={() => setIsPopupOpen(true)}>
                   <div className="relative aspect-[4/3] overflow-hidden">
-                    <Image src={dest.image} alt={dest.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy-light via-transparent to-transparent" />
+                    <Image src={dest.image} alt={dest.name} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0D2818] via-transparent to-transparent" />
                     <span className={`absolute top-3 left-3 inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${dest.tagColor}`}>{dest.tag}</span>
                     <button onClick={(e) => { e.stopPropagation(); }} className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-coral hover:bg-coral/20 transition-all">
                       <Heart className="h-4 w-4" />
@@ -748,55 +809,17 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
         </div>
       </section>
 
-      {/* ═══════ OFERTAS / PROMOCIONES ═══════ */}
-      <section id="ofertas" className="py-16 sm:py-24 bg-navy-light-depth relative overflow-hidden ambient-glow">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(0,201,167,0.05)_0%,_transparent_50%)]" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <FadeIn>
-            <div className="text-center mb-12">
-              <span className="text-amber font-semibold text-sm uppercase tracking-[0.2em]">Ofertas Exclusivas</span>
-              <h2 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">Descuentos del mes</h2>
-              <p className="mt-4 text-white/50 text-lg max-w-xl mx-auto">Promociones por tiempo limitado que no puedes dejar pasar.</p>
-            </div>
-          </FadeIn>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {promoDetails.map((promo, i) => (
-              <FadeIn key={promo.title} delay={i * 0.1}>
-                <Card className="group overflow-hidden border-white/5 bg-navy hover:bg-navy-mid shadow-none hover:shadow-xl hover:shadow-teal/5 card-depth transition-all duration-500 rounded-2xl cursor-pointer"
-                  onClick={() => setIsPopupOpen(true)}>
-                  <div className="relative h-48 overflow-hidden">
-                    <Image src={promo.image} alt={promo.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/30 to-transparent" />
-                    <div className="absolute top-3 right-3 bg-coral text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">{promo.discount}</div>
-                    <div className="absolute bottom-3 left-3">
-                      <span className="text-2xl">{promo.emoji}</span>
-                    </div>
-                  </div>
-                  <CardContent className="p-5">
-                    <h3 className="text-white font-bold text-lg mb-1">{promo.title}</h3>
-                    <p className="text-white/50 text-sm mb-3">{promo.subtitle}</p>
-                    <div className="flex items-baseline gap-3 mb-3">
-                      <span className="text-white/30 line-through text-sm">{formatCLP(promo.originalPrice)}</span>
-                      <span className="text-teal font-bold text-xl">{formatCLP(promo.discountPrice)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-white/30 text-xs flex items-center gap-1"><Clock className="h-3 w-3" />Hasta {promo.validUntil}</span>
-                      <Button size="sm" className="bg-teal hover:bg-teal-dark text-navy font-bold rounded-full text-xs px-4 shadow-lg shadow-teal/20">
-                        Ver Oferta
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Mountain divider */}
+      <div className="mountain-divider bg-destinos-adventure">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,80 L0,55 Q180,15 360,45 Q540,75 720,30 Q900,0 1080,40 Q1260,70 1440,35 L1440,80 Z" fill="#0D0B1F" />
+        </svg>
+      </div>
 
       {/* ═══════ NOSOTROS ═══════ */}
-      <section id="nosotros" className="py-16 sm:py-24 bg-navy-depth relative overflow-hidden ambient-glow">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-teal/3 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+      <section id="nosotros" className="py-16 sm:py-24 bg-nosotros-adventure relative overflow-hidden texture-topo texture-grain">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-mountain/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-72 h-72 bg-teal/3 rounded-full blur-3xl translate-x-1/3 translate-y-1/3" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <FadeIn>
@@ -812,7 +835,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
                 <div className="mt-8 grid grid-cols-2 gap-4">
                   {benefits.slice(0, 4).map((b) => (
                     <div key={b.title} className="flex items-start gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-teal/10 flex items-center justify-center shrink-0"><b.icon className="h-5 w-5 text-teal" /></div>
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-teal/10 to-mountain/10 flex items-center justify-center shrink-0"><b.icon className="h-5 w-5 text-teal" /></div>
                       <div><h4 className="text-white font-semibold text-sm">{b.title}</h4><p className="text-white/40 text-xs mt-0.5">{b.description}</p></div>
                     </div>
                   ))}
@@ -822,9 +845,9 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
             <FadeIn delay={0.2}>
               <div className="relative">
                 <div className="aspect-[4/3] rounded-2xl overflow-hidden">
-                  <Image src="/images/experiencia_andes.png" alt="Experiencias ancestrales en los Andes" fill className="object-cover" />
+                  <Image src="/images/experiencia_andes.png" alt="Experiencias ancestrales en los Andes" fill className="object-cover object-center" />
                 </div>
-                <div className="absolute -bottom-4 -right-4 bg-teal rounded-2xl px-6 py-4 shadow-xl shadow-teal/20">
+                <div className="absolute -bottom-4 -right-4 bg-gradient-to-br from-teal to-emerald-600 rounded-2xl px-6 py-4 shadow-xl shadow-teal/20">
                   <p className="text-navy font-black text-2xl">14+</p>
                   <p className="text-navy/70 text-sm font-medium">Destinos unicos</p>
                 </div>
@@ -834,9 +857,16 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
         </div>
       </section>
 
+      {/* Mountain divider */}
+      <div className="mountain-divider bg-nosotros-adventure">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,80 L0,40 Q240,80 480,35 Q720,-5 960,40 Q1200,80 1440,30 L1440,80 Z" fill="#1A1508" />
+        </svg>
+      </div>
+
       {/* ═══════ TESTIMONIALS ═══════ */}
-      <section className="py-16 sm:py-24 bg-navy-light-depth relative overflow-hidden ambient-glow">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,201,167,0.05)_0%,_transparent_70%)]" />
+      <section className="py-16 sm:py-24 bg-testimonials-adventure relative overflow-hidden texture-topo texture-grain">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(217,119,6,0.06)_0%,_transparent_70%)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <FadeIn>
             <div className="text-center mb-12">
@@ -844,10 +874,32 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
               <h2 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">Historias que inspiran</h2>
             </div>
           </FadeIn>
+
+          {/* Google Reviews Badge */}
+          <FadeIn delay={0.05}>
+            <div className="flex items-center justify-center gap-3 mb-10">
+              <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span className="text-white/70 text-sm font-medium">Resenas de Google</span>
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-amber text-amber" />
+                  ))}
+                </div>
+                <span className="text-amber font-bold text-sm">5.0</span>
+              </div>
+            </div>
+          </FadeIn>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
               <FadeIn key={t.name} delay={i * 0.15}>
-                <Card className="h-full border-white/5 bg-navy shadow-none hover:shadow-xl hover:shadow-teal/5 card-depth transition-all duration-500 rounded-2xl">
+                <Card className="h-full border-white/5 bg-[#1A1508]/80 shadow-none hover:shadow-xl hover:shadow-amber/5 card-depth gradient-card-border transition-all duration-500 rounded-2xl">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-1 mb-4">
                       {Array.from({ length: t.rating }).map((_, si) => <Star key={si} className="h-4 w-4 fill-amber text-amber" />)}
@@ -866,10 +918,10 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* ═══════ CTA BANNER ═══════ */}
-      <section className="py-16 sm:py-20 bg-navy-depth relative overflow-hidden">
+      <section className="py-16 sm:py-20 bg-nosotros-adventure relative overflow-hidden">
         <div className="absolute inset-0">
-          <Image src="/images/elqui-new.png" alt="Valle del Elqui" fill className="object-cover opacity-30" />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/80 to-navy" />
+          <Image src="/images/elqui-new.png" alt="Valle del Elqui" fill className="object-cover opacity-25" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0D0B1F] via-[#0D0B1F]/80 to-[#0D0B1F]" />
         </div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <FadeIn>
@@ -889,8 +941,8 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* ═══════ CONTACT / FORM ═══════ */}
-      <section id="contacto" ref={formRef} className="py-16 sm:py-24 bg-navy-light-depth">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="contacto" ref={formRef} className="py-16 sm:py-24 bg-contacto-adventure relative overflow-hidden texture-topo texture-grain">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Info */}
             <FadeIn>
@@ -969,7 +1021,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* ═══════ FOOTER ═══════ */}
-      <footer className="bg-navy border-t border-navy-glow/20 mt-auto">
+      <footer className="bg-navy border-t border-teal/10 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
             <div>
