@@ -54,7 +54,7 @@ const destinations: Destination[] = [
   { name: "Rapa Nui", subtitle: "Isla de Pascua, Chile", image: "/images/rapanui.png", description: "Misteriosos moais guardians del Pacifico. Vive la cultura ancestral rapanui en medio del oceano mas remoto del planeta. Tapati 2027 con 15% OFF.", tag: "Cultura & Misterio", tagColor: "bg-violet-500/20 text-violet-300", icon: Compass, category: "internacional", price: 957100, duration: "5 dias", originalPrice: 1126000 },
   { name: "San Pedro de Atacama + Uyuni", subtitle: "Chile - Bolivia", image: "/images/uyuni.png", description: "Del desierto mas arido al espejo de sal mas grande del mundo. Geisers, lagunas altiplanicas y el Salar de Uyuni. Viaje grupal 10 dias.", tag: "Expedicion", tagColor: "bg-amber-500/20 text-amber-300", icon: Mountain, category: "internacional", price: 1658600, duration: "10 dias" },
   { name: "Cusco + Machu Picchu", subtitle: "Peru", image: "/images/cusco.png", description: "La ciudadela inca entre las nubes. Recorre el Camino Inca, explora Cusco imperial y conecta con la historia viva.", tag: "Historia & Trekking", tagColor: "bg-emerald-500/20 text-emerald-300", icon: Binoculars, category: "internacional", price: 1200000, duration: "7 dias" },
-  { name: "Turismo Vivencial", subtitle: "Chile", image: "/images/vivencial.png", description: "Conecta con comunidades locales, vive sus tradiciones, saborea su cocina y descubre Chile desde adentro.", tag: "Autentico", tagColor: "bg-orange-500/20 text-orange-300", icon: Users, category: "experiencial", price: 350000, duration: "3 dias" },
+  { name: "Terapias Ancestrales", subtitle: "Experiencias Andinas, Peru", image: "/images/terapias_ancestrales.png", description: "Terapia sonora ancestral con vibraciones curativas de los Andes, sanacion con arcilla para transformacion ancestral y conexion con la tierra, terapia con alpacas para equilibrio emocional.", tag: "Bienestar & Ancestral", tagColor: "bg-orange-500/20 text-orange-300", icon: Heart, category: "experiencial", price: 350000, duration: "3 dias" },
   { name: "Ballenas + Valle del Elqui", subtitle: "Chile", image: "/images/ballenas.png", description: "Avistamiento de ballenas en Caleta Chanaral de Aceituno y noches magicas bajo los cielos mas limpios del mundo.", tag: "Naturaleza & Astro", tagColor: "bg-cyan-500/20 text-cyan-300", icon: Waves, category: "chile", price: 450000, duration: "3 dias" },
   { name: "Santiago + Vinedos", subtitle: "Chile", image: "/images/vinedos.png", description: "La vibracion de Santiago entre montanas y los mejores vinos de Chile. City tours, enoturismo y gastronomia de altura.", tag: "City & Vino", tagColor: "bg-rose-500/20 text-rose-300", icon: Palmtree, category: "chile", price: 280000, duration: "2 dias" },
   { name: "Bolivia Amazonica", subtitle: "Pampas del Yacuma + Selva", image: "/images/bolivia.png", description: "Desde las Pampas del Yacuma hasta la selva amazonica. Caimanes, capibaras y la inmensidad verde del continente.", tag: "Selva & Wildlife", tagColor: "bg-green-500/20 text-green-300", icon: TreePine, category: "internacional", price: 980000, duration: "6 dias" },
@@ -99,9 +99,9 @@ const benefits = [
 ];
 
 const testimonials = [
-  { name: "Carolina Munoz", destination: "Valle del Elqui", rating: 5, text: "Fue un viaje magico. Las noches bajo las estrellas en el Elqui fueron algo que nunca olvidare. Universo Nomada penso en cada detalle.", avatar: "CM" },
-  { name: "Roberto Fuentes", destination: "Atacama + Uyuni", rating: 5, text: "La atencion fue impecable de principio a fin. El Salar de Uyuni cambio mi perspectiva del mundo.", avatar: "RF" },
-  { name: "Maria Jose Soto", destination: "Patagonia", rating: 5, text: "Cumplieron con creces mis expectativas. El trekking fue el reto mas grande y hermoso de mi vida. Volvere!", avatar: "MS" },
+  { name: "Erika Cerda", destination: "Cusco, Peru", rating: 5, text: "Excelente Agencia, hice un maravilloso viaje a Cusco, todo gestionado. Preocupacion constante tanto de Rocio desde Chile y Mario en Peru. Agradecida por todas sus atenciones, antes, durante y despues de mi viaje. 10000000/10. Totalmente recomendables.", avatar: "EC" },
+  { name: "Renan Concha", destination: "San Pedro de Atacama", rating: 5, text: "Queremos agradecer a Universo Nomada por la excelente gestion de nuestro viaje a San Pedro de Atacama. Todo estuvo perfectamente organizado y fue una experiencia inolvidable.", avatar: "RC" },
+  { name: "Andrea Cruz", destination: "Rio de Janeiro, Brasil", rating: 5, text: "Maravilloso el viaje a Rio y sus Tour, la agencia preocupada de todos los detalles y siempre disponibles, lo que hace que el viaje se cumpla de acuerdo a lo programado y uno se dedique a disfrutar de un destino hermoso. 100% recomendado viajar con Universo Nomada.", avatar: "AC" },
 ];
 
 const navLinks = [
@@ -528,7 +528,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-navy">
+    <div className="min-h-screen flex flex-col bg-navy-depth">
       {/* ═══════ DISCOUNT TICKER ═══════ */}
       <DiscountTicker onCotizar={() => setIsPopupOpen(true)} />
 
@@ -569,7 +569,7 @@ export default function LandingPage() {
               </>
             ) : (
               <Button onClick={() => setIsAuthOpen(true)} size="sm" variant="outline"
-                className="hidden sm:flex bg-white/5 border-white/10 text-white/80 hover:bg-teal hover:text-navy rounded-full text-xs">
+                className="bg-white/5 border-white/10 text-white/80 hover:bg-teal hover:text-navy rounded-full text-xs">
                 <LogIn className="h-3.5 w-3.5 mr-1" />Iniciar Sesion
               </Button>
             )}
@@ -615,11 +615,12 @@ export default function LandingPage() {
       <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-navy">
         <div className="absolute inset-0">
           <Image src="/images/hero-new.png" alt="Paisaje Patagonia Chile" fill className="object-cover" priority quality={95} />
-          <div className="absolute inset-0 bg-gradient-to-b from-navy/70 via-navy/40 to-navy" />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-navy/70 via-navy-glow/30 to-navy" />
+          <div className="absolute inset-0 bg-gradient-to-r from-navy/60 via-transparent to-navy-glow/20" />
         </div>
         <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-teal/5 rounded-full blur-3xl float-animation" />
         <div className="absolute bottom-1/3 left-1/5 w-48 h-48 bg-amber/5 rounded-full blur-3xl float-animation" style={{ animationDelay: "1s" }} />
+        <div className="absolute top-1/2 left-1/3 w-96 h-96 bg-navy-glow/10 rounded-full blur-[100px] float-animation" style={{ animationDelay: "2s" }} />
 
         <div className="relative z-10 text-center px-4 sm:px-6 max-w-5xl mx-auto pt-28">
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }}>
@@ -683,7 +684,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       {/* Stats section removed per user request */}
 
       {/* ═══════ DESTINATIONS WITH FILTERS ═══════ */}
-      <section id="destinos" className="py-16 sm:py-24 bg-navy">
+      <section id="destinos" className="py-16 sm:py-24 bg-navy-depth relative overflow-hidden ambient-glow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
             <div className="text-center mb-10">
@@ -710,7 +711,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredDestinations.map((dest, i) => (
               <FadeIn key={dest.name} delay={i * 0.05}>
-                <Card className="group overflow-hidden border-white/5 bg-navy-light hover:bg-white/5 shadow-none hover:shadow-xl hover:shadow-teal/5 transition-all duration-500 rounded-2xl cursor-pointer"
+                <Card className="group overflow-hidden border-white/5 bg-navy-light hover:bg-navy-mid shadow-none hover:shadow-xl hover:shadow-teal/5 card-depth transition-all duration-500 rounded-2xl cursor-pointer"
                   onClick={() => setIsPopupOpen(true)}>
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <Image src={dest.image} alt={dest.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -748,7 +749,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* ═══════ OFERTAS / PROMOCIONES ═══════ */}
-      <section id="ofertas" className="py-16 sm:py-24 bg-navy-light relative overflow-hidden">
+      <section id="ofertas" className="py-16 sm:py-24 bg-navy-light-depth relative overflow-hidden ambient-glow">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(0,201,167,0.05)_0%,_transparent_50%)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <FadeIn>
@@ -762,7 +763,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {promoDetails.map((promo, i) => (
               <FadeIn key={promo.title} delay={i * 0.1}>
-                <Card className="group overflow-hidden border-white/5 bg-navy shadow-none hover:shadow-xl hover:shadow-teal/5 transition-all duration-500 rounded-2xl cursor-pointer"
+                <Card className="group overflow-hidden border-white/5 bg-navy hover:bg-navy-mid shadow-none hover:shadow-xl hover:shadow-teal/5 card-depth transition-all duration-500 rounded-2xl cursor-pointer"
                   onClick={() => setIsPopupOpen(true)}>
                   <div className="relative h-48 overflow-hidden">
                     <Image src={promo.image} alt={promo.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -794,7 +795,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* ═══════ NOSOTROS ═══════ */}
-      <section id="nosotros" className="py-16 sm:py-24 bg-navy relative overflow-hidden">
+      <section id="nosotros" className="py-16 sm:py-24 bg-navy-depth relative overflow-hidden ambient-glow">
         <div className="absolute top-0 left-0 w-96 h-96 bg-teal/3 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -821,7 +822,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
             <FadeIn delay={0.2}>
               <div className="relative">
                 <div className="aspect-[4/3] rounded-2xl overflow-hidden">
-                  <Image src="/images/vivencial.png" alt="Universo Nomada equipo" fill className="object-cover" />
+                  <Image src="/images/experiencia_andes.png" alt="Experiencias ancestrales en los Andes" fill className="object-cover" />
                 </div>
                 <div className="absolute -bottom-4 -right-4 bg-teal rounded-2xl px-6 py-4 shadow-xl shadow-teal/20">
                   <p className="text-navy font-black text-2xl">14+</p>
@@ -834,7 +835,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* ═══════ TESTIMONIALS ═══════ */}
-      <section className="py-16 sm:py-24 bg-navy-light relative overflow-hidden">
+      <section className="py-16 sm:py-24 bg-navy-light-depth relative overflow-hidden ambient-glow">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,201,167,0.05)_0%,_transparent_70%)]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <FadeIn>
@@ -846,7 +847,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (
               <FadeIn key={t.name} delay={i * 0.15}>
-                <Card className="h-full border-white/5 bg-navy shadow-none hover:shadow-xl hover:shadow-teal/5 transition-all duration-500 rounded-2xl">
+                <Card className="h-full border-white/5 bg-navy shadow-none hover:shadow-xl hover:shadow-teal/5 card-depth transition-all duration-500 rounded-2xl">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-1 mb-4">
                       {Array.from({ length: t.rating }).map((_, si) => <Star key={si} className="h-4 w-4 fill-amber text-amber" />)}
@@ -865,7 +866,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* ═══════ CTA BANNER ═══════ */}
-      <section className="py-16 sm:py-20 bg-navy relative overflow-hidden">
+      <section className="py-16 sm:py-20 bg-navy-depth relative overflow-hidden">
         <div className="absolute inset-0">
           <Image src="/images/elqui-new.png" alt="Valle del Elqui" fill className="object-cover opacity-30" />
           <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/80 to-navy" />
@@ -888,7 +889,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* ═══════ CONTACT / FORM ═══════ */}
-      <section id="contacto" ref={formRef} className="py-16 sm:py-24 bg-navy-light">
+      <section id="contacto" ref={formRef} className="py-16 sm:py-24 bg-navy-light-depth">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Info */}
@@ -968,7 +969,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* ═══════ FOOTER ═══════ */}
-      <footer className="bg-navy border-t border-white/5 mt-auto">
+      <footer className="bg-navy border-t border-navy-glow/20 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
             <div>
@@ -1025,9 +1026,9 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
               </div>
             </div>
           </div>
-          <div className="border-t border-white/5 mt-10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/25">
+          <div className="border-t border-white/5 mt-10 pt-8 flex flex-col items-center gap-2 text-sm text-white/25">
             <p>&copy; {new Date().getFullYear()} Universo Nomada. Todos los derechos reservados.</p>
-            <p className="flex items-center gap-1">Hecho con <Heart className="h-3.5 w-3.5 text-coral fill-coral" /> en La Serena, Chile</p>
+            <p className="text-white/20 text-xs">Respaldo SERNATUR &middot; La Serena, Chile</p>
           </div>
         </div>
       </footer>
