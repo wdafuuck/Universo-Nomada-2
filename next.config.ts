@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  images: {
+    qualities: [75, 95],
+  },
 };
 
 export default nextConfig;

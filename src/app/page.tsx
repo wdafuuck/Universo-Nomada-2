@@ -2,16 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import {
-  MapPin, Phone, Mail, Star, Heart, Shield, Clock, CreditCard,
-  Compass, MessageCircle, Instagram, Facebook, Send, ArrowDown,
-  Globe, Sparkles, ChevronRight, Users, Award, X, ChevronLeft,
-  ArrowRight, Plane, Mountain, Waves, TreePine, Palmtree, Binoculars,
-  Menu, LogIn, LogOut, LayoutDashboard, Tag, TrendingUp, Calendar,
-  User, Lock, Eye, EyeOff, type LucideIcon,
-} from "lucide-react";
+import { MapPin, Search, Calendar, Users, ChevronDown, ArrowRight, Star, Plane, Ship, Train, Bus, Car, Mountain, Waves, Trees, Building, Camera, Heart, Compass, Clock, DollarSign, Menu, X, Instagram, Facebook, Mail, Phone, ChevronLeft, ChevronRight, Plus, Minus, Check, AlertCircle, Info, Shield, Award, Globe, Zap, TrendingUp, Target, Sparkles, Flame, Navigation, LayoutDashboard, Binoculars, Palmtree, TreePine, CreditCard, LogIn, User, Lock, Eye, EyeOff, Send, Tag, LogOut, MessageCircle, ShoppingCart, type LucideIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 /* ═══════════════════ CONSTANTS ═══════════════════ */
 const WHATSAPP_URL = "https://wa.me/56974636396";
@@ -48,23 +43,23 @@ function FadeIn({ children, delay = 0, direction = "up", className = "" }: {
 // AnimatedCounter removed - stats section eliminated per user request
 
 /* ═══════════════════ DATA ═══════════════════ */
-interface Destination { name: string; subtitle: string; image: string; description: string; tag: string; tagColor: string; icon: LucideIcon; category: string; price: number; duration: string; originalPrice?: number; }
+interface Destination { id: string; name: string; subtitle: string; image: string; description: string; tag: string; tagColor: string; icon: LucideIcon; category: string; price: number; duration: string; originalPrice?: number; }
 
 const destinations: Destination[] = [
-  { name: "Rapa Nui", subtitle: "Isla de Pascua, Chile", image: "/images/rapanui.png", description: "Misteriosos moais guardians del Pacifico. Vive la cultura ancestral rapanui en medio del oceano mas remoto del planeta. Tapati 2027 con 15% OFF.", tag: "Cultura & Misterio", tagColor: "bg-violet-500/20 text-violet-300", icon: Compass, category: "internacional", price: 957100, duration: "5 dias", originalPrice: 1126000 },
-  { name: "San Pedro de Atacama + Uyuni", subtitle: "Chile - Bolivia", image: "/images/uyuni.png", description: "Del desierto mas arido al espejo de sal mas grande del mundo. Geisers, lagunas altiplanicas y el Salar de Uyuni. Viaje grupal 10 dias.", tag: "Expedicion", tagColor: "bg-amber-500/20 text-amber-300", icon: Mountain, category: "internacional", price: 1658600, duration: "10 dias" },
-  { name: "Cusco + Machu Picchu", subtitle: "Peru", image: "/images/cusco.png", description: "La ciudadela inca entre las nubes. Recorre el Camino Inca, explora Cusco imperial y conecta con la historia viva.", tag: "Historia & Trekking", tagColor: "bg-emerald-500/20 text-emerald-300", icon: Binoculars, category: "internacional", price: 1200000, duration: "7 dias" },
-  { name: "Terapias Ancestrales", subtitle: "Experiencias Andinas, Peru", image: "/images/terapias_ancestrales.png", description: "Terapia sonora ancestral con vibraciones curativas de los Andes, sanacion con arcilla para transformacion ancestral y conexion con la tierra, terapia con alpacas para equilibrio emocional.", tag: "Bienestar & Ancestral", tagColor: "bg-orange-500/20 text-orange-300", icon: Heart, category: "experiencial", price: 350000, duration: "3 dias" },
-  { name: "Ballenas + Valle del Elqui", subtitle: "Chile", image: "/images/ballenas.png", description: "Avistamiento de ballenas en Caleta Chanaral de Aceituno y noches magicas bajo los cielos mas limpios del mundo.", tag: "Naturaleza & Astro", tagColor: "bg-cyan-500/20 text-cyan-300", icon: Waves, category: "chile", price: 450000, duration: "3 dias" },
-  { name: "Santiago + Vinedos", subtitle: "Chile", image: "/images/vinedos.png", description: "La vibracion de Santiago entre montanas y los mejores vinos de Chile. City tours, enoturismo y gastronomia de altura.", tag: "City & Vino", tagColor: "bg-rose-500/20 text-rose-300", icon: Palmtree, category: "chile", price: 280000, duration: "2 dias" },
-  { name: "Bolivia Amazonica", subtitle: "Pampas del Yacuma + Selva", image: "/images/bolivia.png", description: "Desde las Pampas del Yacuma hasta la selva amazonica. Caimanes, capibaras y la inmensidad verde del continente.", tag: "Selva & Wildlife", tagColor: "bg-green-500/20 text-green-300", icon: TreePine, category: "internacional", price: 980000, duration: "6 dias" },
-  { name: "Region de Atacama", subtitle: "Chile", image: "/images/atacama-new.png", description: "Valle de la Luna, Lagunas Altiplanicas, Geisers del Tatio y estrellas infinitas en el desierto mas antiguo del planeta.", tag: "Desierto & Estrellas", tagColor: "bg-yellow-500/20 text-yellow-300", icon: Star, category: "chile", price: 520000, duration: "4 dias" },
-  { name: "Valle del Aconcagua", subtitle: "Chile", image: "/images/aconcagua.png", description: "Vinedos boutique al pie del techo de America. Montanismo, enoturismo y paisajes que inspiran.", tag: "Montana & Vino", tagColor: "bg-sky-500/20 text-sky-300", icon: Mountain, category: "chile", price: 320000, duration: "2 dias" },
-  { name: "Catedrales de Marmol + Carretera Austral", subtitle: "Patagonia, Chile", image: "/images/marmol.png", description: "Cuevas de marmol esculpidas por el agua turquesa y la ruta mas salvaje de Patagonia. Aventura pura en el fin del mundo.", tag: "Patagonia Extrema", tagColor: "bg-teal-500/20 text-teal-300", icon: Waves, category: "chile", price: 1500000, duration: "8 dias" },
-  { name: "Rio de Janeiro", subtitle: "Brasil", image: "/images/rio_janeiro.png", description: "La ciudad maravillosa. Cristo Redentor, Copacabana, Ipanema y la energia carioca que lo contagia todo. Samba, playas y una cultura vibrante.", tag: "City & Playa", tagColor: "bg-yellow-500/20 text-yellow-300", icon: Palmtree, category: "internacional", price: 698000, duration: "5 dias" },
-  { name: "Florianopolis", subtitle: "Brasil", image: "/images/florianopolis.png", description: "La isla de la magia. 42 playas paradisiacas, dunas, selva atlantica y una gastronomia que enamora. El destino brasileno perfecto.", tag: "Playa & Naturaleza", tagColor: "bg-cyan-500/20 text-cyan-300", icon: Waves, category: "internacional", price: 593000, duration: "5 dias", originalPrice: 698000 },
-  { name: "Buenos Aires", subtitle: "Argentina", image: "/images/buenos_aires.png", description: "La paris de Sudamerica. Tango en La Boca, arquitectura europea, bodegones y una noche portena que no tiene fin.", tag: "Cultura & Gastronomia", tagColor: "bg-rose-500/20 text-rose-300", icon: Compass, category: "internacional", price: 450000, duration: "4 dias" },
-  { name: "Mendoza", subtitle: "Argentina", image: "/images/mendoza.png", description: "Vinos de altura al pie de los Andes. Bodegas boutique, Aconcagua imponente y la ruta del malbec mas famosa del continente. 15% OFF en abril.", tag: "Vino & Montana", tagColor: "bg-purple-500/20 text-purple-300", icon: Mountain, category: "internacional", price: 586700, duration: "5 dias", originalPrice: 690300 },
+  { id: "rapa-nui", name: "Rapa Nui", subtitle: "Isla de Pascua, Chile", image: "/images/rapanui.png", description: "Misteriosos moais guardians del Pacifico. Vive la cultura ancestral rapanui en medio del oceano mas remoto del planeta. Tapati 2027 con 15% OFF.", tag: "Cultura & Misterio", tagColor: "bg-violet-500/20 text-violet-300", icon: Compass, category: "internacional", price: 957100, duration: "5 dias", originalPrice: 1126000 },
+  { id: "san-pedro-uyuni", name: "San Pedro de Atacama + Uyuni", subtitle: "Chile - Bolivia", image: "/images/uyuni.png", description: "Del desierto mas arido al espejo de sal mas grande del mundo. Geisers, lagunas altiplanicas y el Salar de Uyuni. Viaje grupal 10 dias.", tag: "Expedicion", tagColor: "bg-amber-500/20 text-amber-300", icon: Mountain, category: "internacional", price: 1658600, duration: "10 dias" },
+  { id: "cusco-machupicchu", name: "Cusco + Machu Picchu", subtitle: "Peru", image: "/images/cusco.png", description: "La ciudadela inca entre las nubes. Recorre el Camino Inca, explora Cusco imperial y conecta con la historia viva.", tag: "Historia & Trekking", tagColor: "bg-emerald-500/20 text-emerald-300", icon: Binoculars, category: "internacional", price: 1200000, duration: "7 dias" },
+  { id: "terapias-ancestrales", name: "Terapias Ancestrales", subtitle: "Experiencias Andinas, Peru", image: "/images/terapias_ancestrales.png", description: "Terapia sonora ancestral con vibraciones curativas de los Andes, sanacion con arcilla para transformacion ancestral y conexion con la tierra, terapia con alpacas para equilibrio emocional.", tag: "Bienestar & Ancestral", tagColor: "bg-orange-500/20 text-orange-300", icon: Heart, category: "experiencial", price: 350000, duration: "3 dias" },
+  { id: "ballenas-elqui", name: "Ballenas + Valle del Elqui", subtitle: "Chile", image: "/images/ballenas.png", description: "Avistamiento de ballenas en Caleta Chanaral de Aceituno y noches magicas bajo los cielos mas limpios del mundo.", tag: "Naturaleza & Astro", tagColor: "bg-cyan-500/20 text-cyan-300", icon: Waves, category: "chile", price: 450000, duration: "3 dias" },
+  { id: "santiago-vinedos", name: "Santiago + Vinedos", subtitle: "Chile", image: "/images/vinedos.png", description: "La vibracion de Santiago entre montanas y los mejores vinos de Chile. City tours, enoturismo y gastronomia de altura.", tag: "City & Vino", tagColor: "bg-rose-500/20 text-rose-300", icon: Palmtree, category: "chile", price: 280000, duration: "2 dias" },
+  { id: "bolivia-amazonica", name: "Bolivia Amazonica", subtitle: "Pampas del Yacuma + Selva", image: "/images/bolivia.png", description: "Desde las Pampas del Yacuma hasta la selva amazonica. Caimanes, capibaras y la inmensidad verde del continente.", tag: "Selva & Wildlife", tagColor: "bg-green-500/20 text-green-300", icon: TreePine, category: "internacional", price: 980000, duration: "6 dias" },
+  { id: "region-atacama", name: "Region de Atacama", subtitle: "Chile", image: "/images/atacama-new.png", description: "Valle de la Luna, Lagunas Altiplanicas, Geisers del Tatio y estrellas infinitas en el desierto mas antiguo del planeta.", tag: "Desierto & Estrellas", tagColor: "bg-yellow-500/20 text-yellow-300", icon: Star, category: "chile", price: 520000, duration: "4 dias" },
+  { id: "valle-aconcagua", name: "Valle del Aconcagua", subtitle: "Chile", image: "/images/aconcagua.png", description: "Vinedos boutique al pie del techo de America. Montanismo, enoturismo y paisajes que inspiran.", tag: "Montana & Vino", tagColor: "bg-sky-500/20 text-sky-300", icon: Mountain, category: "chile", price: 320000, duration: "2 dias" },
+  { id: "catedrales-marmol", name: "Catedrales de Marmol + Carretera Austral", subtitle: "Patagonia, Chile", image: "/images/marmol.png", description: "Cuevas de marmol esculpidas por el agua turquesa y la ruta mas salvaje de Patagonia. Aventura pura en el fin del mundo.", tag: "Patagonia Extrema", tagColor: "bg-teal-500/20 text-teal-300", icon: Waves, category: "chile", price: 1500000, duration: "8 dias" },
+  { id: "rio-janeiro", name: "Rio de Janeiro", subtitle: "Brasil", image: "/images/rio_janeiro.png", description: "La ciudad maravillosa. Cristo Redentor, Copacabana, Ipanema y la energia carioca que lo contagia todo. Samba, playas y una cultura vibrante.", tag: "City & Playa", tagColor: "bg-yellow-500/20 text-yellow-300", icon: Palmtree, category: "internacional", price: 698000, duration: "5 dias" },
+  { id: "florianopolis", name: "Florianopolis", subtitle: "Brasil", image: "/images/florianopolis.png", description: "La isla de la magia. 42 playas paradisiacas, dunas, selva atlantica y una gastronomia que enamora. El destino brasileno perfecto.", tag: "Playa & Naturaleza", tagColor: "bg-cyan-500/20 text-cyan-300", icon: Waves, category: "internacional", price: 593000, duration: "5 dias", originalPrice: 698000 },
+  { id: "buenos-aires", name: "Buenos Aires", subtitle: "Argentina", image: "/images/buenos_aires.png", description: "La paris de Sudamerica. Tango en La Boca, arquitectura europea, bodegones y una noche portena que no tiene fin.", tag: "Cultura & Gastronomia", tagColor: "bg-rose-500/20 text-rose-300", icon: Compass, category: "internacional", price: 450000, duration: "4 dias" },
+  { id: "mendoza", name: "Mendoza", subtitle: "Argentina", image: "/images/mendoza.png", description: "Vinos de altura al pie de los Andes. Bodegas boutique, Aconcagua imponente y la ruta del malbec mas famosa del continente. 15% OFF en abril.", tag: "Vino & Montana", tagColor: "bg-purple-500/20 text-purple-300", icon: Mountain, category: "internacional", price: 586700, duration: "5 dias", originalPrice: 690300 },
 ];
 
 const destinoOptions = destinations.map((d) => d.name).concat(["Otro destino"]);
@@ -99,17 +94,57 @@ const benefits = [
 ];
 
 const testimonials = [
+  { name: "Tania Lovera", destination: "Cusco, Peru", rating: 5, text: "Infinitamente agradecida de Universo Nómada, más que una agencia fue una constante compañera de ruta!!!", avatar: "TL" },
   { name: "Erika Cerda", destination: "Cusco, Peru", rating: 5, text: "Excelente Agencia, hice un maravilloso viaje a Cusco, todo gestionado. Preocupacion constante tanto de Rocio desde Chile y Mario en Peru. Agradecida por todas sus atenciones, antes, durante y despues de mi viaje. 10000000/10. Totalmente recomendables.", avatar: "EC" },
   { name: "Renan Concha", destination: "San Pedro de Atacama", rating: 5, text: "Queremos agradecer a Universo Nomada por la excelente gestion de nuestro viaje a San Pedro de Atacama. Todo estuvo perfectamente organizado y fue una experiencia inolvidable.", avatar: "RC" },
   { name: "Andrea Cruz", destination: "Rio de Janeiro, Brasil", rating: 5, text: "Maravilloso el viaje a Rio y sus Tour, la agencia preocupada de todos los detalles y siempre disponibles, lo que hace que el viaje se cumpla de acuerdo a lo programado y uno se dedique a disfrutar de un destino hermoso. 100% recomendado viajar con Universo Nomada.", avatar: "AC" },
+  { name: "María José Pérez", destination: "Mendoza, Argentina", rating: 5, text: "Increíble experiencia en Mendoza! Los viñedos eran espectaculares y el Aconcagua impresionante. El guía fue muy profesional y nos llevó a lugares que no encontraríamos solos. Sin duda volveré a viajar con ellos.", avatar: "MP" },
+  { name: "Carlos González", destination: "Uyuni, Bolivia", rating: 5, text: "El viaje al Salar de Uyuni fue mágico. Todo perfectamente coordinado, desde los hoteles hasta los tours. La atención de Universo Nomada fue excepcional durante todo el proceso. 100% confiable.", avatar: "CG" },
+  { name: "Fernanda López", destination: "Rapa Nui", rating: 5, text: "Mi sueño era conocer Rapa Nui y Universo Nomada lo hizo posible. Todo impecable, desde los vuelos hasta los tours. La cultura rapanui es fascinante y gracias a ellos pudimos vivirla plenamente.", avatar: "FL" },
+  { name: "Diego Martín", destination: "Patagonia, Chile", rating: 5, text: "Expeditión Patagonia fue una aventura increíble. Las Catedrales de Marmol son espectaculares. La logística fue perfecta a pesar de lo remoto de los lugares. Muy profesionales!", avatar: "DM" },
+  { name: "Camila Silva", destination: "Valle del Elqui", rating: 5, text: "Noches mágicas en Elqui observando estrellas. Universo Nomada organizó todo perfecto, desde el alojamiento hasta los tours astronómicos. Una experiencia que nunca olvidaré.", avatar: "CS" }
 ];
 
 const navLinks = [
   { label: "Inicio", href: "#inicio" },
   { label: "Ofertas", href: "#ofertas" },
+  { label: "Viajes Grupales", href: "#viajes-grupales" },
   { label: "Destinos", href: "#destinos" },
   { label: "Nosotros", href: "#nosotros" },
   { label: "Contacto", href: "#contacto" },
+];
+
+const groupTrips = [
+  {
+    name: "San Pedro de Atacama",
+    duration: "4D/3N",
+    dates: ["Del 25 al 28 de junio", "Del 16 al 19 de junio"],
+    price: 784000,
+    reservation: 100000,
+    includes: ["Vuelo", "Seguro", "Transfer", "Hotel + desayuno", "5 tours", "Entradas", "Líder de grupo", "Acompañamiento durante todo el viaje"],
+    image: "/images/atacama-new.png",
+    gradient: "from-orange-500 to-red-600"
+  },
+  {
+    name: "Uyuni",
+    duration: "6D/5N",
+    dates: ["Del 14 al 19 de Septiembre"],
+    price: 968700,
+    reservation: 100000,
+    includes: ["Vuelo + equipaje", "Seguro", "Transfer", "Hotel + desayuno + almuerzo + cena", "Tours", "Entradas", "Líder de grupo", "Acompañamiento durante todo el viaje"],
+    image: "/images/uyuni.png",
+    gradient: "from-cyan-500 to-blue-600"
+  },
+  {
+    name: "Rapa Nui",
+    duration: "5D/4N",
+    dates: ["Del 14 al 18 de agosto"],
+    price: 1205000,
+    reservation: 200000,
+    includes: ["Vuelo + equipaje", "Seguro", "Transfer + collar de Flores", "Hotel + desayuno", "Tours", "Entradas", "Líder de grupo", "Acompañamiento durante todo el viaje"],
+    image: "/images/rapanui.png",
+    gradient: "from-violet-500 to-purple-600"
+  }
 ];
 
 const filterTabs = ["Todos", "Chile", "Internacional", "Experienciales"];
@@ -118,7 +153,7 @@ const filterTabs = ["Todos", "Chile", "Internacional", "Experienciales"];
 function DiscountTicker({ onCotizar }: { onCotizar: () => void }) {
   const tickerItems = [...promotions, ...promotions];
   return (
-    <div className="bg-gradient-to-r from-teal via-teal-dark to-teal text-navy overflow-hidden">
+    <div className="bg-gradient-to-r from-teal via-teal-dark to-teal text-navy overflow-hidden shadow-lg">
       <div className="flex items-center h-10">
         <div className="flex animate-[scroll_30s_linear_infinite] whitespace-nowrap">
           {tickerItems.map((p, i) => (
@@ -241,6 +276,219 @@ function AuthDialog({ isOpen, onClose, onLogin }: {
   );
 }
 
+/* ═══════════════════ TRAVEL FORM POPUP ═══════════════════ */
+function TravelFormPopup({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [formData, setFormData] = useState({
+    // Datos Personales
+    nombreCompleto: "",
+    rutPasaporte: "",
+    telefono: "",
+    email: "",
+    instagram: "",
+    // Datos del Viaje
+    destino: "",
+    fechaViaje: "",
+    cantidadPersonas: "1",
+    // Salud y Restricciones
+    saludRestricciones: ""
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.nombreCompleto || !formData.rutPasaporte || !formData.telefono || !formData.email) {
+      toast.error("Completa los campos obligatorios");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+      if (!res.ok) throw new Error("Error");
+      toast.success("Formulario enviado! Te contactaremos pronto.");
+      setFormData({
+        nombreCompleto: "",
+        rutPasaporte: "",
+        telefono: "",
+        email: "",
+        instagram: "",
+        destino: "",
+        fechaViaje: "",
+        cantidadPersonas: "1",
+        saludRestricciones: ""
+      });
+      setTimeout(onClose, 1500);
+    } catch {
+      toast.error("Error al enviar. Intenta de nuevo.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+          <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="relative bg-gradient-to-r from-teal to-emerald-600 px-6 py-6 text-white">
+              <button onClick={onClose} className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+                <X className="h-4 w-4" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Plane className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Formulario de Registro de Viajero</h3>
+                  <p className="text-white/80 text-sm">Completa tus datos para tu próxima aventura</p>
+                </div>
+              </div>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Datos Personales */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-bold text-gray-900 border-b pb-2">Datos Personales</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Nombre completo *</label>
+                    <Input
+                      placeholder="Juan Pérez García"
+                      value={formData.nombreCompleto}
+                      onChange={(e) => setFormData({ ...formData, nombreCompleto: e.target.value })}
+                      className="rounded-xl border-gray-200 h-11"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">RUT / Pasaporte *</label>
+                    <Input
+                      placeholder="12.345.678-9"
+                      value={formData.rutPasaporte}
+                      onChange={(e) => setFormData({ ...formData, rutPasaporte: e.target.value })}
+                      className="rounded-xl border-gray-200 h-11"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Teléfono de contacto *</label>
+                    <Input
+                      type="tel"
+                      placeholder="+56 9 1234 5678"
+                      value={formData.telefono}
+                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                      className="rounded-xl border-gray-200 h-11"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Correo electrónico *</label>
+                    <Input
+                      type="email"
+                      placeholder="correo@ejemplo.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="rounded-xl border-gray-200 h-11"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <label className="text-sm font-semibold text-gray-700">Instagram</label>
+                    <Input
+                      placeholder="@usuario"
+                      value={formData.instagram}
+                      onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                      className="rounded-xl border-gray-200 h-11"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Datos del Viaje */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-bold text-gray-900 border-b pb-2">Datos del Viaje</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Destino / Tour contratado</label>
+                    <Select value={formData.destino} onValueChange={(val) => setFormData({ ...formData, destino: val })}>
+                      <SelectTrigger className="rounded-xl h-11 border-gray-200">
+                        <SelectValue placeholder="Selecciona destino" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {destinoOptions.map((d) => (
+                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Fecha del viaje</label>
+                    <Input
+                      type="date"
+                      value={formData.fechaViaje}
+                      onChange={(e) => setFormData({ ...formData, fechaViaje: e.target.value })}
+                      className="rounded-xl border-gray-200 h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700">Cantidad de personas</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={formData.cantidadPersonas}
+                      onChange={(e) => setFormData({ ...formData, cantidadPersonas: e.target.value })}
+                      className="rounded-xl border-gray-200 h-11"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Salud y Restricciones */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-bold text-gray-900 border-b pb-2">Salud y Restricciones</h4>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700">Información médica o restricciones alimentarias</label>
+                  <Textarea
+                    placeholder="Por favor, menciona cualquier condición médica, alergias o restricciones alimentarias que debamos conocer..."
+                    value={formData.saludRestricciones}
+                    onChange={(e) => setFormData({ ...formData, saludRestricciones: e.target.value })}
+                    className="rounded-xl min-h-[100px] resize-none border-gray-200"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-teal hover:bg-teal-dark text-white font-bold rounded-full h-12 shadow-lg shadow-teal/20 transition-all hover:scale-[1.02]"
+                >
+                  {isSubmitting ? "Enviando..." : "Enviar Formulario"}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={onClose}
+                  variant="outline"
+                  className="px-6 h-12 rounded-full border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </Button>
+              </div>
+              
+              <p className="text-center text-xs text-gray-400">Tu información es privada y segura.</p>
+            </form>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 /* ═══════════════════ LEAD POPUP ═══════════════════ */
 function LeadPopup({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [formData, setFormData] = useState({ nombre: "", email: "", telefono: "", destino: "", mensaje: "" });
@@ -478,10 +726,14 @@ function AdminPanel({ onClose }: { onClose: () => void }) {
 
 /* ═══════════════════ MAIN PAGE ═══════════════════ */
 export default function LandingPage() {
+  const { language, setLanguage, t } = useLanguage();
   const formRef = useRef<HTMLDivElement>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isTravelFormOpen, setIsTravelFormOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [formData, setFormData] = useState({ nombre: "", email: "", telefono: "", destino: "", mensaje: "" });
@@ -530,7 +782,9 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-navy-depth">
       {/* ═══════ DISCOUNT TICKER ═══════ */}
-      <DiscountTicker onCotizar={() => setIsPopupOpen(true)} />
+      <div className="fixed top-0 left-0 right-0 z-40">
+        <DiscountTicker onCotizar={() => setIsPopupOpen(true)} />
+      </div>
 
       {/* ═══════ NAV ═══════ */}
       <motion.nav initial={{ y: -80, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -547,13 +801,13 @@ export default function LandingPage() {
           </div>
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-1 flex-1 justify-center">
             {navLinks.map((link) => (
               <a key={link.href} href={link.href} className="px-3 py-2 text-sm text-white/60 hover:text-teal transition-colors font-medium rounded-lg hover:bg-white/5">{link.label}</a>
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {user ? (
               <>
                 {user.role === "admin" && (
@@ -573,10 +827,33 @@ export default function LandingPage() {
                 <LogIn className="h-4 w-4 mr-1.5" />Iniciar Sesion
               </Button>
             )}
-            <Button onClick={() => setIsPopupOpen(true)} size="sm"
-              className="bg-teal hover:bg-teal-dark text-navy font-bold rounded-full px-3 sm:px-5 shadow-lg shadow-teal/20 transition-all hover:scale-105 text-xs">
-              Cotiza tu Viaje
-            </Button>
+            {/* Carrito de Compras */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-2 text-white/80 hover:text-teal hover:bg-white/5 rounded-xl transition-all mr-2"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute -top-1 -right-1 bg-teal text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                0
+              </span>
+            </motion.button>
+
+            <Button onClick={() => setIsTravelFormOpen(true)} size="sm"
+                className="bg-gradient-to-r from-amber to-orange-500 hover:from-amber-dark hover:to-orange-600 text-white font-bold rounded-full px-3 sm:px-5 shadow-lg shadow-amber/20 transition-all hover:scale-105 text-xs">
+                Formulario de Viajes
+              </Button>
+            <Select value={language} onValueChange={(value: 'es' | 'en' | 'fr') => setLanguage(value)}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-full px-3 h-9 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                <SelectItem value="es">🇪🇸 ES</SelectItem>
+                <SelectItem value="en">🇬🇧 EN</SelectItem>
+                <SelectItem value="fr">🇫🇷 FR</SelectItem>
+              </SelectContent>
+            </Select>
             <Button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} size="sm" variant="ghost" className="lg:hidden text-white">
               <Menu className="h-5 w-5" />
             </Button>
@@ -594,143 +871,352 @@ export default function LandingPage() {
                     className="block px-4 py-2.5 text-white/70 hover:text-teal hover:bg-white/5 rounded-xl transition-colors text-sm font-medium">{link.label}</a>
                 ))}
                 {!user && (
-                  <button onClick={() => { setIsAuthOpen(true); setMobileMenuOpen(false); }}
-                    className="w-full text-left px-4 py-3 text-teal hover:bg-teal/10 border border-teal/30 rounded-xl transition-all text-sm font-semibold flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />Iniciar Sesion
-                  </button>
-                )}
-                {user?.role === "admin" && (
-                  <button onClick={() => { setShowAdmin(true); setMobileMenuOpen(false); }}
-                    className="w-full text-left px-4 py-2.5 text-white/70 hover:text-teal hover:bg-white/5 rounded-xl transition-colors text-sm font-medium flex items-center gap-2">
-                    <LayoutDashboard className="h-4 w-4" />Panel Admin
-                  </button>
+                  <Button onClick={() => setIsAuthOpen(true)} size="sm" variant="outline"
+                    className="w-full border-teal/40 text-teal hover:bg-teal hover:text-navy rounded-full text-sm px-4 h-9 shadow-md shadow-teal/10 transition-all hover:scale-105 font-semibold">
+                    <LogIn className="h-4 w-4 mr-1.5" />Iniciar Sesion
+                  </Button>
                 )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.nav>
+          </motion.nav>
 
-      {/* ═══════ HERO ═══════ */}
-      <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-hero-adventure">
+      {/* ═══════ HERO - DISEÑO ELEGANTE Y SIMPLE ═══════ */}
+      <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Background - Imagen de playa con pareja feliz */}
         <div className="absolute inset-0">
-          <Image src="/images/hero-new.png" alt="Paisaje Patagonia Chile" fill className="object-cover" priority quality={95} />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0D1B2A]/70 via-[#0E2D4A]/30 to-[#0D1B2A]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0D1B2A]/60 via-transparent to-[#0B3D5E]/20" />
+          <Image 
+            src="/images/portada.png" 
+            alt="Playa paradisíaca - Universo Nomada" 
+            fill 
+            className="object-cover object-center" 
+            priority 
+            quality={100} 
+          />
+          {/* Overlay sutil para legibilidad */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
         </div>
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-teal/5 rounded-full blur-3xl float-animation" />
-        <div className="absolute bottom-1/3 left-1/5 w-48 h-48 bg-sunset/5 rounded-full blur-3xl float-animation" style={{ animationDelay: "1s" }} />
-        <div className="absolute top-1/2 left-1/3 w-96 h-96 bg-mountain/5 rounded-full blur-[100px] float-animation" style={{ animationDelay: "2s" }} />
 
-        <div className="relative z-10 text-center px-4 sm:px-6 max-w-5xl mx-auto pt-28">
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }}>
-            <div className="inline-flex items-center gap-2 mb-6 px-5 py-2 rounded-full glass">
-              <Sparkles className="h-4 w-4 text-amber" />
-              <span className="text-white/80 text-sm font-medium">Experiencias que transforman</span>
-            </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.4 }}>
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white leading-[0.95] tracking-tight mb-2">UNIVERSO</h1>
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[0.95] tracking-tight gradient-text">NOMADA</h1>
-          </motion.div>
-          <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.6 }}
-            className="mt-6 sm:mt-8 text-lg sm:text-xl md:text-2xl text-white/70 max-w-2xl mx-auto leading-relaxed font-light">
-Agencia de viajes boutique especializada en experiencias personalizadas y autenticas en destinos cuidadosamente seleccionados de Chile y Sudamerica.
-          </motion.p>
-
-          {/* Search Bar like geoterra */}
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.8 }}
-            className="mt-8 sm:mt-10 max-w-3xl mx-auto">
-            <div className="glass rounded-2xl p-2 flex flex-col sm:flex-row gap-2">
-              <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5">
-                <MapPin className="h-5 w-5 text-teal shrink-0" />
-                <Select value={formData.destino} onValueChange={(val) => setFormData({ ...formData, destino: val })}>
-                  <SelectTrigger className="border-0 bg-transparent text-white p-0 h-auto focus:ring-0"><SelectValue placeholder="Donde quieres ir?" /></SelectTrigger>
-                  <SelectContent>{destinoOptions.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5">
-                <Calendar className="h-5 w-5 text-teal shrink-0" />
-                <Input placeholder="Fecha" className="border-0 bg-transparent text-white placeholder:text-white/40 p-0 h-auto focus-visible:ring-0" />
-              </div>
-              <Button onClick={() => setIsPopupOpen(true)} className="bg-teal hover:bg-teal-dark text-navy font-bold rounded-xl px-6 h-12 shadow-lg shadow-teal/20 transition-all hover:scale-105">
-                Buscar <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 1 }}
-            className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button onClick={() => setIsPopupOpen(true)} size="lg"
-              className="bg-teal hover:bg-teal-dark text-navy text-lg font-bold rounded-full px-10 py-6 shadow-2xl shadow-teal/30 transition-all hover:scale-105">
-              Cotiza tu Viaje Gratis <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button variant="outline" size="lg" className="bg-white/5 backdrop-blur-sm border-white/15 text-white hover:bg-white/10 rounded-full px-8 py-6 text-lg font-semibold" asChild>
-              <a href={WHATSAPP_FULL} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="mr-2 h-5 w-5" />WhatsApp
-              </a>
-            </Button>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 1.5 }} className="mt-14">
-            <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="flex flex-col items-center gap-2 text-white/30">
-              <span className="text-xs uppercase tracking-widest">Descubre</span><ArrowDown className="h-5 w-5" />
+        {/* Content - Más hacia la izquierda */}
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full h-full flex items-center">
+          <div className="lg:w-1/2 xl:w-2/5 lg:pr-8">
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }} 
+              animate={{ opacity: 1, x: 0 }} 
+              transition={{ duration: 1.2, delay: 0.3 }}
+              className="text-white text-left lg:text-left"
+            >
+            {/* Logo o marca sutil */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="mb-8"
+            >
+              <span className="text-sm font-light tracking-widest text-white/80 uppercase">Universo Nomada</span>
             </motion.div>
-          </motion.div>
+
+            {/* Título Principal - Minimalista y poderoso */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light mb-6 leading-tight">
+              <span className="block mb-2 text-white" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.8), 1px -1px 2px rgba(0,0,0,0.8), -1px 1px 2px rgba(0,0,0,0.8)' }}>Viajes que</span>
+              <span className="block font-semibold text-white" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.8), 1px -1px 2px rgba(0,0,0,0.8), -1px 1px 2px rgba(0,0,0,0.8)' }}>transforman</span>
+              <span className="block font-light text-white" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.8), 1px -1px 2px rgba(0,0,0,0.8), -1px 1px 2px rgba(0,0,0,0.8)' }}>vidas</span>
+            </h1>
+
+            {/* Subtítulo emocional */}
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="text-lg sm:text-xl text-white/90 mb-12 leading-relaxed font-light"
+            >
+              <span className="text-white block" style={{ textShadow: '1px 1px 1px rgba(0,0,0,0.6), -1px -1px 1px rgba(0,0,0,0.6)' }}>Descubre destinos que despiertan tu alma y crean recuerdos que durarán para siempre.</span>
+              <span className="block mt-2 text-white/80" style={{ textShadow: '1px 1px 1px rgba(0,0,0,0.6), -1px -1px 1px rgba(0,0,0,0.6)' }}>Tu próxima gran aventura comienza aquí.</span>
+            </motion.p>
+
+            {/* Llamada a la acción simple y elegante */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.3 }}
+              className="flex flex-col sm:flex-row gap-4 justify-start items-center"
+            >
+              <button 
+                onClick={() => setIsPopupOpen(true)}
+                className="group bg-white text-gray-900 hover:bg-gray-100 font-medium py-4 px-10 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-3 text-lg tracking-wide"
+              >
+                Explorar Destinos
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button 
+                onClick={() => setIsTravelFormOpen(true)}
+                className="text-white hover:text-white/80 font-medium py-4 px-10 rounded-full transition-all duration-300 border border-white/30 hover:border-white/50 text-lg tracking-wide"
+              >
+                Planificar Viaje
+              </button>
+            </motion.div>
+
+            {/* Elementos de confianza - Minimalistas */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.6 }}
+              className="mt-20 flex flex-col sm:flex-row gap-8 justify-start items-center text-white/70 text-sm"
+            >
+              <div className="flex items-center gap-2">
+                <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                <span>Excelencia 5 estrellas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-green-400" />
+                <span>Viajes 100% seguros</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Heart className="h-4 w-4 text-red-400" />
+                <span>Hecho con amor</span>
+              </div>
+            </motion.div>
+            </motion.div>
+          </div>
         </div>
+
+        {/* Indicador de scroll sutil */}
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          transition={{ duration: 1, delay: 2 }}
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/60"
+        >
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-xs font-light tracking-widest uppercase">Descubre más</span>
+            <motion.div 
+              animate={{ y: [0, 6, 0] }} 
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <ChevronDown className="h-4 w-4" />
+            </motion.div>
+          </div>
+        </motion.div>
       </section>
 
-      {/* Mountain divider - Hero to Ofertas */}
-      <div className="mountain-divider bg-hero-adventure">
-        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0,80 L0,60 Q120,20 360,45 Q600,70 840,30 Q1080,0 1260,35 Q1380,55 1440,40 L1440,80 Z" fill="#1A1207" />
+      {/* Clean divider - Hero to Ofertas */}
+      <div className="relative bg-black">
+        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-16">
+          <path d="M0,30 C360,60 720,0 1440,30 L1440,60 L0,60 Z" fill="#1A1207" />
         </svg>
       </div>
 
       {/* Stats section removed per user request */}
 
       {/* ═══════ OFERTAS / PROMOCIONES ═══════ */}
-      <section id="ofertas" className="py-16 sm:py-24 bg-ofertas-adventure relative overflow-hidden texture-topo texture-grain">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(217,119,6,0.08)_0%,_transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(0,201,167,0.05)_0%,_transparent_50%)]" />
+      <section id="ofertas" className="py-16 sm:py-24 bg-gradient-to-br from-pink-500 via-rose-400 to-orange-300 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/30 to-transparent" />
+        
+        {/* Ola superior con oscilación */}
+        <div className="absolute top-0 left-0 right-0">
+          <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-16">
+            <path d="M0,30 Q180,10 360,30 T720,30 T1080,30 T1440,30 L1440,0 L0,0 Z" fill="transparent" stroke="rgba(255,255,255,0.15)" strokeWidth="2" />
+          </svg>
+        </div>
+        
+        {/* Ola inferior con oscilación */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-16">
+            <path d="M0,30 Q180,50 360,30 T720,30 T1080,30 T1440,30 L1440,60 L0,60 Z" fill="transparent" stroke="rgba(255,255,255,0.15)" strokeWidth="2" />
+          </svg>
+        </div>
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <FadeIn>
             <div className="text-center mb-12">
-              <span className="text-amber font-semibold text-sm uppercase tracking-[0.2em]">Ofertas Exclusivas</span>
-              <h2 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">Descuentos del mes</h2>
-              <p className="mt-4 text-white/50 text-lg max-w-xl mx-auto">Promociones por tiempo limitado que no puedes dejar pasar.</p>
+              <span className="bg-white/20 backdrop-blur-md text-white text-sm font-bold px-4 py-2 rounded-full">{t('discounts').exclusive}</span>
+              <h2 className="mt-4 text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight">{t('discounts').title}</h2>
+              <p className="mt-4 text-white/80 text-lg max-w-xl mx-auto">{t('discounts').subtitle}</p>
             </div>
           </FadeIn>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {promoDetails.map((promo, i) => (
               <FadeIn key={promo.title} delay={i * 0.1}>
-                <Card className="group overflow-hidden border-white/5 bg-[#1A1207]/80 hover:bg-[#2D1B06]/80 shadow-none hover:shadow-xl hover:shadow-amber/5 card-depth gradient-card-border transition-all duration-500 rounded-2xl cursor-pointer"
+                <div className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer transform hover:scale-105"
                   onClick={() => setIsPopupOpen(true)}>
+                  {/* Imagen */}
                   <div className="relative h-48 overflow-hidden">
                     <Image src={promo.image} alt={promo.title} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#1A1207] via-[#1A1207]/30 to-transparent" />
-                    <div className="absolute top-3 right-3 bg-coral text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">{promo.discount}</div>
-                    <div className="absolute bottom-3 left-3">
-                      <span className="text-2xl">{promo.emoji}</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    
+                    {/* Badge de descuento */}
+                    <div className="absolute top-4 left-4">
+                      <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
+                        {promo.discount}
+                      </span>
+                    </div>
+                    
+                    {/* Emoji */}
+                    <div className="absolute bottom-4 right-4">
+                      <span className="text-3xl drop-shadow-lg">{promo.emoji}</span>
                     </div>
                   </div>
-                  <CardContent className="p-5">
-                    <h3 className="text-white font-bold text-lg mb-1">{promo.title}</h3>
-                    <p className="text-white/50 text-sm mb-3">{promo.subtitle}</p>
-                    <div className="flex items-baseline gap-3 mb-3">
-                      <span className="text-white/30 line-through text-sm">{formatCLP(promo.originalPrice)}</span>
-                      <span className="text-teal font-bold text-xl">{formatCLP(promo.discountPrice)}</span>
+                  
+                  {/* Contenido */}
+                  <div className="p-5">
+                    <h3 className="text-gray-900 font-bold text-lg mb-1">{promo.title}</h3>
+                    <p className="text-gray-600 text-sm mb-3">{promo.subtitle}</p>
+                    
+                    {/* Incluye */}
+                    <div className="mb-3">
+                      <div className="flex flex-wrap gap-1">
+                        <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium">
+                          ✈️ Vuelo
+                        </span>
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
+                          🏨 Hotel
+                        </span>
+                        <span className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full font-medium">
+                          🎯 Tour
+                        </span>
+                        <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full font-medium">
+                          👥 Guías Locales
+                        </span>
+                      </div>
                     </div>
+                    
+                    {/* Precios */}
+                    <div className="flex items-baseline gap-2 mb-3">
+                      <span className="text-gray-400 line-through text-sm">Antes: {formatCLP(promo.originalPrice)}</span>
+                      <span className="text-green-600 font-black text-2xl">Ahora: {formatCLP(promo.discountPrice)}</span>
+                    </div>
+                    
+                    {/* Fecha y botón */}
                     <div className="flex items-center justify-between">
-                      <span className="text-white/30 text-xs flex items-center gap-1"><Clock className="h-3 w-3" />Hasta {promo.validUntil}</span>
-                      <Button size="sm" className="bg-teal hover:bg-teal-dark text-navy font-bold rounded-full text-xs px-4 shadow-lg shadow-teal/20">
-                        Ver Oferta
+                      <span className="text-gray-500 text-xs flex items-center gap-1">
+                        <Clock className="h-3 w-3" />Hasta {promo.validUntil}
+                      </span>
+                      <Link href={`/detalle-paquete/oferta-${i}`} className="block">
+                        <button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold rounded-full px-4 py-2 text-sm shadow-lg transition-all w-full">
+                          Ver Detalles
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Clean divider - Ofertas to Viajes */}
+      <div className="relative">
+        <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-16">
+          <path d="M0,30 C360,0 720,60 1440,30 L1440,60 L0,60 Z" fill="#0D2818" />
+        </svg>
+      </div>
+
+      {/* ═══════ VIAJES GRUPALES ═══════ */}
+      <section className="py-16 sm:py-24 bg-gradient-to-b from-[#1A1508] to-[#0D2818] relative overflow-hidden texture-topo texture-grain">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(217,119,6,0.08)_0%,_transparent_70%)]" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <FadeIn>
+            <div className="text-center mb-12">
+              <span className="text-amber font-semibold text-sm uppercase tracking-[0.2em]">Viajes Grupales</span>
+              <h2 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">Aventura Compartida</h2>
+              <p className="mt-4 text-white/50 text-lg max-w-xl mx-auto">Viaza con gente apasionada por descubrir nuevos horizontes.</p>
+            </div>
+          </FadeIn>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {groupTrips.map((trip, i) => (
+              <FadeIn key={trip.name} delay={i * 0.15}>
+                <div className={`group relative bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer transform hover:scale-105 border-2 ${
+                  trip.name === 'San Pedro de Atacama' ? 'border-orange-300' :
+                  trip.name === 'Uyuni' ? 'border-cyan-300' :
+                  'border-purple-300'
+                }`}>
+                  {/* Badge de descuento */}
+                  <div className="absolute top-4 left-4 z-20">
+                    <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                      {trip.reservation === 100000 ? 'Reserva $100.000' : 'Reserva $200.000'}
+                    </span>
+                  </div>
+                  
+                  {/* Imagen */}
+                  <div className="relative h-80 overflow-hidden rounded-t-2xl">
+                    <Image src={trip.image} alt={trip.name} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" />
+                    <div className={`absolute inset-0 bg-gradient-to-t ${trip.gradient} via-transparent to-transparent opacity-80`} />
+                    
+                    {/* Duración */}
+                    <div className="absolute top-4 right-4">
+                      <span className="bg-white/90 backdrop-blur-md text-gray-900 text-xs font-bold px-3 py-1.5 rounded-full">
+                        {trip.duration}
+                      </span>
+                    </div>
+                    
+                    {/* Nombre del destino */}
+                    <div className="absolute bottom-4 left-4">
+                      <h3 className="text-white font-black text-2xl mb-1">{trip.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          ))}
+                        </div>
+                        <span className="text-white/90 text-sm">(4.9)</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Contenido */}
+                  <div className="p-6">
+                    {/* Fechas */}
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 text-gray-600 text-sm mb-2">
+                        <Calendar className="h-4 w-4 text-red-500" />
+                        <span className="font-semibold">Fechas Disponibles:</span>
+                      </div>
+                      {trip.dates.map((date, idx) => (
+                        <div key={idx} className="text-gray-700 text-sm mb-1">
+                          • {date}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Incluye */}
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 text-gray-600 text-sm mb-2">
+                        <Shield className="h-4 w-4 text-green-500" />
+                        <span className="font-semibold">Todo Incluido:</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {trip.includes.slice(0, 4).map((item, idx) => (
+                          <div key={idx} className="flex items-center gap-1 text-gray-600 text-xs">
+                            <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Precio y botón */}
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-gray-500 line-through text-sm">${(trip.price * 1.2).toLocaleString('es-CL')}</span>
+                          <p className="text-gray-900 font-black text-2xl">{formatCLP(trip.price)}</p>
+                        </div>
+                        <p className="text-gray-600 text-xs font-medium">Por persona</p>
+                      </div>
+                      <Button onClick={() => setIsPopupOpen(true)} className={`bg-gradient-to-r ${
+                        trip.name === 'San Pedro de Atacama' ? 'from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700' :
+                        trip.name === 'Uyuni' ? 'from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700' :
+                        'from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700'
+                      } text-white font-bold rounded-full px-6 py-3 shadow-lg transition-all hover:scale-105`}>
+                        Reservar
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </FadeIn>
             ))}
           </div>
@@ -738,9 +1224,9 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       </section>
 
       {/* Mountain divider */}
-      <div className="mountain-divider bg-ofertas-adventure">
+      <div className="mountain-divider bg-gradient-to-b from-[#0D2818] to-[#0D2818]">
         <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0,80 L0,50 Q120,10 240,40 Q360,70 480,30 Q600,-5 720,35 Q840,65 960,25 Q1080,0 1200,40 Q1320,70 1440,45 L1440,80 Z" fill="#0A1A14" />
+          <path d="M0,80 L0,55 Q180,15 360,45 Q540,75 720,30 Q900,0 1080,40 Q1260,70 1440,35 L1440,80 Z" fill="#0D0B1F" />
         </svg>
       </div>
 
@@ -748,10 +1234,18 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
       <section id="destinos" className="py-16 sm:py-24 bg-destinos-adventure relative overflow-hidden texture-topo texture-grain">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <FadeIn>
-            <div className="text-center mb-10">
-              <span className="text-teal font-semibold text-sm uppercase tracking-[0.2em]">Destinos</span>
-              <h2 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">Explora lo imposible</h2>
-              <p className="mt-4 text-white/50 text-lg max-w-xl mx-auto">Cada destino es una puerta a lo extraordinario.</p>
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full mb-6">
+                <div className="h-2 w-2 rounded-full bg-teal animate-pulse" />
+                <span className="text-teal text-sm font-semibold">{t('destinations').title}</span>
+              </div>
+              <h2 className="text-5xl sm:text-6xl md:text-7xl font-black text-white tracking-tight mb-6">
+                Explora lo
+                <span className="block text-teal mt-2">imposible</span>
+              </h2>
+              <p className="text-white/60 text-xl max-w-3xl mx-auto leading-relaxed">
+                {t('destinations').description}
+              </p>
             </div>
           </FadeIn>
 
@@ -762,47 +1256,88 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
                 <button key={tab} onClick={() => setActiveFilter(tab)}
                   className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
                     activeFilter === tab ? "bg-teal text-navy shadow-lg shadow-teal/20" : "bg-white/5 text-white/60 hover:bg-white/10"}`}>
-                  {tab}
+                  {tab === 'Todos' ? t('destinations').todos : 
+                   tab === 'Chile' ? t('destinations').chile : 
+                   tab === 'Internacional' ? t('destinations').internacional : 
+                   tab === 'Experienciales' ? t('destinations').experienciales : tab}
                 </button>
               ))}
             </div>
           </FadeIn>
 
-          {/* Destination Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {/* Destination Cards - Estilo Minimalista Moderno */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredDestinations.map((dest, i) => (
               <FadeIn key={dest.name} delay={i * 0.05}>
-                <Card className="group overflow-hidden border-white/5 bg-[#0D2818]/80 hover:bg-[#0A1F14]/80 shadow-none hover:shadow-xl hover:shadow-emerald-500/5 card-depth gradient-card-border transition-all duration-500 rounded-2xl cursor-pointer"
+                <div className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer"
                   onClick={() => setIsPopupOpen(true)}>
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <Image src={dest.image} alt={dest.name} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0D2818] via-transparent to-transparent" />
-                    <span className={`absolute top-3 left-3 inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${dest.tagColor}`}>{dest.tag}</span>
-                    <button onClick={(e) => { e.stopPropagation(); }} className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-coral hover:bg-coral/20 transition-all">
-                      <Heart className="h-4 w-4" />
-                    </button>
+                  {/* Imagen */}
+                  <div className="relative h-48 overflow-hidden">
+                    <Image src={dest.image} alt={dest.name} fill className="object-cover object-center transition-transform duration-500 group-hover:scale-105" />
+                    
+                    {/* Badge de categoría */}
+                    <div className="absolute top-3 left-3">
+                      <span className="bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-medium px-2 py-1 rounded-md shadow-sm">
+                        {dest.tag}
+                      </span>
+                    </div>
                   </div>
-                  <CardContent className="p-4">
-                    <p className="text-white/50 text-xs flex items-center gap-1 mb-1"><MapPin className="h-3 w-3" />{dest.subtitle}</p>
-                    <h3 className="text-white font-bold text-lg leading-tight mb-2">{dest.name}</h3>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-white/40 text-xs">Desde</span>
-                        {dest.originalPrice ? (
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="text-white/30 line-through text-xs">{formatCLP(dest.originalPrice)}</span>
-                            <p className="text-teal font-bold">{formatCLP(dest.price)}</p>
-                          </div>
+                  
+                  {/* Contenido */}
+                  <div className="p-4">
+                    {/* Nombre y ubicación */}
+                    <div className="mb-3">
+                      <h3 className="text-gray-900 font-bold text-lg leading-tight mb-1">{dest.name}</h3>
+                      <p className="text-gray-500 text-sm flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />{dest.subtitle}
+                      </p>
+                    </div>
+                    
+                    {/* Tipo de destino */}
+                    <div className="mb-3">
+                      <div className="flex gap-1">
+                        {dest.category === 'chile' ? (
+                          <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-medium">
+                            🇨🇱 Nacional
+                          </span>
+                        ) : dest.category === 'internacional' ? (
+                          <span className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">
+                            🌍 Internacional
+                          </span>
                         ) : (
-                          <p className="text-teal font-bold">{formatCLP(dest.price)}</p>
+                          <span className="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-medium">
+                            ✨ Experiencial
+                          </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 text-white/40 text-xs">
+                    </div>
+                    
+                    {/* Precio y duración */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <span className="text-gray-500 text-xs">{t('destinations').desde}</span>
+                        {dest.originalPrice ? (
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-gray-400 line-through text-xs">{formatCLP(dest.originalPrice)}</span>
+                            <p className="font-bold text-lg text-gray-900">{formatCLP(dest.price)}</p>
+                          </div>
+                        ) : (
+                          <p className="font-bold text-lg text-gray-900">{formatCLP(dest.price)}</p>
+                        )}
+                      </div>
+                      <div className="text-gray-500 text-xs flex items-center gap-1">
                         <Clock className="h-3 w-3" />{dest.duration}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    
+                    {/* Botón */}
+                    <Link href={`/detalle-paquete/${dest.id}`} className="block">
+                      <button className="w-full bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg py-2 text-sm transition-colors">
+                        {t('destinations').verDetalles}
+                      </button>
+                    </Link>
+                  </div>
+                </div>
               </FadeIn>
             ))}
           </div>
@@ -844,8 +1379,8 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
             </FadeIn>
             <FadeIn delay={0.2}>
               <div className="relative">
-                <div className="aspect-[4/3] rounded-2xl overflow-hidden">
-                  <Image src="/images/experiencia_andes.png" alt="Experiencias ancestrales en los Andes" fill className="object-cover object-center" />
+                <div className="aspect-[16/9] rounded-2xl overflow-hidden bg-gray-900 ring-4 ring-teal/20 ring-offset-4 ring-offset-gray-900">
+                  <Image src="/images/nosotros.png" alt="Experiencias Universo Nomada" fill className="object-contain object-center" />
                 </div>
                 <div className="absolute -bottom-4 -right-4 bg-gradient-to-br from-teal to-emerald-600 rounded-2xl px-6 py-4 shadow-xl shadow-teal/20">
                   <p className="text-navy font-black text-2xl">14+</p>
@@ -896,27 +1431,55 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
             </div>
           </FadeIn>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <FadeIn key={t.name} delay={i * 0.15}>
-                <Card className="h-full border-white/5 bg-[#1A1508]/80 shadow-none hover:shadow-xl hover:shadow-amber/5 card-depth gradient-card-border transition-all duration-500 rounded-2xl">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-1 mb-4">
-                      {Array.from({ length: t.rating }).map((_, si) => <Star key={si} className="h-4 w-4 fill-amber text-amber" />)}
-                    </div>
-                    <p className="text-white/80 leading-relaxed mb-6 italic">&ldquo;{t.text}&rdquo;</p>
-                    <div className="flex items-center gap-3 border-t border-white/5 pt-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal/10 text-teal font-bold text-sm">{t.avatar}</div>
-                      <div><p className="text-sm font-semibold text-white">{t.name}</p><p className="text-xs text-white/40 flex items-center gap-1"><MapPin className="h-3 w-3" />{t.destination}</p></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </FadeIn>
-            ))}
+          {/* Slider Automatico de Testimonios - Perfectamente Centrado */}
+          <div className="relative max-w-7xl mx-auto px-4">
+            <div className="overflow-hidden">
+              <div className="flex gap-6 animate-scroll"
+                   style={{
+                     width: 'fit-content'
+                   }}>
+                {[...testimonials, ...testimonials].map((t, i) => (
+                  <div key={i} className="w-80 flex-shrink-0">
+                    <Card className="h-full bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300">
+                      <CardContent className="p-6">
+                        <div className="flex items-center gap-1 mb-4">
+                          {[...Array(t.rating)].map((_, si) => (
+                            <Star key={si} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          ))}
+                          <span className="text-gray-600 text-sm ml-2">{t.rating}.0</span>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed mb-6 italic text-sm">&ldquo;{t.text}&rdquo;</p>
+                        <div className="flex items-center gap-3 border-t pt-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-teal to-emerald-500 text-white font-bold text-sm ring-2 ring-teal/20">
+                            {t.avatar}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">{t.name}</p>
+                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />{t.destination}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <style jsx>{`
+              @keyframes scroll {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-50%); }
+              }
+              .animate-scroll {
+                animation: scroll 25s linear infinite;
+              }
+            `}</style>
           </div>
         </div>
       </section>
 
+      
       {/* ═══════ CTA BANNER ═══════ */}
       <section className="py-16 sm:py-20 bg-nosotros-adventure relative overflow-hidden">
         <div className="absolute inset-0">
@@ -928,13 +1491,14 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4">Tu proximo viaje comienza aqui</h2>
             <p className="text-white/60 text-lg mb-8 max-w-xl mx-auto">Dejanos disenar la experiencia que mereces. Cotizacion gratuita y sin compromiso.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button onClick={() => setIsPopupOpen(true)} size="lg"
-                className="bg-teal hover:bg-teal-dark text-navy font-bold rounded-full px-10 py-7 text-lg shadow-2xl shadow-teal/30 transition-all hover:scale-105">
-                Cotiza Ahora <ArrowRight className="ml-2 h-5 w-5" />
+              <Button onClick={() => setIsTravelFormOpen(true)} size="lg"
+                className="bg-gradient-to-r from-amber to-orange-500 hover:from-amber-dark hover:to-orange-600 text-white font-bold rounded-full px-10 py-7 text-lg shadow-2xl shadow-amber/30 transition-all hover:scale-105">
+                Formulario de Viajes <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" className="bg-white/5 border-white/15 text-white hover:bg-white/10 rounded-full px-8 py-7 text-lg font-semibold" asChild>
-                <a href={WHATSAPP_FULL} target="_blank" rel="noopener noreferrer"><MessageCircle className="mr-2 h-5 w-5" />WhatsApp</a>
-              </Button>
+              <a href={WHATSAPP_FULL} target="_blank" rel="noopener noreferrer" 
+                className="bg-green-500 hover:bg-green-600 text-white font-bold rounded-full px-10 py-7 text-lg shadow-lg shadow-green-500/20 transition-all hover:scale-105 flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />WhatsApp
+              </a>
             </div>
           </FadeIn>
         </div>
@@ -1041,7 +1605,16 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
                   <Mail className="h-4 w-4 text-teal shrink-0" /><a href={`mailto:${EMAIL}`}>{EMAIL}</a>
                 </li>
                 <li className="flex items-center gap-2.5 text-white/50 hover:text-teal transition-colors">
-                  <Phone className="h-4 w-4 text-teal shrink-0" /><a href={WHATSAPP_FULL} target="_blank" rel="noopener noreferrer">{PHONE_DISPLAY}</a>
+                  <Phone className="h-4 w-4 text-teal shrink-0" /><a href="https://wa.me/56974636396" target="_blank" rel="noopener noreferrer">+56 9 7463 6396</a>
+                </li>
+                <li className="flex items-center gap-2.5 text-white/50 hover:text-teal transition-colors">
+                  <Phone className="h-4 w-4 text-teal shrink-0" /><a href="https://wa.me/56974841303" target="_blank" rel="noopener noreferrer">+56 9 7484 1303</a>
+                </li>
+                <li className="flex items-center gap-2.5 text-white/50 hover:text-blue-400 transition-colors">
+                  <svg className="h-4 w-4 text-blue-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                  <a href="https://web.facebook.com/profile.php?id=61560104283524" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400">Facebook</a>
                 </li>
                 <li className="flex items-start gap-2.5 text-white/50">
                   <MapPin className="h-4 w-4 text-teal shrink-0 mt-0.5" /><span>La Serena, Chile</span>
@@ -1059,12 +1632,12 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
             <div>
               <h4 className="text-white font-bold mb-5 text-sm uppercase tracking-wider">Siguenos</h4>
               <div className="flex items-center gap-3">
-                <a href="https://instagram.com/universonomada" target="_blank" rel="noopener noreferrer"
-                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 hover:bg-teal hover:text-navy text-white/60 transition-all duration-300" aria-label="Instagram">
+                <a href="https://www.instagram.com/universo.nomadaa/" target="_blank" rel="noopener noreferrer"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white transition-all duration-300" aria-label="Instagram">
                   <Instagram className="h-5 w-5" />
                 </a>
-                <a href="https://facebook.com/universonomada" target="_blank" rel="noopener noreferrer"
-                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 hover:bg-teal hover:text-navy text-white/60 transition-all duration-300" aria-label="Facebook">
+                <a href="https://web.facebook.com/profile.php?id=61560104283524" target="_blank" rel="noopener noreferrer"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 hover:bg-blue-500 hover:text-white text-white/60 transition-all duration-300" aria-label="Facebook">
                   <Facebook className="h-5 w-5" />
                 </a>
                 <a href={WHATSAPP_FULL} target="_blank" rel="noopener noreferrer"
@@ -1075,6 +1648,11 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
               <div className="mt-6 space-y-2 text-sm text-white/30">
                 <a href="#" className="block hover:text-teal transition-colors">Politica de Privacidad</a>
                 <a href="#" className="block hover:text-teal transition-colors">Terminos y Condiciones</a>
+              </div>
+              
+              {/* Registro R */}
+              <div className="mt-6 flex justify-center">
+                <Image src="/images/logo_r-1.png" alt="Registro R" width={80} height={80} className="opacity-80 hover:opacity-100 transition-opacity" />
               </div>
             </div>
           </div>
@@ -1095,6 +1673,7 @@ Agencia de viajes boutique especializada en experiencias personalizadas y autent
 
       {/* ═══════ POPUPS ═══════ */}
       <LeadPopup isOpen={isPopupOpen} onClose={() => setIsPopupOpen(false)} />
+      <TravelFormPopup isOpen={isTravelFormOpen} onClose={() => setIsTravelFormOpen(false)} />
       <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onLogin={handleLogin} />
     </div>
   );
