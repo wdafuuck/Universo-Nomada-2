@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://universonomada.cl";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Universo Nomada | Viajes que Dejan Huella",
   description:
     "Universo Nomada - Agencia de viajes boutique especializada en experiencias personalizadas y autenticas en Chile y Sudamerica. Rapa Nui, Atacama, Machu Picchu, Florianopolis, Rio de Janeiro, Buenos Aires, Mendoza y mas.",
