@@ -1,0 +1,5 @@
+# Producción — Universo Nómada (DigitalOcean + Caddy)
+universonomada.cl, www.universonomada.cl {
+	encode gzip zstd
+	reverse_proxy 127.0.0.1:3001
+}

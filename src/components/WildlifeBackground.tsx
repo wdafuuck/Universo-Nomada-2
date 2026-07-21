@@ -1,0 +1,23 @@
+/** Paleta compartida para que las olas encajen con el borde de cada sección */
+export const WAVE_COLORS = {
+  hero: "#0f172a",
+  amberLight: "#FFFBEB",
+  roseLight: "#FFF1F2",
+  tealLight: "#F0FDFA",
+  skyLight: "#F0F9FF",
+  skyMid: "#E0F2FE",
+  light: "#FAFBFC",
+  white: "#FFFFFF",
+  benefits: "#DFF4EF",
+  howItWorks: "#5EEAD4",
+  tourTypes: "#7DD3FC",
+  slateSoft: "#F8FAFC",
+  jungle: "#0A1F14",
+  ocean: "#0F172A",
+  groupTrips: "#0F172A",
+  forest: "#064e3b",
+  emeraldDark: "#022c22",
+  cta: "#0D0B1F",
+  contact: "#E8F4F0",
+  footer: "#0D1B2A",
+} as const;

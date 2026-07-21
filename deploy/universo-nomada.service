@@ -1,0 +1,20 @@
+[Unit]
+Description=Universo Nomada Next.js (standalone)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/universo-nomada
+ExecStart=/var/www/universo-nomada/deploy/universo-nomada-start.sh
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillMode=mixed
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=universo-nomada
+
+[Install]
+WantedBy=multi-user.target

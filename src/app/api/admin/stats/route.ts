@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth-session";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!(await requireAdmin(request))) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
   try {
     const [totalLeads, totalPromotions, recentLeads] = await Promise.all([
       db.lead.count(),

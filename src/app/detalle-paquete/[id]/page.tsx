@@ -1,10 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, MapPin, Clock, Star, Calendar, Users, CheckCircle, Plus, Minus, ShoppingCart, CreditCard, Plane, Hotel, Car, Camera, X, Mountain } from 'lucide-react'
+import { useParams } from 'next/navigation'
+import { ArrowLeft, MapPin, Clock, Star, Calendar, CheckCircle, Plus, Minus, ShoppingCart, CreditCard, Plane, Hotel, Car, Camera, X, Mountain } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { AddToCartButton } from '@/components/AddToCartButton'
+import { PriceOffer } from '@/components/PriceOffer'
+import { useTourById } from '@/hooks/use-tour-by-id'
+import { PackageDetailExtras } from '@/components/package/PackageDetailExtras'
+import { PackageAccommodationsSection } from '@/components/package/PackageAccommodationsSection'
+import { PackageDetailStickyBar } from '@/components/PackageDetailStickyBar'
+import { PackageDetailHero } from '@/components/package/PackageDetailHero'
+import { GravityReveal } from '@/components/motion/GravityReveal'
+import { CheckoutTrustBar, PaymentMethodBadges } from '@/components/CheckoutTrustBar'
+import { PackageViewTracker } from '@/components/seo/PackageViewTracker'
 
 const destinations = [
   {
@@ -311,11 +321,23 @@ const destinations = [
 
 export default function DetallePaquete() {
   const params = useParams()
-  const router = useRouter()
   const packageId = params.id as string
+  const { tour: liveTour, loading: tourLoading } = useTourById(packageId)
 
   const [showTourSelection, setShowTourSelection] = useState(false)
   const [selectedTours, setSelectedTours] = useState<string[]>([])
+  const [selectedOptionalTours, setSelectedOptionalTours] = useState<string[]>([])
+
+  const toggleOptionalTour = (id: string) => {
+    const pickCount = liveTour?.optionalTours?.pickCount ?? 0
+    setSelectedOptionalTours((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id)
+      if (pickCount > 0 && prev.length >= pickCount) {
+        return [...prev.slice(1), id]
+      }
+      return [...prev, id]
+    })
+  }
   const [passengers, setPassengers] = useState({
     adults: 0,
     children: 0,
@@ -325,7 +347,56 @@ export default function DetallePaquete() {
   const [showDinnerOption, setShowDinnerOption] = useState(false)
   const [addDinner, setAddDinner] = useState(false)
 
-  const packageDetail = destinations.find(dest => dest.id === packageId)
+  const staticDetail = destinations.find(dest => dest.id === packageId)
+
+  const dbIncludes = liveTour?.includes?.length ? liveTour.includes : null
+  const dbExcludes = liveTour?.excludes?.length ? liveTour.excludes : null
+  const hasBundledTours = Boolean(
+    liveTour?.optionalTours?.hasBundledIncluded &&
+      liveTour.optionalTours.bundledIncludedTours?.some((t) => t.name?.trim()),
+  )
+  const hasDbContent = !!(
+    dbIncludes ||
+    dbExcludes ||
+    liveTour?.gallery?.length ||
+    liveTour?.faq?.length ||
+    liveTour?.pdfUrl ||
+    (liveTour?.optionalTours?.pickCount ?? 0) > 0 ||
+    (liveTour?.optionalTours?.additionalActivities?.length ?? 0) > 0 ||
+    hasBundledTours
+  )
+
+  const packageDetail = staticDetail
+    ? {
+        ...staticDetail,
+        ...(liveTour
+          ? {
+              name: liveTour.name,
+              subtitle: liveTour.subtitle,
+              image: liveTour.image,
+              price: liveTour.price,
+              duration: liveTour.duration,
+              description: liveTour.description || staticDetail.description,
+              highlights: liveTour.highlights ?? [],
+            }
+          : {}),
+      }
+    : liveTour
+      ? {
+          id: liveTour.tourId,
+          name: liveTour.name,
+          subtitle: liveTour.subtitle,
+          image: liveTour.image,
+          price: liveTour.price,
+          duration: liveTour.duration,
+          description: liveTour.description || '',
+          category: 'chile',
+          highlights: liveTour.highlights ?? [],
+          tours: [] as typeof destinations[0]['tours'],
+          includes: [] as string[],
+          notIncludes: [] as string[],
+        }
+      : undefined
   
   const calculateTotal = () => {
     const adultPrice = packageDetail?.price || 0
@@ -341,13 +412,21 @@ export default function DetallePaquete() {
     return addDinner ? total + 45000 : total
   }
 
+  if (!packageDetail && tourLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <p className="text-white/60">Cargando paquete...</p>
+      </div>
+    )
+  }
+
   if (!packageDetail) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-white mb-4">Paquete no encontrado</h1>
-          <Link href="/" className="text-teal hover:text-teal-400 underline">
-            Volver al inicio
+          <Link href="/#destinos" className="text-teal hover:text-teal-400 underline">
+            Volver a todos los paquetes
           </Link>
         </div>
       </div>
@@ -363,53 +442,33 @@ export default function DetallePaquete() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Hero Image */}
-      <div className="relative h-96 overflow-hidden">
-        <Image 
-          src={packageDetail.image} 
-          alt={packageDetail.name}
-          fill
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent" />
-        
-        {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="absolute top-4 left-4 z-10 bg-white/10 backdrop-blur-md text-white p-3 rounded-full hover:bg-white/20 transition-colors"
-        >
-          <ArrowLeft className="h-6 w-6" />
-        </button>
-
-        {/* Title Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-8">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-black text-white mb-2">
-              {packageDetail.name}
-            </h1>
-            <p className="text-xl text-white/80 flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              {packageDetail.subtitle}
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-900 pb-24 md:pb-0">
+      <main id="main-content">
+      <PackageViewTracker tourId={packageId} tourName={packageDetail.name} price={packageDetail.price} />
+      <PackageDetailHero
+        name={packageDetail.name}
+        subtitle={packageDetail.subtitle}
+        image={packageDetail.image}
+        duration={packageDetail.duration}
+      />
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid md:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="md:col-span-2 space-y-8">
+            <GravityReveal once mode="up">
             {/* Description */}
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">Descripción</h2>
-              <p className="text-gray-300 leading-relaxed">
+              <p className="text-gray-300 leading-relaxed whitespace-pre-line">
                 {packageDetail.description}
               </p>
             </section>
+            </GravityReveal>
 
-            {/* Highlights */}
+            <GravityReveal once mode="up" delay={0.05}>
+            {packageDetail.highlights.length > 0 && (
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">Destacados</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -421,56 +480,89 @@ export default function DetallePaquete() {
                 ))}
               </div>
             </section>
+            )}
+            </GravityReveal>
 
-            {/* Includes */}
-            <section>
-              <h2 className="text-2xl font-bold text-white mb-4">¿Qué incluye?</h2>
-              <div className="bg-gray-800 rounded-xl p-6 space-y-3">
-                {packageDetail.includes.map((item, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-300">{item}</span>
+            <GravityReveal once mode="up" delay={0.08}>
+            {hasDbContent && liveTour ? (
+              <PackageDetailExtras
+                tour={liveTour}
+                selectedTours={selectedOptionalTours}
+                onToggleTour={toggleOptionalTour}
+              />
+            ) : (
+              <>
+                <section>
+                  <h2 className="text-2xl font-bold text-white mb-4">¿Qué incluye?</h2>
+                  <div className="bg-gray-800 rounded-xl p-6 space-y-3">
+                    {packageDetail.includes.map((item, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-300">{item}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
+                </section>
 
-            {/* Not Includes */}
-            <section>
-              <h2 className="text-2xl font-bold text-white mb-4">¿Qué no incluye?</h2>
-              <div className="bg-gray-800 rounded-xl p-6 space-y-3">
-                {packageDetail.notIncludes.map((item, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="h-5 w-5 border-2 border-red-500 rounded-full mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-300">{item}</span>
+                <section>
+                  <h2 className="text-2xl font-bold text-white mb-4">¿Qué no incluye?</h2>
+                  <div className="bg-gray-800 rounded-xl p-6 space-y-3">
+                    {packageDetail.notIncludes.map((item, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="h-5 w-5 border-2 border-red-500 rounded-full mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-300">{item}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
+                </section>
+
+                <PackageAccommodationsSection
+                  tourId={packageId}
+                  tourName={packageDetail.name}
+                  fallbackPrice={packageDetail.price}
+                />
+              </>
+            )}
+            </GravityReveal>
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="md:sticky md:top-6 self-start">
             {/* Price Card */}
-            <div className="bg-gray-800 rounded-xl p-6 sticky top-6">
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border border-teal/20 shadow-xl shadow-black/30">
               <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-2 text-gray-400 mb-2">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm">{packageDetail.duration}</span>
+                <div className="flex items-center justify-center gap-2 text-gray-400 mb-3">
+                  <Clock className="h-4 w-4 text-teal" />
+                  <span className="text-sm font-medium">{packageDetail.duration}</span>
                 </div>
-                <div className="text-3xl font-black text-white mb-1">
-                  {formatCLP(packageDetail.price)}
-                </div>
-                <p className="text-gray-400 text-sm">Por persona</p>
+                <PriceOffer
+                  price={packageDetail.price}
+                  originalPrice={liveTour?.originalPrice}
+                  size="lg"
+                  theme="dark"
+                />
+                <p className="mt-3 text-sm text-teal font-semibold leading-snug">
+                  {(liveTour?.minDepositPerPerson ?? 0) > 0
+                    ? `Puedes reservar con abono desde $${(liveTour!.minDepositPerPerson!).toLocaleString("es-CL")} por persona`
+                    : "Puedes reservar con abono mínimo"}
+                </p>
               </div>
 
-              <button
-                onClick={() => setShowTourSelection(true)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                Comprar Ahora
-              </button>
+              <AddToCartButton
+                tourId={packageId}
+                tourName={packageDetail.name}
+                image={packageDetail.image}
+                basePrice={packageDetail.price}
+                duration={packageDetail.duration}
+                preselectedOptionalTours={selectedOptionalTours}
+                variant="primary"
+                className="py-3 rounded-xl min-h-[48px]"
+              />
+
+              <div className="mt-4 space-y-3">
+                <CheckoutTrustBar minDepositPerPerson={liveTour?.minDepositPerPerson} />
+                <PaymentMethodBadges variant="dark" />
+              </div>
 
               {/* Contact Info */}
               <div className="mt-4 pt-4 border-t border-gray-700">
@@ -481,32 +573,18 @@ export default function DetallePaquete() {
                 </p>
               </div>
             </div>
-
-            {/* Quick Info */}
-            <div className="bg-gray-800 rounded-xl p-6">
-              <h3 className="font-bold text-white mb-4">Información Rápida</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-5 w-5 text-teal" />
-                  <span className="text-gray-300 text-sm">{packageDetail.subtitle}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-teal" />
-                  <span className="text-gray-300 text-sm">{packageDetail.duration}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Users className="h-5 w-5 text-teal" />
-                  <span className="text-gray-300 text-sm">Grupos reducidos</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Star className="h-5 w-5 text-teal" />
-                  <span className="text-gray-300 text-sm">5.0 (28 reseñas)</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
+
+      <PackageDetailStickyBar
+        tourId={packageId}
+        tourName={packageDetail.name}
+        image={packageDetail.image}
+        basePrice={packageDetail.price}
+        duration={packageDetail.duration}
+        preselectedOptionalTours={selectedOptionalTours}
+      />
 
       {/* Tour Selection Section */}
       {showTourSelection && (
@@ -774,7 +852,7 @@ export default function DetallePaquete() {
                       />
                       <div>
                         <span className="text-white font-bold text-lg">Adicionar Cena Tradicional</span>
-                        <p className="text-gray-400">Disfruta de una cena rapanui auténtica con platos típicos +$45.000</p>
+                        <p className="text-black/70">Disfruta de una cena rapanui auténtica con platos típicos <span className="text-black font-bold">+$45.000</span></p>
                       </div>
                     </label>
                   </div>
@@ -863,7 +941,7 @@ export default function DetallePaquete() {
                 <div className="bg-gray-800 rounded-xl p-6">
                   <div className="flex justify-between items-center mb-6">
                     <span className="text-white font-bold text-2xl">Total:</span>
-                    <span className="text-teal font-bold text-3xl">{formatCLP(calculateTotal())}</span>
+                    <span className="text-black font-bold text-3xl">{formatCLP(calculateTotal())}</span>
                   </div>
                   <div className="flex gap-4">
                     <button
@@ -901,6 +979,7 @@ export default function DetallePaquete() {
           </div>
         </section>
       )}
+      </main>
     </div>
   )
 }

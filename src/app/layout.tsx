@@ -3,51 +3,49 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AnnouncerProvider } from "@/contexts/AnnouncerContext";
+import { CartProvider } from "@/contexts/CartContext";
+import { ConditionalAnalytics } from "@/components/ConditionalAnalytics";
+import { JsonLd } from "@/components/JsonLd";
+import { ReviewsJsonLd } from "@/components/seo/ReviewsJsonLd";
+import { RoulettePrizeBar } from "@/components/RoulettePrizeBar";
+import { PageAmbient } from "@/components/motion/PageAmbient";
+import { SkipLink } from "@/components/a11y/SkipLink";
+import { CookieConsent } from "@/components/a11y/CookieConsent";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { pageMetadata, siteVerificationMetadata } from "@/lib/seo-metadata";
+import { SEO_DEFAULT_KEYWORDS } from "@/lib/seo-config";
+import { SITE_URL } from "@/lib/site-url";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Universo Nomada | Viajes que Dejan Huella",
-  description:
-    "Universo Nomada - Agencia de viajes boutique especializada en experiencias personalizadas y autenticas en Chile y Sudamerica. Rapa Nui, Atacama, Machu Picchu, Florianopolis, Rio de Janeiro, Buenos Aires, Mendoza y mas.",
-  keywords: [
-    "Universo Nomada",
-    "viajes personalizados",
-    "La Serena",
-    "Chile",
-    "Rapa Nui",
-    "Atacama",
-    "Machu Picchu",
-    "Patagonia",
-    "Uyuni",
-    "Florianopolis",
-    "Rio de Janeiro",
-    "Buenos Aires",
-    "Mendoza",
-    "Brasil",
-    "Argentina",
-    "turismo vivencial",
-    "experiencias de viaje",
-    "destinos autenticos",
-  ],
-  authors: [{ name: "Universo Nomada" }],
-  icons: {
-    icon: "/logo.svg",
-  },
-  openGraph: {
-    title: "Universo Nomada | Viajes que Dejan Huella",
-    description: "Universo Nomada - Agencia de viajes boutique. Experiencias personalizadas y autenticas en Chile y Sudamerica.",
-    siteName: "Universo Nomada",
-    type: "website",
-  },
+  ...pageMetadata({
+    path: "/",
+    title: "Universo Nomada | Viajes que Dejan Huella — Agencia Boutique Chile",
+    description:
+      "Agencia de viajes boutique en Viña del Mar y La Serena. Paquetes a Rapa Nui, Atacama, Machu Picchu, Patagonia, Brasil y Argentina. Reserva online con asesoría personalizada.",
+    keywords: [...SEO_DEFAULT_KEYWORDS],
+  }),
+  metadataBase: new URL(SITE_URL),
+  authors: [{ name: "Universo Nomada", url: SITE_URL }],
+  creator: "Universo Nómada®",
+  publisher: "Universo Nómada®",
+  category: "travel",
+  verification: siteVerificationMetadata(),
+  icons: { icon: "/logo.svg", apple: "/images/logo-un.png" },
+  manifest: "/manifest.json",
+  formatDetection: { telephone: true, email: true },
 };
 
 export default function RootLayout({
@@ -57,13 +55,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <JsonLd />
+        <ReviewsJsonLd />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://connect.facebook.net" />
+        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        suppressHydrationWarning
       >
         <LanguageProvider>
-          {children}
-          <Toaster richColors position="top-center" />
+          <AnnouncerProvider>
+            <CartProvider>
+              <SkipLink />
+              <PageAmbient />
+              <RoulettePrizeBar />
+              {children}
+              <CookieConsent />
+              <ServiceWorkerRegister />
+            </CartProvider>
+            <Toaster richColors position="top-center" />
+          </AnnouncerProvider>
         </LanguageProvider>
+        <ConditionalAnalytics />
       </body>
     </html>
   );

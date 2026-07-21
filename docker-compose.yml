@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: unnomada
+      POSTGRES_PASSWORD: unnomada_dev
+      POSTGRES_DB: unnomada
+    volumes:
+      - unnomada_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unnomada -d unnomada"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  unnomada_pg:
