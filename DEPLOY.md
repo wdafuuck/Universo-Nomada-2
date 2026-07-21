@@ -13,7 +13,15 @@ Repo → **Settings → Secrets and variables → Actions** → crear:
 | `DEPLOY_HOST` | `138.197.167.137` |
 | `DEPLOY_USER` | `root` |
 | `DEPLOY_PATH` | `/var/www/universo-nomada` |
-| `DEPLOY_SSH_KEY` | Contenido completo de `~/.ssh/universo-nomada-deploy` (clave **privada**) |
+| `DEPLOY_SSH_KEY` | **Recomendado:** una sola línea base64 (ver abajo). También acepta la clave privada completa. |
+
+**Cómo generar el valor base64 (en Terminal del Mac, sin SSH):**
+
+```bash
+base64 < ~/.ssh/universo-nomada-deploy | pbcopy
+```
+
+Eso deja en el portapapeles una sola línea. En GitHub: edita el secreto `DEPLOY_SSH_KEY` → pega → Update secret.
 
 La clave pública ya está en el servidor. Si regeneras la clave, vuelve a agregar la `.pub` en `/root/.ssh/authorized_keys`.
 
