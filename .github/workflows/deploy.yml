@@ -18,22 +18,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" 'echo SSH_OK'
+
       - name: Sync files to droplet
-        uses: burnett01/rsync-deployments@7.0.1
-        with:
-          switches: -az --delete --exclude .git --exclude node_modules --exclude .next --exclude .env --exclude .env.local --exclude .env.production --exclude prisma/dev.db --exclude public/uploads --exclude .cursor --exclude -p --exclude 3001
-          path: ./
-          remote_path: ${{ secrets.DEPLOY_PATH }}/
-          remote_host: ${{ secrets.DEPLOY_HOST }}
-          remote_user: ${{ secrets.DEPLOY_USER }}
-          remote_key: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          rsync -az --delete \
+            --exclude '.git/' \
+            --exclude 'node_modules/' \
+            --exclude '.next/' \
+            --exclude '.env' \
+            --exclude '.env.local' \
+            --exclude '.env.production' \
+            --exclude 'prisma/dev.db' \
+            --exclude 'prisma/dev.db-journal' \
+            --exclude 'public/uploads/' \
+            --exclude '.cursor/' \
+            --exclude 'dev.log' \
+            --exclude 'server.log' \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+
       - name: Build and restart on server
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          script: |
-            chmod +x ${{ secrets.DEPLOY_PATH }}/deploy/remote-build.sh
-            ${{ secrets.DEPLOY_PATH }}/deploy/remote-build.sh
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "chmod +x ${{ secrets.DEPLOY_PATH }}/deploy/remote-build.sh && ${{ secrets.DEPLOY_PATH }}/deploy/remote-build.sh"
