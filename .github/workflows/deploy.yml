@@ -1,0 +1,39 @@
+name: Deploy production
+
+on:
+  push:
+    branches:
+      - deploy/2026-prod
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/deploy/2026-prod' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync files to droplet
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -az --delete --exclude .git --exclude node_modules --exclude .next --exclude .env --exclude .env.local --exclude .env.production --exclude prisma/dev.db --exclude public/uploads --exclude .cursor --exclude -p --exclude 3001
+          path: ./
+          remote_path: ${{ secrets.DEPLOY_PATH }}/
+          remote_host: ${{ secrets.DEPLOY_HOST }}
+          remote_user: ${{ secrets.DEPLOY_USER }}
+          remote_key: ${{ secrets.DEPLOY_SSH_KEY }}
+      - name: Build and restart on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            chmod +x ${{ secrets.DEPLOY_PATH }}/deploy/remote-build.sh
+            ${{ secrets.DEPLOY_PATH }}/deploy/remote-build.sh

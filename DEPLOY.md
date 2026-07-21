@@ -1,5 +1,40 @@
 # Checklist de despliegue a producción
 
+## Deploy automático (recomendado)
+
+Al hacer **push** a `deploy/2026-prod` (o `main`), GitHub Actions sincroniza el código al droplet, hace build y reinicia el servicio.
+
+### Secretos en GitHub (una sola vez)
+
+Repo → **Settings → Secrets and variables → Actions** → crear:
+
+| Secret | Valor |
+|--------|--------|
+| `DEPLOY_HOST` | `138.197.167.137` |
+| `DEPLOY_USER` | `root` |
+| `DEPLOY_PATH` | `/var/www/universo-nomada` |
+| `DEPLOY_SSH_KEY` | Contenido completo de `~/.ssh/universo-nomada-deploy` (clave **privada**) |
+
+La clave pública ya está en el servidor. Si regeneras la clave, vuelve a agregar la `.pub` en `/root/.ssh/authorized_keys`.
+
+Con `gh` autenticado:
+
+```bash
+gh auth login
+gh secret set DEPLOY_HOST --body "138.197.167.137" --repo wdafuuck/Universo-Nomada-2
+gh secret set DEPLOY_USER --body "root" --repo wdafuuck/Universo-Nomada-2
+gh secret set DEPLOY_PATH --body "/var/www/universo-nomada" --repo wdafuuck/Universo-Nomada-2
+gh secret set DEPLOY_SSH_KEY < ~/.ssh/universo-nomada-deploy --repo wdafuuck/Universo-Nomada-2
+```
+
+### Deploy manual desde tu Mac
+
+```bash
+npm run deploy
+```
+
+Sube el código actual por SSH, build en el servidor y reinicia. **No** toca `.env` ni `public/uploads`.
+
 ## Antes del deploy
 
 - [ ] `DATABASE_URL` apunta a **PostgreSQL** (Neon, Supabase, RDS, etc.)
