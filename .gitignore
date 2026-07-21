@@ -63,3 +63,7 @@ content-dump.json
 
 # local IDE
 .cursor/
+
+# uploaded images (keep folder via .gitkeep)
+/public/uploads/*
+!/public/uploads/.gitkeep
