@@ -15,6 +15,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/deploy/2026-prod' || github.ref == 'refs/heads/main'
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -23,11 +28,21 @@ jobs:
           set -euo pipefail
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          # Escribir clave desde env (mejor con multilínea) y normalizar saltos de línea
+          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" 'echo SSH_OK'
+          # Validación básica sin filtrar el secreto
+          lines=$(wc -l < ~/.ssh/deploy_key | tr -d ' ')
+          bytes=$(wc -c < ~/.ssh/deploy_key | tr -d ' ')
+          echo "deploy_key lines=$lines bytes=$bytes"
+          head -1 ~/.ssh/deploy_key | grep -q 'BEGIN.*PRIVATE KEY' || {
+            echo "::error::DEPLOY_SSH_KEY no parece una clave privada OPENSSH/PEM (falta BEGIN PRIVATE KEY)"
+            exit 1
+          }
+          ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            -o ConnectTimeout=15 \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" 'echo SSH_OK'
 
       - name: Sync files to droplet
         run: |
@@ -45,12 +60,12 @@ jobs:
             --exclude '.cursor/' \
             --exclude 'dev.log' \
             --exclude 'server.log' \
-            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
-            ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
 
       - name: Build and restart on server
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
-            "chmod +x ${{ secrets.DEPLOY_PATH }}/deploy/remote-build.sh && ${{ secrets.DEPLOY_PATH }}/deploy/remote-build.sh"
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "chmod +x ${DEPLOY_PATH}/deploy/remote-build.sh && ${DEPLOY_PATH}/deploy/remote-build.sh"
