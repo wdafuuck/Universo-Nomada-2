@@ -26,6 +26,11 @@ jobs:
       - name: Setup SSH
         run: |
           set -euo pipefail
+          echo "host_chars=${#DEPLOY_HOST} user_chars=${#DEPLOY_USER} path_chars=${#DEPLOY_PATH} key_chars=${#DEPLOY_SSH_KEY}"
+          test -n "$DEPLOY_HOST" || { echo "::error::DEPLOY_HOST vacío"; exit 1; }
+          test -n "$DEPLOY_USER" || { echo "::error::DEPLOY_USER vacío"; exit 1; }
+          test -n "$DEPLOY_PATH" || { echo "::error::DEPLOY_PATH vacío"; exit 1; }
+          test -n "$DEPLOY_SSH_KEY" || { echo "::error::DEPLOY_SSH_KEY vacío — vuelve a pegar la clave privada"; exit 1; }
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           # Escribir clave desde env (mejor con multilínea) y normalizar saltos de línea
@@ -40,9 +45,10 @@ jobs:
             exit 1
           }
           ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+          ssh -vvv -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
             -o ConnectTimeout=15 \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" 'echo SSH_OK'
+            "${DEPLOY_USER}@${DEPLOY_HOST}" 'echo SSH_OK' 2>&1 | tee /tmp/ssh-debug.log | tail -40
+          grep -q SSH_OK /tmp/ssh-debug.log
 
       - name: Sync files to droplet
         run: |
