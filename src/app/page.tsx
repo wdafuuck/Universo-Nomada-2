@@ -46,7 +46,7 @@ import {
   getStoredRoulettePrize,
 } from "@/lib/roulette-client";
 
-const POPUP_DAY_KEY = "un_popup_day";
+const POPUP_DAY_KEY = "un_popup_day_v2";
 
 function todayPopupKey(): string {
   return new Date().toISOString().slice(0, 10);
@@ -513,11 +513,6 @@ export default function LandingPage() {
     };
   }, []);
 
-  const closeRoulettePopup = () => {
-    markPopupShownToday();
-    setIsRouletteOpen(false);
-  };
-
   useEffect(() => {
     if (user) {
       setIsRouletteOpen(false);
@@ -526,24 +521,31 @@ export default function LandingPage() {
     if (getStoredRoulettePrize()) return;
     if (popupShownToday()) return;
 
-    const openIfScrolled = () => {
-      if (window.scrollY <= window.innerHeight * 0.25) return false;
-      markPopupShownToday();
+    let opened = false;
+    const openRoulette = () => {
+      if (opened) return;
+      opened = true;
       setIsRouletteOpen(true);
-      return true;
     };
 
-    if (openIfScrolled()) return;
+    // Aparece sola a los 2.5s (antes solo tras scrollear y se marcaba "visto" al abrir)
+    const timer = window.setTimeout(openRoulette, 2500);
 
     const onScroll = () => {
-      if (openIfScrolled()) {
-        window.removeEventListener("scroll", onScroll);
-      }
+      if (window.scrollY > 80) openRoulette();
     };
-
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [user]);
+
+  const closeRoulettePopup = () => {
+    markPopupShownToday();
+    setIsRouletteOpen(false);
+  };
 
   const handleLogin = (u: { id: string; email: string; name: string | null; role: string }) => {
     setUser(u);
