@@ -24,14 +24,21 @@ chmod +x deploy/universo-nomada-start.sh deploy/remote-build.sh 2>/dev/null || t
 
 echo "==> Restart"
 systemctl restart universo-nomada
-# Esperar a que pase de activating → active
-for i in 1 2 3 4 5 6 7 8; do
-  if systemctl is-active --quiet universo-nomada; then
+# Esperar a que el health responda (no solo systemd active)
+ok=0
+for i in $(seq 1 30); do
+  if curl -sf http://127.0.0.1:3001/api/health >/tmp/un-health.json 2>/dev/null; then
+    ok=1
     break
   fi
   sleep 1
 done
 systemctl is-active universo-nomada
-curl -sf http://127.0.0.1:3001/api/health | head -c 200
+if [ "$ok" -ne 1 ]; then
+  echo ":: error: la app no respondió /api/health a tiempo"
+  journalctl -u universo-nomada -n 40 --no-pager || true
+  exit 1
+fi
+head -c 200 /tmp/un-health.json
 echo
 echo "==> Deploy OK"
