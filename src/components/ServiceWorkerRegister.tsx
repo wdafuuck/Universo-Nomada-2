@@ -2,16 +2,16 @@
 
 import { useEffect } from "react";
 
+const MIGRATION_KEY = "un-sw-cleared-v4";
+
 /**
- * Tras migrar de Netlify, muchos navegadores conservan un Service Worker viejo
- * que sirve la web antigua desde caché. Limpiamos SW + caches y registramos el nuevo.
+ * Tras Netlify, el SW viejo sirve la web antigua desde caché.
+ * Por ahora solo limpiamos SW/caches y NO registramos uno nuevo
+ * (evita crashes al girar la ruleta / formularios).
  */
 export function ServiceWorkerRegister() {
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-    if (process.env.NODE_ENV !== "production") return;
-
-    let cancelled = false;
 
     (async () => {
       try {
@@ -21,17 +21,13 @@ export function ServiceWorkerRegister() {
           const keys = await caches.keys();
           await Promise.all(keys.map((k) => caches.delete(k)));
         }
-        // Evitar re-registrar el SW viejo en el mismo load si aún controla la página
-        if (cancelled) return;
-        await navigator.serviceWorker.register("/sw.js?v=3");
+        if (!localStorage.getItem(MIGRATION_KEY)) {
+          localStorage.setItem(MIGRATION_KEY, "1");
+        }
       } catch {
         // ignore
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   return null;

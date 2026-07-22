@@ -68,33 +68,55 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
       const res = await fetch("/api/roulette/spin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify(form),
       });
-      const data = await res.json();
+      let data: {
+        error?: string;
+        segmentIndex?: number;
+        prize?: RoulettePrizeId;
+        prizeLabel?: string;
+        spinId?: number;
+        expiresAt?: string;
+      } = {};
+      try {
+        data = await res.json();
+      } catch {
+        toast.error("Respuesta inválida del servidor. Recarga la página e intenta de nuevo.");
+        return;
+      }
       if (!res.ok) {
         toast.error(data.error ?? "No se pudo girar la ruleta");
+        return;
+      }
+      if (typeof data.segmentIndex !== "number" || !data.prize) {
+        toast.error("No se pudo leer el premio. Intenta de nuevo.");
         return;
       }
 
       setSegmentIndex(data.segmentIndex);
       setPrize(data.prize);
-      setPrizeLabel(data.prizeLabel);
+      setPrizeLabel(data.prizeLabel ?? "");
       setPhase("spinning");
       setSpinning(true);
 
-      trackGenerateLead({ source: "ruleta-familia" });
+      try {
+        trackGenerateLead({ source: "ruleta-familia" });
+      } catch {
+        // analytics no debe romper la ruleta
+      }
 
       saveStoredRoulettePrize({
-        spinId: data.spinId,
+        spinId: data.spinId ?? 0,
         prize: data.prize,
         email: form.email.trim(),
         nombre: form.nombre.trim(),
         telefono: form.telefono.trim(),
-        expiresAt: data.expiresAt,
+        expiresAt: data.expiresAt ?? new Date().toISOString(),
         segmentIndex: data.segmentIndex,
       });
     } catch {
-      toast.error("Error de conexi?n. Intenta de nuevo.");
+      toast.error("Error de conexión. Intenta de nuevo.");
     } finally {
       setSubmitting(false);
     }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { normalizeEmail } from "@/lib/otp-auth";
+import { normalizeEmail } from "@/lib/normalize-email";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import {
   pickRandomRouletteOutcome,
