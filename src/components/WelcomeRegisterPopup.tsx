@@ -114,21 +114,25 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
           email: form.email.trim().toLowerCase(),
           code: otp,
           name: form.nombre.trim(),
+          welcomeDiscount: true,
         }),
       });
       const data = (await res.json()) as {
         error?: string;
         user?: { id: string; email: string; name: string | null; role: string };
+        discountCode?: string;
       };
       if (!res.ok || !data.user) {
         setError(data.error || "Código incorrecto");
         return;
       }
 
-      saveWelcomeDiscountCode(discountCode);
+      const codeToSave = data.discountCode || discountCode;
+      if (data.discountCode) setDiscountCode(data.discountCode);
+      saveWelcomeDiscountCode(codeToSave);
       onRegistered(data.user);
       setPhase("success");
-      toast.success("¡Cuenta creada!");
+      toast.success("¡Cuenta creada! Te enviamos tu código de descuento al correo");
     } catch {
       setError("Error al verificar. Intenta de nuevo.");
     } finally {
@@ -287,8 +291,8 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Válido una sola vez por persona. Ingrésalo en el carrito al reservar; también lo
-                guardamos en este navegador.
+                También te lo enviamos al correo. Válido una sola vez por persona; úsalo en el
+                carrito al reservar.
               </p>
               <Button type="button" className="w-full bg-navy hover:bg-navy/90" onClick={onClose}>
                 Empezar a explorar

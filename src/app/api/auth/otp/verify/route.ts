@@ -3,6 +3,12 @@ import { db } from "@/lib/db";
 import { setSessionCookie } from "@/lib/auth-session";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
 import { hashOtp, normalizeEmail, MAX_ATTEMPTS } from "@/lib/otp-auth";
+import { sendEmail } from "@/lib/email/send";
+import { welcomeDiscountEmailHtml } from "@/lib/email/templates";
+import {
+  ensureWelcomeDiscountCode,
+  WELCOME_DISCOUNT_PERCENT,
+} from "@/lib/welcome-discount";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +17,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Demasiados intentos. Espera un momento." }, { status: 429 });
     }
 
-    const body = (await request.json()) as { email?: string; code?: string; name?: string };
+    const body = (await request.json()) as {
+      email?: string;
+      code?: string;
+      name?: string;
+      welcomeDiscount?: boolean;
+    };
     const email = normalizeEmail(body.email ?? "");
     const code = String(body.code ?? "").trim();
 
@@ -47,6 +58,7 @@ export async function POST(request: NextRequest) {
     await db.emailOtp.deleteMany({ where: { email } });
 
     let user = await db.user.findUnique({ where: { email } });
+    const isNewUser = !user;
     if (!user) {
       user = await db.user.create({
         data: {
@@ -72,7 +84,6 @@ export async function POST(request: NextRequest) {
       data: { userId: user.id },
     });
 
-    // Mi cuenta siempre como pasajero; admin solo con login por contraseña
     const sessionUser = {
       id: user.id,
       email: user.email,
@@ -81,10 +92,37 @@ export async function POST(request: NextRequest) {
     };
     await setSessionCookie(sessionUser);
 
+    let discountCode: string | undefined;
+    if (body.welcomeDiscount && isNewUser) {
+      try {
+        discountCode = await ensureWelcomeDiscountCode(db);
+        const { html, text } = welcomeDiscountEmailHtml({
+          name: user.name,
+          code: discountCode,
+          percent: WELCOME_DISCOUNT_PERCENT,
+        });
+        const sent = await sendEmail({
+          to: email,
+          subject: `Tu ${WELCOME_DISCOUNT_PERCENT}% de descuento — código ${discountCode}`,
+          html,
+          text,
+        });
+        if (!sent.ok) {
+          console.error(
+            "[otp/verify] welcome discount email failed:",
+            "error" in sent ? sent.error : "unknown",
+          );
+        }
+      } catch (e) {
+        console.error("[otp/verify] welcome discount email", e);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       message: "Sesión iniciada",
       user: sessionUser,
+      discountCode,
     });
   } catch (e) {
     console.error("[otp/verify]", e);

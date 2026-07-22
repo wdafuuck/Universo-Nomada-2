@@ -162,6 +162,42 @@ export function otpEmailHtml(code: string): { html: string; text: string } {
   return { html, text };
 }
 
+export function welcomeDiscountEmailHtml(opts: {
+  name?: string | null;
+  code: string;
+  percent: number;
+}): { html: string; text: string } {
+  const greeting = opts.name?.trim() ? `Hola ${escapeHtml(opts.name.trim())},` : "Hola,";
+  const code = escapeHtml(opts.code);
+  const percent = opts.percent;
+  const url = siteUrl();
+
+  const bodyHtml = `
+    <h1 style="margin:0 0 12px;font-size:24px;font-weight:800;color:#0f172a;">¡Bienvenido/a a la familia Nómada!</h1>
+    <p style="margin:0 0 16px;color:#475569;font-size:15px;line-height:1.6;">
+      ${greeting} gracias por registrarte. Aquí tienes tu <strong>${percent}% de descuento</strong> de bienvenida.
+    </p>
+    <div style="text-align:center;margin:28px 0;">
+      <p style="margin:0 0 10px;color:#64748b;font-size:13px;">Tu código</p>
+      <span style="display:inline-block;background:#f0fdfa;border:2px dashed #14b8a6;border-radius:16px;padding:18px 32px;font-size:28px;font-weight:900;letter-spacing:0.12em;color:#0f766e;">${code}</span>
+    </div>
+    <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.6;">
+      Úsalo en el carrito al reservar. <strong>Válido una sola vez por persona.</strong>
+    </p>
+    ${ctaButton(url, "Explorar viajes")}
+  `;
+
+  const html = emailLayout({
+    preheader: `Tu ${percent}% de descuento: ${opts.code}`,
+    title: "Tu descuento de bienvenida",
+    bodyHtml,
+  });
+
+  const text = `${greeting}\n\nGracias por registrarte en Universo Nómada.\nTu código de ${percent}% de descuento: ${opts.code}\n\nÚsalo en el carrito al reservar. Válido una sola vez por persona.\n\n${url}`;
+
+  return { html, text };
+}
+
 export function ctaButton(href: string, label: string, color: "teal" | "green" = "teal"): string {
   const bg = color === "green" ? "#25D366" : "#0f766e";
   return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0;">
