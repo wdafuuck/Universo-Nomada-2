@@ -38,12 +38,21 @@ export default function RuletaPage() {
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
+        message?: string;
+        alreadyRegistered?: boolean;
         spinId?: number;
         prize?: RoulettePrizeId;
         prizeLabel?: string;
         expiresAt?: string;
         segmentIndex?: number;
       };
+      if (res.status === 409) {
+        toast.error(
+          data.error ?? "Ya estás registrado. Este correo ya participó en la ruleta.",
+        );
+        setSubmitting(false);
+        return;
+      }
       if (!res.ok || !data.prize || !data.spinId) {
         toast.error(data.error ?? "No se pudo girar la ruleta");
         setSubmitting(false);

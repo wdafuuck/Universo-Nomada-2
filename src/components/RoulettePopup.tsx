@@ -43,6 +43,8 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
   const [segmentIndex, setSegmentIndex] = useState(0);
   const [prize, setPrize] = useState<RoulettePrizeId | null>(null);
   const [prizeLabel, setPrizeLabel] = useState("");
+  const [formError, setFormError] = useState("");
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const endedRef = useRef(false);
 
   const timeHint =
@@ -65,13 +67,43 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
     setPrize(null);
     setPrizeLabel("");
     setForm({ nombre: "", email: "", telefono: "" });
+    setFormError("");
+    setAlreadyRegistered(false);
     endedRef.current = false;
   }, [isOpen]);
+
+  const persistPrize = (data: {
+    spinId?: number;
+    prize: RoulettePrizeId;
+    prizeLabel?: string;
+    expiresAt?: string;
+    segmentIndex: number;
+  }) => {
+    try {
+      saveStoredRoulettePrize(
+        {
+          spinId: data.spinId ?? 0,
+          prize: data.prize,
+          email: form.email.trim(),
+          nombre: form.nombre.trim(),
+          telefono: form.telefono.trim(),
+          expiresAt: data.expiresAt ?? new Date().toISOString(),
+          segmentIndex: data.segmentIndex,
+        },
+        { silent: true },
+      );
+    } catch {
+      // ignore
+    }
+  };
 
   const handleSpin = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setFormError("");
+    setAlreadyRegistered(false);
     if (!form.nombre.trim() || !form.email.trim() || !form.telefono.trim()) {
+      setFormError("Completa todos los campos para unirte y girar");
       toast.error("Completa todos los campos para unirte y girar");
       return;
     }
@@ -88,45 +120,67 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
+        message?: string;
+        alreadySpun?: boolean;
+        alreadyRegistered?: boolean;
         segmentIndex?: number;
         prize?: RoulettePrizeId;
         prizeLabel?: string;
         spinId?: number;
         expiresAt?: string;
       };
+
+      // Correo ya usado / premio vencido o canjeado
+      if (res.status === 409 || (data.alreadyRegistered && !data.prize)) {
+        const msg =
+          data.error ??
+          data.message ??
+          "Ya estás registrado. Este correo ya participó en la ruleta.";
+        setFormError(msg);
+        setAlreadyRegistered(true);
+        toast.error(msg);
+        return;
+      }
+
       if (!res.ok) {
-        toast.error(data.error ?? "No se pudo girar la ruleta");
+        const msg = data.error ?? "No se pudo girar la ruleta";
+        setFormError(msg);
+        toast.error(msg);
         return;
       }
       if (typeof data.segmentIndex !== "number" || !data.prize) {
+        setFormError("No se pudo leer el premio");
         toast.error("No se pudo leer el premio");
         return;
       }
 
-      try {
-        saveStoredRoulettePrize(
-          {
-            spinId: data.spinId ?? 0,
-            prize: data.prize,
-            email: form.email.trim(),
-            nombre: form.nombre.trim(),
-            telefono: form.telefono.trim(),
-            expiresAt: data.expiresAt ?? new Date().toISOString(),
-            segmentIndex: data.segmentIndex,
-          },
-          { silent: true },
-        );
-      } catch {
-        // ignore
-      }
+      persistPrize({
+        spinId: data.spinId,
+        prize: data.prize,
+        prizeLabel: data.prizeLabel,
+        expiresAt: data.expiresAt,
+        segmentIndex: data.segmentIndex,
+      });
 
-      endedRef.current = false;
       setSegmentIndex(data.segmentIndex);
       setPrize(data.prize);
       setPrizeLabel(data.prizeLabel ?? "");
+
+      // Ya registrado con premio activo: mostrar resultado sin girar (evita crash)
+      if (data.alreadySpun || data.alreadyRegistered) {
+        setAlreadyRegistered(true);
+        toast.message(data.message ?? "Ya estás registrado. Este es tu premio activo.");
+        endedRef.current = true;
+        setSpinning(false);
+        setPhase("result");
+        return;
+      }
+
+      endedRef.current = false;
       setPhase("spinning");
       setSpinning(true);
     } catch {
+      setFormError("Error de conexión. Intenta de nuevo.");
       toast.error("Error de conexión. Intenta de nuevo.");
     } finally {
       setSubmitting(false);
@@ -195,12 +249,27 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
               <p className="text-white/90 text-sm mb-4 leading-relaxed">{lp.subtitle}</p>
 
               <form onSubmit={handleSpin} className="space-y-3" noValidate>
+                {formError && (
+                  <div
+                    className={`rounded-xl px-4 py-3 text-sm font-semibold ${
+                      alreadyRegistered
+                        ? "bg-amber-100 text-amber-950"
+                        : "bg-red-100 text-red-900"
+                    }`}
+                    role="alert"
+                  >
+                    {formError}
+                  </div>
+                )}
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     placeholder="Tu nombre"
                     value={form.nombre}
-                    onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                    onChange={(e) => {
+                      setFormError("");
+                      setForm({ ...form, nombre: e.target.value });
+                    }}
                     className="rounded-full h-12 pl-10 bg-white border-0 text-slate-900"
                     required
                     autoComplete="name"
@@ -212,7 +281,10 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                     type="email"
                     placeholder="Email"
                     value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    onChange={(e) => {
+                      setFormError("");
+                      setForm({ ...form, email: e.target.value });
+                    }}
                     className="rounded-full h-12 pl-10 bg-white border-0 text-slate-900"
                     required
                     autoComplete="email"
@@ -224,7 +296,10 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                     type="tel"
                     placeholder="+56 9 ..."
                     value={form.telefono}
-                    onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                    onChange={(e) => {
+                      setFormError("");
+                      setForm({ ...form, telefono: e.target.value });
+                    }}
                     className="rounded-full h-12 pl-10 bg-white border-0 text-slate-900"
                     required
                     autoComplete="tel"
@@ -258,6 +333,11 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
 
           {phase === "result" && prize && (
             <div className="text-center">
+              {alreadyRegistered && (
+                <p className="text-amber-100 text-sm font-semibold mb-2">
+                  Ya estás registrado — este es tu premio activo
+                </p>
+              )}
               {hasBenefit ? (
                 <>
                   <p className="text-white/80 text-sm mb-1">¡Bienvenido a la familia Nómada!</p>

@@ -38,6 +38,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           ok: true,
           alreadySpun: true,
+          alreadyRegistered: true,
+          message: "Ya estás registrado. Este es tu premio activo.",
           spinId: existing.id,
           prize: existing.prize,
           prizeLabel: roulettePrizeLabel(existing.prize as RoulettePrizeId),
@@ -48,7 +50,10 @@ export async function POST(request: NextRequest) {
         });
       }
       return NextResponse.json(
-        { error: "Ya participaste en la ruleta con este correo" },
+        {
+          error: "Ya estás registrado. Este correo ya participó en la ruleta.",
+          alreadyRegistered: true,
+        },
         { status: 409 },
       );
     }
