@@ -9,13 +9,12 @@ type Props = {
   onSpinEnd?: () => void;
   size?: number;
   idle?: boolean;
-  display?: "half" | "full";
-  /** compat — siempre puntero derecho */
-  pointer?: "top" | "right";
+  /** Si false, no monta el canvas (fase resultado) */
+  active?: boolean;
 };
 
 const SEGMENT_ANGLE = (Math.PI * 2) / ROULETTE_SEGMENTS.length;
-const SPIN_MS = 4500;
+const SPIN_MS = 3800;
 
 function drawWheel(
   ctx: CanvasRenderingContext2D,
@@ -42,7 +41,7 @@ function drawWheel(
     ctx.closePath();
     ctx.fillStyle = seg.color;
     ctx.fill();
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -50,52 +49,46 @@ function drawWheel(
     const textR = r * 0.58;
     ctx.save();
     ctx.rotate(mid);
-    ctx.fillStyle = "#fff";
-    ctx.font = `800 ${Math.max(10, Math.round(diameter / 28))}px system-ui, sans-serif`;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `700 ${Math.max(11, Math.round(diameter / 30))}px system-ui, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const lines = seg.wheelLines;
-    const lineH = Math.max(12, Math.round(diameter / 32));
-    lines.forEach((line, li) => {
-      const y =
-        lines.length === 1 ? 0 : li === 0 ? -lineH * 0.45 : lineH * 0.45;
-      ctx.fillText(line, textR, y, r * 0.55);
-    });
+    const lineH = Math.max(12, Math.round(diameter / 34));
+    for (let li = 0; li < lines.length; li++) {
+      const y = lines.length === 1 ? 0 : li === 0 ? -lineH * 0.45 : lineH * 0.45;
+      ctx.fillText(lines[li], textR, y, r * 0.55);
+    }
     ctx.restore();
   }
 
   ctx.beginPath();
   ctx.arc(0, 0, r * 0.06, 0, Math.PI * 2);
-  ctx.fillStyle = "#fff";
+  ctx.fillStyle = "#ffffff";
   ctx.fill();
-  ctx.strokeStyle = "#e2e8f0";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
   ctx.restore();
 
-  // borde exterior
   ctx.beginPath();
   ctx.arc(cx, cy, r - 1.5, 0, Math.PI * 2);
-  ctx.strokeStyle = "#fff";
+  ctx.strokeStyle = "#ffffff";
   ctx.lineWidth = 5;
   ctx.stroke();
 }
 
 function easeOutCubic(t: number) {
-  return 1 - Math.pow(1 - t, 3);
+  return 1 - (1 - t) ** 3;
 }
 
 /**
- * Ruleta dibujada en canvas + rAF (evita crash GPU de SVG/CSS transform en Chrome).
+ * Canvas + rAF. Sin CSS transform / SVG (crash en Chrome/Safari móvil al terminar).
  */
 export function RouletteWheel({
   segmentIndex,
   spinning,
   onSpinEnd,
-  size = 260,
+  size = 240,
   idle = false,
-  display = "full",
+  active = true,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rotationRef = useRef(0);
@@ -104,95 +97,120 @@ export function RouletteWheel({
   const onSpinEndRef = useRef(onSpinEnd);
   onSpinEndRef.current = onSpinEnd;
 
-  const isHalf = display === "half";
-  const diameter = Math.round(size * 1.7);
-  const clipW = isHalf ? Math.round(diameter / 2) : diameter;
+  const diameter = Math.round(size * 1.65);
+
+  const stopRaf = () => {
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  };
 
   const paint = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
     drawWheel(ctx, diameter, rotationRef.current);
   };
 
   useEffect(() => {
+    if (!active) {
+      stopRaf();
+      spinningRef.current = false;
+      return;
+    }
     paint();
-  }, [diameter]);
+  }, [active, diameter]);
 
-  // Idle suave
+  // Idle
   useEffect(() => {
-    if (!idle || spinning) return;
+    if (!active || !idle || spinning) return;
     let alive = true;
     const tick = () => {
       if (!alive) return;
-      rotationRef.current += 0.008;
+      rotationRef.current += 0.01;
       paint();
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => {
       alive = false;
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      stopRaf();
     };
-  }, [idle, spinning, diameter]);
+  }, [active, idle, spinning, diameter]);
 
-  // Giro al premio
+  // Spin
   useEffect(() => {
-    if (!spinning || spinningRef.current) return;
+    if (!active || !spinning || spinningRef.current) return;
     spinningRef.current = true;
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    stopRaf();
 
     const from = rotationRef.current;
     const centerOffset = segmentIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
-    // Puntero derecho: queremos el centro del segmento en ángulo 0 (eje +X)
-    // En drawWheel, ángulo 0 del segmento i empieza en i*SEGMENT - PI/2
-    // Centro en coords locales: centerOffset - PI/2 desde el eje +X del disco
-    // Rotación del disco para alinear centro con +X: -(centerOffset - PI/2) = -centerOffset + PI/2
     const align = -centerOffset + Math.PI / 2;
-    let to = from + Math.PI * 2 * 6;
     const fromNorm = ((from % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
     const alignNorm = ((align % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
     let extra = alignNorm - fromNorm;
     if (extra < 0) extra += Math.PI * 2;
-    to = from + Math.PI * 2 * 6 + extra;
-
+    const to = from + Math.PI * 2 * 5 + extra;
     const start = performance.now();
+    let finished = false;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      spinningRef.current = false;
+      stopRaf();
+      // Fuera del frame de animación — evita crash Safari/Chrome móvil
+      window.setTimeout(() => {
+        try {
+          onSpinEndRef.current?.();
+        } catch {
+          // ignore
+        }
+      }, 50);
+    };
+
     const step = (now: number) => {
+      if (finished) return;
       const t = Math.min(1, (now - start) / SPIN_MS);
       rotationRef.current = from + (to - from) * easeOutCubic(t);
       paint();
       if (t < 1) {
         rafRef.current = requestAnimationFrame(step);
       } else {
-        spinningRef.current = false;
-        onSpinEndRef.current?.();
+        finish();
       }
     };
     rafRef.current = requestAnimationFrame(step);
 
+    // Failsafe si el tab queda en background
+    const failsafe = window.setTimeout(finish, SPIN_MS + 800);
+
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.clearTimeout(failsafe);
+      // No cancelar si ya terminó y está por llamar onSpinEnd
+      if (!finished) stopRaf();
     };
-  }, [spinning, segmentIndex, diameter]);
+  }, [active, spinning, segmentIndex, diameter]);
+
+  if (!active) return null;
 
   return (
-    <div
-      className="relative mx-auto overflow-hidden"
-      style={{ width: clipW, height: diameter }}
-    >
+    <div className="relative mx-auto" style={{ width: diameter, height: diameter }}>
       <canvas
         ref={canvasRef}
         width={diameter}
         height={diameter}
-        className="absolute top-0 block"
-        style={{ left: isHalf ? -diameter / 2 : 0, width: diameter, height: diameter }}
+        className="block rounded-full"
+        style={{ width: diameter, height: diameter }}
         aria-hidden
       />
       <div
         className="absolute top-1/2 -translate-y-1/2 z-20 pointer-events-none"
         style={{
-          right: isHalf ? -2 : -4,
+          right: -4,
           width: 0,
           height: 0,
           borderTop: "14px solid transparent",

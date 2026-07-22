@@ -30,9 +30,18 @@ export function getStoredRoulettePrize(): StoredRoulettePrize | null {
   }
 }
 
-export function saveStoredRoulettePrize(data: StoredRoulettePrize): void {
+export function saveStoredRoulettePrize(
+  data: StoredRoulettePrize,
+  opts?: { silent?: boolean },
+): void {
   localStorage.setItem(ROULETTE_STORAGE_KEY, JSON.stringify(data));
   localStorage.setItem(ROULETTE_DISMISSED_KEY, "1");
+  if (!opts?.silent && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("un-roulette-update"));
+  }
+}
+
+export function notifyRoulettePrizeUpdate(): void {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("un-roulette-update"));
   }
