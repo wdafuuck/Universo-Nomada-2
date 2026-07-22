@@ -26,6 +26,7 @@ rsync -az --delete \
   --exclude '.cursor/' \
   --exclude 'dev.log' \
   --exclude 'server.log' \
+  --exclude 'docker-compose.yml' \
   -e "ssh ${SSH_OPTS[*]}" \
   "$ROOT/" "${USER}@${HOST}:${REMOTE}/"
 

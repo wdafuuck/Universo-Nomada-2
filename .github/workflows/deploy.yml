@@ -67,6 +67,7 @@ jobs:
             --exclude '.cursor/' \
             --exclude 'dev.log' \
             --exclude 'server.log' \
+            --exclude 'docker-compose.yml' \
             -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
 
