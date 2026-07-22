@@ -12,7 +12,7 @@ export function JsonLd() {
         name: "Universo Nómada®",
         url: SITE_URL,
         logo: absoluteUrl("/images/logo-un.png"),
-        image: absoluteUrl("/images/familia-universo-nomada-v2.jpg"),
+        image: absoluteUrl("/images/logo-un.png"),
         description:
           "Agencia de viajes boutique especializada en experiencias personalizadas y auténticas en Chile y Sudamérica. Rapa Nui, Atacama, Machu Picchu, Patagonia y más.",
         telephone: "+56974636396",

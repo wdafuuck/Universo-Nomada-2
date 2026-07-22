@@ -14,7 +14,7 @@ type PageMetaOpts = {
 
 export function pageMetadata(opts: PageMetaOpts): Metadata {
   const url = absoluteUrl(opts.path);
-  const image = opts.image ? absoluteUrl(opts.image) : absoluteUrl("/images/familia-universo-nomada-v2.jpg");
+  const image = opts.image ? absoluteUrl(opts.image) : absoluteUrl("/images/logo-un.png");
   const keywords = opts.keywords ?? [...SEO_DEFAULT_KEYWORDS];
 
   return {
@@ -33,10 +33,10 @@ export function pageMetadata(opts: PageMetaOpts): Metadata {
       siteName: "Universo Nómada®",
       locale: "es_CL",
       type: opts.type ?? "website",
-      images: [{ url: image, width: 1200, height: 630, alt: opts.title }],
+      images: [{ url: image, width: 1563, height: 1563, alt: "Universo Nómada®" }],
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title: opts.title,
       description: opts.description,
       images: [image],
