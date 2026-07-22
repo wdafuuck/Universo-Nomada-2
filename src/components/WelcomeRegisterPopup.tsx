@@ -19,7 +19,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onRegistered: (user: { id: string; email: string; name: string | null; role: string }) => void;
-  onRequestLogin: () => void;
+  onRequestLogin: (email?: string) => void;
 };
 
 export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestLogin }: Props) {
@@ -44,6 +44,20 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
     }, 200);
     return () => window.clearTimeout(t);
   }, [isOpen]);
+
+  // Correo ya registrado → mensaje y abrir login automáticamente
+  useEffect(() => {
+    if (phase !== "already") return;
+    const email = form.email.trim().toLowerCase();
+    toast.message("Usuario ya registrado. Ingresa a tu cuenta.");
+    const t = window.setTimeout(() => {
+      onClose();
+      onRequestLogin(email);
+    }, 1200);
+    return () => window.clearTimeout(t);
+    // Solo al pasar a "already" (evitar re-disparos por identidad de callbacks)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   if (!isOpen) return null;
 
@@ -126,6 +140,11 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
         discountCode?: string;
       };
       if (!res.ok || !data.user) {
+        // Si el correo ya tenía cuenta y el OTP era de un intento viejo
+        if (res.status === 409 || data.error?.toLowerCase().includes("registrado")) {
+          setPhase("already");
+          return;
+        }
         setError(data.error || "Código incorrecto");
         return;
       }
@@ -133,9 +152,12 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
       const codeToSave = data.discountCode || discountCode || WELCOME_DISCOUNT_CODE;
       setDiscountCode(codeToSave);
       saveWelcomeDiscountCode(codeToSave);
-      // Primero mostrar el código; luego notificar sesión (sin cerrar el popup)
       setPhase("success");
-      onRegistered(data.user);
+      try {
+        onRegistered(data.user);
+      } catch {
+        // no bloquear la pantalla del código
+      }
       toast.success(`Tu código de descuento: ${codeToSave}`);
     } catch {
       setError("Error al verificar. Intenta de nuevo.");
@@ -324,14 +346,15 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
             <div className="space-y-4 text-center">
               <p className="text-base font-semibold text-navy">Usuario ya registrado</p>
               <p className="text-sm text-muted-foreground">
-                Inicia sesión para ver tus beneficios y seguir reservando con tu cuenta Nómada.
+                Ingresa a tu cuenta para ver tus beneficios. Te redirigimos al inicio de sesión…
               </p>
               <Button
                 type="button"
                 className="h-12 w-full bg-teal text-base hover:bg-teal/90"
                 onClick={() => {
+                  const email = form.email.trim().toLowerCase();
                   onClose();
-                  onRequestLogin();
+                  onRequestLogin(email);
                 }}
               >
                 <LogIn className="mr-2 h-4 w-4" />

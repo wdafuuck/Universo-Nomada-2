@@ -10,6 +10,20 @@ import {
   WELCOME_DISCOUNT_PERCENT,
 } from "@/lib/welcome-discount";
 
+async function findExistingUser(email: string) {
+  const exact = await db.user.findUnique({ where: { email } });
+  if (exact) return exact;
+
+  const linked = await db.lead.findFirst({
+    where: { email, userId: { not: null } },
+    select: { userId: true },
+  });
+  if (linked?.userId) {
+    return db.user.findUnique({ where: { id: linked.userId } });
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const ip = clientIp(request);
@@ -57,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     await db.emailOtp.deleteMany({ where: { email } });
 
-    let user = await db.user.findUnique({ where: { email } });
+    let user = await findExistingUser(email);
     const isNewUser = !user;
     if (!user) {
       user = await db.user.create({
@@ -94,28 +108,26 @@ export async function POST(request: NextRequest) {
 
     let discountCode: string | undefined;
     if (body.welcomeDiscount && isNewUser) {
-      try {
-        discountCode = await ensureWelcomeDiscountCode(db);
-        const { html, text } = welcomeDiscountEmailHtml({
-          name: user.name,
-          code: discountCode,
-          percent: WELCOME_DISCOUNT_PERCENT,
-        });
-        const sent = await sendEmail({
-          to: email,
-          subject: `Tu ${WELCOME_DISCOUNT_PERCENT}% de descuento — código ${discountCode}`,
-          html,
-          text,
-        });
+      discountCode = await ensureWelcomeDiscountCode(db);
+      const { html, text } = welcomeDiscountEmailHtml({
+        name: user.name,
+        code: discountCode,
+        percent: WELCOME_DISCOUNT_PERCENT,
+      });
+      // No await: en móvil el correo hacía timeout y mostraba "error al verificar"
+      void sendEmail({
+        to: email,
+        subject: `Tu ${WELCOME_DISCOUNT_PERCENT}% de descuento — código ${discountCode}`,
+        html,
+        text,
+      }).then((sent) => {
         if (!sent.ok) {
           console.error(
             "[otp/verify] welcome discount email failed:",
             "error" in sent ? sent.error : "unknown",
           );
         }
-      } catch (e) {
-        console.error("[otp/verify] welcome discount email", e);
-      }
+      });
     }
 
     return NextResponse.json({

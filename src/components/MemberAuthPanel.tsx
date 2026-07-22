@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mail, LogIn, User, Phone, CreditCard, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,17 +8,20 @@ import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { getReferralCode } from "@/components/ReferralCapture";
 
-type Props = {
-  onSuccess: (user: { id: string; email: string; name: string | null; role: string }) => void;
-  compact?: boolean;
-};
-
 type AuthStep = "main" | "code";
 type AuthFlow = "register" | "login";
 
-export function MemberAuthPanel({ onSuccess, compact }: Props) {
+type Props = {
+  onSuccess: (user: { id: string; email: string; name: string | null; role: string }) => void;
+  compact?: boolean;
+  /** Prefill login y forzar flujo de inicio de sesión */
+  initialEmail?: string;
+  initialFlow?: AuthFlow;
+};
+
+export function MemberAuthPanel({ onSuccess, compact, initialEmail, initialFlow = "login" }: Props) {
   const [step, setStep] = useState<AuthStep>("main");
-  const [flow, setFlow] = useState<AuthFlow>("login");
+  const [flow, setFlow] = useState<AuthFlow>(initialFlow);
   const [activeEmail, setActiveEmail] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,9 +33,21 @@ export function MemberAuthPanel({ onSuccess, compact }: Props) {
     rut: "",
   });
 
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginEmail, setLoginEmail] = useState(initialEmail ?? "");
 
   const [pendingName, setPendingName] = useState("");
+
+  useEffect(() => {
+    if (initialEmail) {
+      setLoginEmail(initialEmail);
+      setFlow("login");
+      setStep("main");
+    }
+  }, [initialEmail]);
+
+  useEffect(() => {
+    if (initialFlow) setFlow(initialFlow);
+  }, [initialFlow]);
 
   const sendOtp = async (email: string) => {
     const res = await fetch("/api/auth/otp/request", {

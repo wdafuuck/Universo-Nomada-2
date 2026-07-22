@@ -9,9 +9,18 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (user: { id: string; email: string; name: string | null; role: string }) => void;
+  initialEmail?: string;
+  /** Si true, abre en modo iniciar sesión */
+  forceLogin?: boolean;
 };
 
-export function MemberAuthDialog({ isOpen, onClose, onLogin }: Props) {
+export function MemberAuthDialog({
+  isOpen,
+  onClose,
+  onLogin,
+  initialEmail,
+  forceLogin,
+}: Props) {
   const handleSuccess = (user: { id: string; email: string; name: string | null; role: string }) => {
     onLogin(user);
     onClose();
@@ -50,12 +59,22 @@ export function MemberAuthDialog({ isOpen, onClose, onLogin }: Props) {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">Mi cuenta Nómada</h3>
-                  <p className="text-white/60 text-sm">Regístrate o inicia sesión con tu correo</p>
+                  <p className="text-white/60 text-sm">
+                    {forceLogin || initialEmail
+                      ? "Inicia sesión con tu correo"
+                      : "Regístrate o inicia sesión con tu correo"}
+                  </p>
                 </div>
               </div>
             </div>
             <div className="p-6">
-              <MemberAuthPanel onSuccess={handleSuccess} compact />
+              <MemberAuthPanel
+                key={`${initialEmail ?? ""}-${forceLogin ? "login" : "any"}-${isOpen}`}
+                onSuccess={handleSuccess}
+                compact
+                initialEmail={initialEmail}
+                initialFlow={forceLogin || initialEmail ? "login" : "login"}
+              />
             </div>
           </motion.div>
         </motion.div>

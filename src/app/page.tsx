@@ -482,6 +482,8 @@ export default function LandingPage() {
   const [isTravelFormOpen, setIsTravelFormOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMemberAuthOpen, setIsMemberAuthOpen] = useState(false);
+  const [memberAuthEmail, setMemberAuthEmail] = useState("");
+  const [memberAuthForceLogin, setMemberAuthForceLogin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const { openCart } = useCart();
   const cartCount = useCartStore((s) => s.items.length);
@@ -1246,14 +1248,24 @@ export default function LandingPage() {
         isOpen={isWelcomeOpen}
         onClose={closeWelcomePopup}
         onRegistered={handleWelcomeRegistered}
-        onRequestLogin={() => setIsMemberAuthOpen(true)}
+        onRequestLogin={(email) => {
+          setMemberAuthEmail(email ?? "");
+          setMemberAuthForceLogin(true);
+          setIsMemberAuthOpen(true);
+        }}
       />
       <TravelFormPopup isOpen={isTravelFormOpen} onClose={() => setIsTravelFormOpen(false)} />
       <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onLogin={handleLogin} />
       <MemberAuthDialog
         isOpen={isMemberAuthOpen}
-        onClose={() => setIsMemberAuthOpen(false)}
+        onClose={() => {
+          setIsMemberAuthOpen(false);
+          setMemberAuthEmail("");
+          setMemberAuthForceLogin(false);
+        }}
         onLogin={handleLogin}
+        initialEmail={memberAuthEmail || undefined}
+        forceLogin={memberAuthForceLogin}
       />
     </div>
   );

@@ -15,6 +15,20 @@ import {
 import { ensureWelcomeDiscountCode, WELCOME_DISCOUNT_CODE } from "@/lib/welcome-discount";
 import { notifyNewLead } from "@/lib/notify";
 
+async function findRegisteredUser(email: string) {
+  const exact = await db.user.findUnique({ where: { email } });
+  if (exact) return exact;
+
+  const linked = await db.lead.findFirst({
+    where: { email, userId: { not: null } },
+    select: { userId: true },
+  });
+  if (linked?.userId) {
+    return db.user.findUnique({ where: { id: linked.userId } });
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const blocked = guardPublicApi(request, { key: "welcome-signup", limit: 5, requireJson: true });
@@ -45,13 +59,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Correo inválido" }, { status: 400 });
     }
 
-    const existing = await db.user.findUnique({ where: { email } });
+    // Primero: ¿ya tiene cuenta? → no enviar OTP de registro
+    const existing = await findRegisteredUser(email);
     if (existing) {
       return NextResponse.json(
         {
           error: "Usuario ya registrado",
           code: "already_registered",
-          message: "Usuario ya registrado. Inicia sesión para ver tus beneficios.",
+          message: "Usuario ya registrado. Ingresa a tu cuenta para ver tus beneficios.",
         },
         { status: 409 },
       );
@@ -116,7 +131,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** Respuesta estática del código (por si el cliente lo pide tras OTP). */
 export async function GET() {
   return NextResponse.json({
     code: WELCOME_DISCOUNT_CODE,
