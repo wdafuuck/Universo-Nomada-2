@@ -263,13 +263,9 @@ html {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-@keyframes roulette-idle-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
+/* Ruleta: sin animación de giro (crash GPU en Chrome) */
 .roulette-idle-spin {
-  animation: roulette-idle-spin 20s linear infinite;
+  animation: none;
 }
 
 /* Hide scrollbar for horizontal scroll */

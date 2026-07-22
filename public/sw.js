@@ -1,21 +1,23 @@
-/* Universo Nómada — SW desactivado (evita crashes / caché vieja post-Netlify).
-   Si quedó registrado, se desinstala solo. */
-self.addEventListener("install", (event) => {
+/* Universo Nómada — SW desactivado. Solo limpia y se desregistra. */
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
-      const regs = await self.registration.unregister();
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      } catch {
+        // ignore
+      }
+      try {
+        await self.registration.unregister();
+      } catch {
+        // ignore
+      }
       await self.clients.claim();
-      return regs;
     })(),
   );
-});
-
-self.addEventListener("fetch", () => {
-  // no interceptar
 });

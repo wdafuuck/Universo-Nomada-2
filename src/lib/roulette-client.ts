@@ -43,7 +43,8 @@ export function subscribeRoulettePrize(onChange: () => void): () => void {
   const handler = () => onChange();
   window.addEventListener("storage", handler);
   window.addEventListener("un-roulette-update", handler);
-  const id = window.setInterval(handler, 1000);
+  // Countdown cada 5s (antes 1s) — menos trabajo en el hilo principal
+  const id = window.setInterval(handler, 5000);
   return () => {
     window.removeEventListener("storage", handler);
     window.removeEventListener("un-roulette-update", handler);
