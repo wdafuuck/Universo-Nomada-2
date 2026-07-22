@@ -26,8 +26,9 @@ echo "==> Restart"
 systemctl restart universo-nomada
 # Esperar a que el health responda (no solo systemd active)
 ok=0
-for i in $(seq 1 30); do
-  if curl -sf http://127.0.0.1:3001/api/health >/tmp/un-health.json 2>/dev/null; then
+for i in $(seq 1 45); do
+  if curl -sf http://127.0.0.1:3001/api/health >/tmp/un-health.json 2>/dev/null \
+    && grep -q '"db":"connected"' /tmp/un-health.json; then
     ok=1
     break
   fi
@@ -35,7 +36,8 @@ for i in $(seq 1 30); do
 done
 systemctl is-active universo-nomada
 if [ "$ok" -ne 1 ]; then
-  echo ":: error: la app no respondió /api/health a tiempo"
+  echo ":: error: /api/health no quedó con db connected a tiempo"
+  cat /tmp/un-health.json 2>/dev/null || true
   journalctl -u universo-nomada -n 40 --no-pager || true
   exit 1
 fi

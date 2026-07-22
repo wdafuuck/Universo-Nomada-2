@@ -11,4 +11,15 @@ set +a
 export HOSTNAME=127.0.0.1
 export PORT="${PORT:-3001}"
 export NODE_ENV=production
+# Standalone a veces no resuelve el engine tras el restart; fijar ruta explícita
+ENGINE_CANDIDATES=(
+  ".next/standalone/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node"
+  "node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node"
+)
+for eng in "${ENGINE_CANDIDATES[@]}"; do
+  if [[ -f "$eng" ]]; then
+    export PRISMA_QUERY_ENGINE_LIBRARY="$(pwd)/$eng"
+    break
+  fi
+done
 exec /usr/bin/node .next/standalone/server.js
