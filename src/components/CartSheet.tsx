@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Trash2, ShoppingBag, Users, CreditCard, Loader2, MessageCircle, Tag, X as XIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -25,6 +25,7 @@ import {
 import {
   roulettePrizeLabel,
 } from "@/lib/roulette-shared";
+import { getStoredWelcomeDiscountCode } from "@/lib/welcome-discount";
 import type { ReservationConfirmation } from "@/lib/reservation-confirmation";
 import { trackBeginCheckout, trackPurchase } from "@/lib/analytics-events";
 import { CheckoutTrustBar, PaymentMethodBadges } from "@/components/CheckoutTrustBar";
@@ -108,6 +109,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
   const [discountInput, setDiscountInput] = useState("");
   const [appliedDiscountCode, setAppliedDiscountCode] = useState<string | null>(null);
   const [applyingDiscount, setApplyingDiscount] = useState(false);
+  const welcomePrefillDone = useRef(false);
 
   const storedRoulette = useMemo(() => (open ? getStoredRoulettePrize() : null), [open]);
   const rouletteSpinId = storedRoulette?.spinId ?? null;
@@ -118,6 +120,34 @@ export function CartSheet({ open, onOpenChange }: Props) {
   const payerEmail = items.find((i) => i.contact?.email?.trim())?.contact?.email;
   const payerName = items.flatMap((i) => i.travelers ?? []).find((tr) => tr.fullName?.trim())?.fullName;
   const payerPhone = items.find((i) => i.contact?.phone?.trim())?.contact?.phone;
+
+  // Prefill código de bienvenida NOMAD5 tras registrarse en el popup
+  useEffect(() => {
+    if (!open) {
+      welcomePrefillDone.current = false;
+      return;
+    }
+    if (items.length === 0 || welcomePrefillDone.current || appliedDiscountCode || rouletteSpinId) return;
+    const welcome = getStoredWelcomeDiscountCode();
+    if (!welcome) return;
+    welcomePrefillDone.current = true;
+    setDiscountInput(welcome);
+    setApplyingDiscount(true);
+    void fetch("/api/discount-codes/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: welcome, cartTotal: total }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (res.ok && data.discount?.code) {
+          setAppliedDiscountCode(data.discount.code);
+          setDiscountInput(data.discount.code);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setApplyingDiscount(false));
+  }, [open, items.length, appliedDiscountCode, rouletteSpinId, total]);
 
   const helpWhatsAppUrl = buildWhatsAppUrl(
     `${c.whatsappCartIntro ?? "Hola! Necesito ayuda con mi reserva:"}\n\n${items.map((i) => `• ${i.tourName}`).join("\n")}\n${c.total ?? "Total"}: ${formatCLP(total)}`,

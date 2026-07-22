@@ -40,11 +40,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useCartStore } from "@/stores/cart-store";
 import { useLandingData } from "@/hooks/use-landing-data";
 import { GROUP_TOUR_META } from "@/lib/group-trips";
-import { RoulettePopup } from "@/components/RoulettePopup";
+import { WelcomeRegisterPopup } from "@/components/WelcomeRegisterPopup";
 import { scrollToHashFromLocation } from "@/lib/scroll-to-section";
-import {
-  getStoredRoulettePrize,
-} from "@/lib/roulette-client";
 
 const POPUP_DAY_KEY = "un_popup_day_v2";
 
@@ -481,7 +478,7 @@ export default function LandingPage() {
     { label: nav.contacto, href: "#contacto" },
   ];
   const formRef = useRef<HTMLDivElement>(null);
-  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [isTravelFormOpen, setIsTravelFormOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMemberAuthOpen, setIsMemberAuthOpen] = useState(false);
@@ -515,35 +512,33 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (user) {
-      setIsRouletteOpen(false);
+      setIsWelcomeOpen(false);
       return;
     }
-    if (getStoredRoulettePrize()) return;
     if (popupShownToday()) return;
 
-    // Solo abrir tras scroll real — no al cargar (el canvas idle crasheaba Safari móvil)
     let opened = false;
-    const openRoulette = () => {
+    const openWelcome = () => {
       if (opened) return;
       opened = true;
-      setIsRouletteOpen(true);
+      setIsWelcomeOpen(true);
     };
 
     const onScroll = () => {
-      if (window.scrollY > 120) openRoulette();
+      if (window.scrollY > 120) openWelcome();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [user]);
 
-  const closeRoulettePopup = () => {
+  const closeWelcomePopup = () => {
     markPopupShownToday();
-    setIsRouletteOpen(false);
+    setIsWelcomeOpen(false);
   };
 
   const handleLogin = (u: { id: string; email: string; name: string | null; role: string }) => {
     setUser(u);
-    setIsRouletteOpen(false);
+    setIsWelcomeOpen(false);
   };
 
   const handleLogout = async () => {
@@ -1238,9 +1233,11 @@ export default function LandingPage() {
       <MobileStickyBar onCotizar={() => setIsTravelFormOpen(true)} />
 
       {/* ═══════ POPUPS ═══════ */}
-      <RoulettePopup
-        isOpen={isRouletteOpen && !user}
-        onClose={closeRoulettePopup}
+      <WelcomeRegisterPopup
+        isOpen={isWelcomeOpen && !user}
+        onClose={closeWelcomePopup}
+        onRegistered={handleLogin}
+        onRequestLogin={() => setIsMemberAuthOpen(true)}
       />
       <TravelFormPopup isOpen={isTravelFormOpen} onClose={() => setIsTravelFormOpen(false)} />
       <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onLogin={handleLogin} />

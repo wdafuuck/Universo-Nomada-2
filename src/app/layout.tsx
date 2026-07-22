@@ -8,7 +8,6 @@ import { CartProvider } from "@/contexts/CartContext";
 import { ConditionalAnalytics } from "@/components/ConditionalAnalytics";
 import { JsonLd } from "@/components/JsonLd";
 import { ReviewsJsonLd } from "@/components/seo/ReviewsJsonLd";
-import { RoulettePrizeBar } from "@/components/RoulettePrizeBar";
 import { PageAmbient } from "@/components/motion/PageAmbient";
 import { SkipLink } from "@/components/a11y/SkipLink";
 import { CookieConsent } from "@/components/a11y/CookieConsent";
@@ -75,7 +74,6 @@ export default function RootLayout({
             <CartProvider>
               <SkipLink />
               <PageAmbient />
-              <RoulettePrizeBar />
               {children}
               <CookieConsent />
               <ServiceWorkerRegister />
