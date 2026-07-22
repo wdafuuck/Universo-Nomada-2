@@ -123,21 +123,10 @@ export function RouletteWheel({
     paint();
   }, [active, diameter]);
 
-  // Idle
+  // Idle desactivado: el rAF continuo crasheaba Safari/Chrome móvil al abrir el popup
   useEffect(() => {
-    if (!active || !idle || spinning) return;
-    let alive = true;
-    const tick = () => {
-      if (!alive) return;
-      rotationRef.current += 0.01;
-      paint();
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      alive = false;
-      stopRaf();
-    };
+    if (!active || spinning) return;
+    paint();
   }, [active, idle, spinning, diameter]);
 
   // Spin

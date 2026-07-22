@@ -521,6 +521,7 @@ export default function LandingPage() {
     if (getStoredRoulettePrize()) return;
     if (popupShownToday()) return;
 
+    // Solo abrir tras scroll real — no al cargar (el canvas idle crasheaba Safari móvil)
     let opened = false;
     const openRoulette = () => {
       if (opened) return;
@@ -528,18 +529,11 @@ export default function LandingPage() {
       setIsRouletteOpen(true);
     };
 
-    // Aparece sola a los 2.5s (antes solo tras scrollear y se marcaba "visto" al abrir)
-    const timer = window.setTimeout(openRoulette, 2500);
-
     const onScroll = () => {
-      if (window.scrollY > 80) openRoulette();
+      if (window.scrollY > window.innerHeight * 0.35) openRoulette();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener("scroll", onScroll);
-    };
+    return () => window.removeEventListener("scroll", onScroll);
   }, [user]);
 
   const closeRoulettePopup = () => {
