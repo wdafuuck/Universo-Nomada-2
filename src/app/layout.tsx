@@ -43,7 +43,11 @@ export const metadata: Metadata = {
   publisher: "Universo Nómada®",
   category: "travel",
   verification: siteVerificationMetadata(),
-  icons: { icon: "/logo.svg", apple: "/images/logo-un.png" },
+  icons: {
+    icon: [{ url: "/images/logo-icon.png", type: "image/png", sizes: "192x192" }],
+    apple: [{ url: "/images/logo-un.png", type: "image/png" }],
+    shortcut: "/images/logo-icon.png",
+  },
   manifest: "/manifest.json",
   formatDetection: { telephone: true, email: true },
 };
