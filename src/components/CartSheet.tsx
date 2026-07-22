@@ -136,18 +136,25 @@ export function CartSheet({ open, onOpenChange }: Props) {
     void fetch("/api/discount-codes/validate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: welcome, cartTotal: total }),
+      body: JSON.stringify({
+        code: welcome,
+        cartTotal: total,
+        email: payerEmail ?? undefined,
+      }),
     })
       .then(async (res) => {
         const data = await res.json();
         if (res.ok && data.discount?.code) {
           setAppliedDiscountCode(data.discount.code);
           setDiscountInput(data.discount.code);
+        } else if (res.status === 409) {
+          // Ya usado por este correo: no auto-aplicar
+          setDiscountInput("");
         }
       })
       .catch(() => {})
       .finally(() => setApplyingDiscount(false));
-  }, [open, items.length, appliedDiscountCode, rouletteSpinId, total]);
+  }, [open, items.length, appliedDiscountCode, rouletteSpinId, total, payerEmail]);
 
   const helpWhatsAppUrl = buildWhatsAppUrl(
     `${c.whatsappCartIntro ?? "Hola! Necesito ayuda con mi reserva:"}\n\n${items.map((i) => `• ${i.tourName}`).join("\n")}\n${c.total ?? "Total"}: ${formatCLP(total)}`,
@@ -243,7 +250,11 @@ export function CartSheet({ open, onOpenChange }: Props) {
       const res = await fetch("/api/discount-codes/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, cartTotal: subtotal }),
+        body: JSON.stringify({
+          code,
+          cartTotal: subtotal,
+          email: payerEmail ?? undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {

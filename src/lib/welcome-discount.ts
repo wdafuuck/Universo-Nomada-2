@@ -10,16 +10,18 @@ export async function ensureWelcomeDiscountCode(db: PrismaClient): Promise<strin
     where: { code: WELCOME_DISCOUNT_CODE },
     create: {
       code: WELCOME_DISCOUNT_CODE,
-      description: "5% de bienvenida por registrarte",
+      description: "5% de bienvenida por registrarte (1 uso por persona)",
       discountType: "percent",
       discountValue: WELCOME_DISCOUNT_PERCENT,
       active: true,
+      oncePerEmail: true,
     },
     update: {
       active: true,
       discountType: "percent",
       discountValue: WELCOME_DISCOUNT_PERCENT,
-      description: "5% de bienvenida por registrarte",
+      description: "5% de bienvenida por registrarte (1 uso por persona)",
+      oncePerEmail: true,
     },
   });
   return WELCOME_DISCOUNT_CODE;

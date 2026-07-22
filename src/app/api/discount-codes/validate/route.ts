@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
-import { findValidDiscountCode, toAppliedDiscount } from "@/lib/discount-codes";
+import { resolveDiscountCodeForEmail, toAppliedDiscount } from "@/lib/discount-codes";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,18 +9,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
     }
 
-    const { code, cartTotal } = await request.json();
+    const { code, cartTotal, email } = await request.json();
     const total = Number(cartTotal);
     if (!code?.trim() || !Number.isFinite(total) || total <= 0) {
       return NextResponse.json({ error: "Código o monto inválido" }, { status: 400 });
     }
 
-    const row = await findValidDiscountCode(db, String(code));
-    if (!row) {
-      return NextResponse.json({ error: "Código inválido o expirado" }, { status: 404 });
+    const resolved = await resolveDiscountCodeForEmail(db, String(code), email ? String(email) : null);
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: resolved.status });
     }
 
-    const applied = toAppliedDiscount(row, total);
+    const applied = toAppliedDiscount(resolved.row, total);
     if (applied.discountAmount <= 0) {
       return NextResponse.json({ error: "Este código no aplica a tu carrito" }, { status: 400 });
     }

@@ -19,7 +19,7 @@ import {
   transferExpiresAt,
   type CartLineInput,
 } from "@/lib/checkout";
-import { findValidDiscountCode, toAppliedDiscount } from "@/lib/discount-codes";
+import { resolveDiscountCodeForEmail, toAppliedDiscount } from "@/lib/discount-codes";
 import {
   applyRouletteDiscount,
   findActiveRouletteSpin,
@@ -118,11 +118,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (!roulettePrize && rawDiscountCode?.trim()) {
-      const row = await findValidDiscountCode(db, String(rawDiscountCode));
-      if (!row) {
-        return NextResponse.json({ error: "Código de descuento inválido o expirado" }, { status: 400 });
+      const resolved = await resolveDiscountCodeForEmail(
+        db,
+        String(rawDiscountCode),
+        contactEmail || null,
+      );
+      if (!resolved.ok) {
+        return NextResponse.json({ error: resolved.error }, { status: resolved.status === 404 ? 400 : resolved.status });
       }
-      const applied = toAppliedDiscount(row, cartTotal);
+      const applied = toAppliedDiscount(resolved.row, cartTotal);
       if (applied.discountAmount <= 0) {
         return NextResponse.json({ error: "Este código no aplica a tu carrito" }, { status: 400 });
       }

@@ -10,6 +10,7 @@ export type DiscountCodeRecord = {
   discountValue: number;
   active: boolean;
   validUntil: Date | null;
+  oncePerEmail?: boolean;
 };
 
 export type AppliedDiscount = {
@@ -23,6 +24,10 @@ export type AppliedDiscount = {
 
 export function normalizeDiscountCode(raw: string): string {
   return raw.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+export function normalizeDiscountEmail(raw: string | null | undefined): string {
+  return String(raw ?? "").trim().toLowerCase();
 }
 
 export function applyDiscountToTotal(
@@ -66,6 +71,64 @@ export async function findValidDiscountCode(
   const row = await db.discountCode.findUnique({ where: { code } });
   if (!row || !isDiscountCodeValid(row)) return null;
   return row;
+}
+
+/** True si el correo ya aplicó este código en alguna reserva/lead. */
+export async function hasEmailUsedDiscountCode(
+  db: PrismaClient,
+  rawCode: string,
+  rawEmail: string | null | undefined,
+): Promise<boolean> {
+  const code = normalizeDiscountCode(rawCode);
+  const email = normalizeDiscountEmail(rawEmail);
+  if (!code || !email) return false;
+
+  const used = await db.lead.findFirst({
+    where: {
+      discountCode: code,
+      email,
+    },
+    select: { id: true },
+  });
+  return Boolean(used);
+}
+
+/**
+ * Valida código + regla de un uso por correo.
+ * Devuelve `{ ok: true, row }` o `{ ok: false, error, status }`.
+ */
+export async function resolveDiscountCodeForEmail(
+  db: PrismaClient,
+  rawCode: string,
+  rawEmail: string | null | undefined,
+): Promise<
+  | { ok: true; row: DiscountCodeRecord }
+  | { ok: false; error: string; status: number }
+> {
+  const row = await findValidDiscountCode(db, rawCode);
+  if (!row) {
+    return { ok: false, error: "Código inválido o expirado", status: 404 };
+  }
+
+  if (row.oncePerEmail) {
+    const email = normalizeDiscountEmail(rawEmail);
+    if (!email) {
+      return {
+        ok: false,
+        error: "Ingresa tu correo en el carrito para usar este código (válido una sola vez por persona)",
+        status: 400,
+      };
+    }
+    if (await hasEmailUsedDiscountCode(db, row.code, email)) {
+      return {
+        ok: false,
+        error: "Este código ya fue usado con este correo. Solo se puede usar una vez por persona.",
+        status: 409,
+      };
+    }
+  }
+
+  return { ok: true, row };
 }
 
 export function toAppliedDiscount(

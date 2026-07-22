@@ -8,7 +8,7 @@ import {
   normalizeCartItems,
   type CartLineInput,
 } from "@/lib/checkout";
-import { findValidDiscountCode, toAppliedDiscount } from "@/lib/discount-codes";
+import { resolveDiscountCodeForEmail, toAppliedDiscount } from "@/lib/discount-codes";
 import {
   applyRouletteDiscount,
   findActiveRouletteSpin,
@@ -61,9 +61,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (!roulettePrize && discountCode?.trim()) {
-      const row = await findValidDiscountCode(db, String(discountCode));
-      if (row) {
-        const applied = toAppliedDiscount(row, cartTotal);
+      const resolved = await resolveDiscountCodeForEmail(
+        db,
+        String(discountCode),
+        contactEmail ? String(contactEmail) : null,
+      );
+      if (resolved.ok) {
+        const applied = toAppliedDiscount(resolved.row, cartTotal);
         discountAmount = applied.discountAmount;
         discountedTotal = applied.discountedTotal;
         appliedCode = applied.code;

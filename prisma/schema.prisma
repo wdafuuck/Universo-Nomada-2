@@ -154,6 +154,8 @@ model DiscountCode {
   discountType  String    @default("percent")
   discountValue Int
   active        Boolean   @default(true)
+  /** Si true, cada correo solo puede usarlo en una reserva. */
+  oncePerEmail  Boolean   @default(false)
   validUntil    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

@@ -287,7 +287,8 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Ingrésalo en el carrito al reservar. También lo guardamos en este navegador.
+                Válido una sola vez por persona. Ingrésalo en el carrito al reservar; también lo
+                guardamos en este navegador.
               </p>
               <Button type="button" className="w-full bg-navy hover:bg-navy/90" onClick={onClose}>
                 Empezar a explorar
