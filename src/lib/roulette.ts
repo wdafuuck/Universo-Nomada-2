@@ -12,8 +12,8 @@ export * from "@/lib/roulette-shared";
 const PRIZE_WEIGHTS: { prize: RoulettePrizeId; weight: number; segmentIndices: number[] }[] = [
   { prize: "discount_5", weight: 12, segmentIndices: [0] },
   { prize: "kit_viajero", weight: 10, segmentIndices: [1] },
-  { prize: "no_luck", weight: 43, segmentIndices: [2, 7] },
-  { prize: "tour_regalo", weight: 10, segmentIndices: [3] },
+  { prize: "tour_regalo", weight: 10, segmentIndices: [2] },
+  { prize: "no_luck", weight: 43, segmentIndices: [3, 7] },
   { prize: "discount_50000", weight: 5, segmentIndices: [4] },
   { prize: "regalo_sorpresa", weight: 10, segmentIndices: [5] },
   { prize: "discount_7", weight: 10, segmentIndices: [6] },
@@ -33,7 +33,7 @@ export function pickRandomRouletteOutcome(): { prize: RoulettePrizeId; segmentIn
       return { prize: entry.prize, segmentIndex };
     }
   }
-  return { prize: "no_luck", segmentIndex: 6 };
+  return { prize: "no_luck", segmentIndex: 3 };
 }
 
 export type RouletteSpinRecord = {

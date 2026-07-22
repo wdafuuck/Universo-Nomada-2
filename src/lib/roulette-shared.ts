@@ -27,15 +27,22 @@ export type RouletteSegment = {
 };
 
 export const ROULETTE_SEGMENTS: RouletteSegment[] = [
+  // 3 premios → sin suerte → 3 premios → sin suerte
   { index: 0, id: "discount_5", label: "5% de descuento", shortLabel: "5% OFF", wheelLines: ["5% de", "descuento"], color: "#0d9488" },
-  { index: 1, id: "kit_viajero", label: "Kit viajero de regalo", shortLabel: "Kit viajero", wheelLines: ["Kit viajero"], color: "#7c3aed" },
-  { index: 2, id: "no_luck", label: "Para la próxima tendré más suerte", shortLabel: "Próxima vez", wheelLines: ["Para la próxima", "tendré más suerte"], color: "#1e293b" },
-  { index: 3, id: "tour_regalo", label: "Tour adicional de regalo", shortLabel: "Tour regalo", wheelLines: ["Tour de", "regalo"], color: "#ea580c" },
-  { index: 4, id: "discount_50000", label: "$50.000 de descuento", shortLabel: "$50.000", wheelLines: ["$50.000", "de descuento"], color: "#ca8a04" },
-  { index: 5, id: "regalo_sorpresa", label: "Regalo sorpresa", shortLabel: "Sorpresa", wheelLines: ["Regalo sorpresa"], color: "#db2777" },
+  { index: 1, id: "kit_viajero", label: "Kit viajero de regalo", shortLabel: "Kit viajero", wheelLines: ["Kit", "viajero"], color: "#7c3aed" },
+  { index: 2, id: "tour_regalo", label: "Tour adicional de regalo", shortLabel: "Tour regalo", wheelLines: ["Tour de", "regalo"], color: "#ea580c" },
+  { index: 3, id: "no_luck", label: "Para la próxima tendré más suerte", shortLabel: "Próxima vez", wheelLines: ["Para la próxima", "tendré más suerte"], color: "#1e293b" },
+  { index: 4, id: "discount_50000", label: "$50.000 de descuento", shortLabel: "$50.000", wheelLines: ["$50.000", "dto."], color: "#ca8a04" },
+  { index: 5, id: "regalo_sorpresa", label: "Regalo sorpresa", shortLabel: "Sorpresa", wheelLines: ["Regalo", "sorpresa"], color: "#db2777" },
   { index: 6, id: "discount_7", label: "7% de descuento", shortLabel: "7% OFF", wheelLines: ["7% de", "descuento"], color: "#16a34a" },
   { index: 7, id: "no_luck", label: "Para la próxima tendré más suerte", shortLabel: "Próxima vez", wheelLines: ["Para la próxima", "tendré más suerte"], color: "#334155" },
 ];
+
+/** Primer segmento que coincide con el premio (para reabrir giro previo). */
+export function segmentIndexForPrize(prize: RoulettePrizeId): number {
+  const idx = ROULETTE_SEGMENTS.findIndex((s) => s.id === prize);
+  return idx >= 0 ? idx : 0;
+}
 
 export function isRoulettePrizeId(value: string | null | undefined): value is RoulettePrizeId {
   return ROULETTE_SEGMENTS.some((s) => s.id === value) || value === "no_luck";

@@ -137,10 +137,7 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
         data = {};
       }
 
-      const registeredMsg =
-        data.error ||
-        data.message ||
-        "Ya estás registrado. Este correo ya participó en la ruleta.";
+      const registeredMsg = data.error || data.message || "Ya estás registrado";
 
       // Cualquier correo ya usado → mensaje claro (con o sin premio activo)
       if (
@@ -352,9 +349,7 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
           {phase === "result" && prize && (
             <div className="text-center">
               {alreadyRegistered && (
-                <p className="text-amber-100 text-sm font-semibold mb-2">
-                  Ya estás registrado — este es tu premio activo
-                </p>
+                <p className="text-amber-100 text-sm font-semibold mb-2">Ya estás registrado</p>
               )}
               {hasBenefit ? (
                 <>

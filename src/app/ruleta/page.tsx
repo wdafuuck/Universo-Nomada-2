@@ -48,9 +48,9 @@ export default function RuletaPage() {
       };
       if (res.status === 409 || data.alreadyRegistered) {
         toast.error(
-          data.error ??
+            data.error ??
             data.message ??
-            "Ya estás registrado. Este correo ya participó en la ruleta.",
+            "Ya estás registrado",
         );
         if (data.prize && data.spinId) {
           try {

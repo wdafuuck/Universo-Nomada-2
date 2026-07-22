@@ -92,9 +92,10 @@ export function RouletteWheel({
           const y1 = r + (r - 2) * Math.sin(start);
           const x2 = r + (r - 2) * Math.cos(end);
           const y2 = r + (r - 2) * Math.sin(end);
-          // Ángulo del centro del segmento (grados); texto sale del centro hacia afuera
           const midDeg = (i + 0.5) * SEG - 90;
           const lines = seg.wheelLines;
+          // Centro del casco (entre centro y borde) para letras más centradas en el gajo
+          const textR = r * 0.62;
 
           return (
             <g key={i}>
@@ -105,26 +106,26 @@ export function RouletteWheel({
                 strokeWidth="2"
               />
               <g transform={`translate(${r}, ${r}) rotate(${midDeg})`}>
-                {lines.map((line, li) => (
-                  <text
-                    key={li}
-                    x={r * 0.52}
-                    y={
-                      lines.length === 1
-                        ? 0
-                        : li === 0
-                          ? -lineGap * 0.45
-                          : lineGap * 0.45
-                    }
-                    fill="#fff"
-                    fontSize={fontSize}
-                    fontWeight="800"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                  >
-                    {line}
-                  </text>
-                ))}
+                {lines.map((line, li) => {
+                  const y =
+                    lines.length === 1
+                      ? 0
+                      : (li - (lines.length - 1) / 2) * lineGap;
+                  return (
+                    <text
+                      key={li}
+                      x={textR}
+                      y={y}
+                      fill="#fff"
+                      fontSize={fontSize}
+                      fontWeight="800"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                    >
+                      {line}
+                    </text>
+                  );
+                })}
               </g>
             </g>
           );
