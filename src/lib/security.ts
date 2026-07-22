@@ -56,6 +56,27 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:3001",
 ]);
 
+try {
+  const site = new URL(SITE_URL);
+  if (site.hostname.startsWith("www.")) {
+    ALLOWED_ORIGINS.add(`${site.protocol}//${site.hostname.slice(4)}`);
+  } else {
+    ALLOWED_ORIGINS.add(`${site.protocol}//www.${site.hostname}`);
+  }
+} catch {
+  // SITE_URL inválida: se mantiene el set base
+}
+
+function isTrustedHostname(hostname: string): boolean {
+  try {
+    const siteHost = new URL(SITE_URL).hostname.replace(/^www\./, "");
+    const host = hostname.replace(/^www\./, "");
+    return host === siteHost || hostname.endsWith(".vercel.app");
+  } catch {
+    return false;
+  }
+}
+
 /** Valida Origin/Referer en mutaciones sensibles (producción). */
 export function isAllowedOrigin(request: Request): boolean {
   if (process.env.NODE_ENV !== "production") return true;
@@ -66,7 +87,7 @@ export function isAllowedOrigin(request: Request): boolean {
   if (origin) {
     try {
       const u = new URL(origin);
-      return ALLOWED_ORIGINS.has(u.origin) || u.hostname.endsWith(".vercel.app");
+      return ALLOWED_ORIGINS.has(u.origin) || isTrustedHostname(u.hostname);
     } catch {
       return false;
     }
@@ -75,7 +96,7 @@ export function isAllowedOrigin(request: Request): boolean {
   if (referer) {
     try {
       const u = new URL(referer);
-      return ALLOWED_ORIGINS.has(u.origin) || u.hostname.endsWith(".vercel.app");
+      return ALLOWED_ORIGINS.has(u.origin) || isTrustedHostname(u.hostname);
     } catch {
       return false;
     }
