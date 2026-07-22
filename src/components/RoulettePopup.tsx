@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Mail, User, Phone, Clock, ShoppingBag, X, Heart } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +19,14 @@ import { saveStoredRoulettePrize } from "@/lib/roulette-client";
 import { trackGenerateLead } from "@/lib/analytics-events";
 
 type Phase = "register" | "spinning" | "result";
+
+type SpinResult = {
+  segmentIndex: number;
+  prize: RoulettePrizeId;
+  prizeLabel: string;
+  spinId: number;
+  expiresAt: string;
+};
 
 type Props = {
   isOpen: boolean;
@@ -42,9 +50,11 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
   const [segmentIndex, setSegmentIndex] = useState(0);
   const [prize, setPrize] = useState<RoulettePrizeId | null>(null);
   const [prizeLabel, setPrizeLabel] = useState("");
+  const pendingSaveRef = useRef<SpinResult | null>(null);
 
-  const timeHint = lp.rouletteTime?.replace("{hours}", String(ROULETTE_PURCHASE_HOURS))
-    ?? `Tienes ${ROULETTE_PURCHASE_HOURS} horas para reservar y activar tu premio`;
+  const timeHint =
+    lp.rouletteTime?.replace("{hours}", String(ROULETTE_PURCHASE_HOURS)) ??
+    `Tienes ${ROULETTE_PURCHASE_HOURS} horas para reservar y activar tu premio`;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -55,10 +65,12 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
     setPrize(null);
     setPrizeLabel("");
     setForm({ nombre: "", email: "", telefono: "" });
+    pendingSaveRef.current = null;
   }, [isOpen]);
 
   const handleSpin = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!form.nombre.trim() || !form.email.trim() || !form.telefono.trim()) {
       toast.error("Completa todos los campos para unirte y girar");
       return;
@@ -69,7 +81,11 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          nombre: form.nombre.trim(),
+          email: form.email.trim(),
+          telefono: form.telefono.trim(),
+        }),
       });
       let data: {
         error?: string;
@@ -94,27 +110,29 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
         return;
       }
 
-      setSegmentIndex(data.segmentIndex);
-      setPrize(data.prize);
-      setPrizeLabel(data.prizeLabel ?? "");
+      const result: SpinResult = {
+        segmentIndex: data.segmentIndex,
+        prize: data.prize,
+        prizeLabel: data.prizeLabel ?? "",
+        spinId: data.spinId ?? 0,
+        expiresAt: data.expiresAt ?? new Date().toISOString(),
+      };
+      pendingSaveRef.current = result;
+
+      setSegmentIndex(result.segmentIndex);
+      setPrize(result.prize);
+      setPrizeLabel(result.prizeLabel);
       setPhase("spinning");
-      setSpinning(true);
+      // Pequeña pausa para que el layout pase a full antes del giro (menos carga GPU)
+      requestAnimationFrame(() => {
+        setSpinning(true);
+      });
 
       try {
         trackGenerateLead({ source: "ruleta-familia" });
       } catch {
         // analytics no debe romper la ruleta
       }
-
-      saveStoredRoulettePrize({
-        spinId: data.spinId ?? 0,
-        prize: data.prize,
-        email: form.email.trim(),
-        nombre: form.nombre.trim(),
-        telefono: form.telefono.trim(),
-        expiresAt: data.expiresAt ?? new Date().toISOString(),
-        segmentIndex: data.segmentIndex,
-      });
     } catch {
       toast.error("Error de conexión. Intenta de nuevo.");
     } finally {
@@ -125,6 +143,23 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
   const handleSpinEnd = () => {
     setSpinning(false);
     setPhase("result");
+    const pending = pendingSaveRef.current;
+    if (pending) {
+      try {
+        saveStoredRoulettePrize({
+          spinId: pending.spinId,
+          prize: pending.prize,
+          email: form.email.trim(),
+          nombre: form.nombre.trim(),
+          telefono: form.telefono.trim(),
+          expiresAt: pending.expiresAt,
+          segmentIndex: pending.segmentIndex,
+        });
+      } catch {
+        // storage no debe romper el resultado
+      }
+      pendingSaveRef.current = null;
+    }
   };
 
   const handleClose = () => {
@@ -134,7 +169,6 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
 
   const hasBenefit = prize ? roulettePrizeHasBenefit(prize) : false;
   const wheelDisplay = phase === "register" ? "half" : "full";
-  const wheelSize = phase === "register" ? 220 : 260;
 
   return (
     <AnimatePresence>
@@ -143,14 +177,14 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-sm overflow-y-auto overscroll-contain"
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 overflow-y-auto overscroll-contain"
           onClick={phase !== "spinning" ? handleClose : undefined}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 16 }}
-            transition={{ type: "spring", damping: 24, stiffness: 300 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.25 }}
             className="relative w-full max-w-3xl max-h-[100dvh] sm:max-h-[min(92dvh,900px)] rounded-t-2xl sm:rounded-3xl shadow-2xl overflow-y-auto bg-gradient-to-br from-teal via-teal to-amber-500 my-0 sm:my-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -171,7 +205,7 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                   segmentIndex={segmentIndex}
                   spinning={spinning}
                   onSpinEnd={handleSpinEnd}
-                  size={wheelSize}
+                  size={240}
                   pointer="right"
                   idle={phase === "register"}
                   display={wheelDisplay}
@@ -191,7 +225,7 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                       {lp.subtitle}
                     </p>
 
-                    <form onSubmit={handleSpin} className="space-y-3">
+                    <form onSubmit={handleSpin} className="space-y-3" noValidate>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input
@@ -200,6 +234,7 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                           onChange={(e) => setForm({ ...form, nombre: e.target.value })}
                           className="rounded-full h-12 pl-10 bg-white border-0 text-slate-900 shadow-md"
                           required
+                          autoComplete="name"
                         />
                       </div>
                       <div className="relative">
@@ -211,6 +246,7 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
                           className="rounded-full h-12 pl-10 bg-white border-0 text-slate-900 shadow-md"
                           required
+                          autoComplete="email"
                         />
                       </div>
                       <div className="relative">
@@ -222,6 +258,7 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                           onChange={(e) => setForm({ ...form, telefono: e.target.value })}
                           className="rounded-full h-12 pl-10 bg-white border-0 text-slate-900 shadow-md"
                           required
+                          autoComplete="tel"
                         />
                       </div>
                       <Button
@@ -249,16 +286,16 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                   <div className="text-center md:text-left">
                     {phase === "spinning" && (
                       <>
-                        <h2 className="text-2xl font-black mb-2">?Girando!</h2>
-                        <p className="text-white/90">Tu premio est? por salir...</p>
+                        <h2 className="text-2xl font-black mb-2">¡Girando!</h2>
+                        <p className="text-white/90">Tu premio está por salir...</p>
                       </>
                     )}
 
                     {phase === "result" && prize && (
-                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                      <div>
                         {hasBenefit ? (
                           <>
-                            <p className="text-white/80 text-sm mb-1">?Bienvenido a la familia N?mada!</p>
+                            <p className="text-white/80 text-sm mb-1">¡Bienvenido a la familia Nómada!</p>
                             <p className="text-2xl font-black mb-4 leading-snug">{prizeLabel}</p>
                             <div className="flex items-center gap-2 text-amber-900 bg-white/95 rounded-xl px-4 py-3 text-sm font-semibold mb-4">
                               <Clock className="h-4 w-4 shrink-0" />
@@ -266,12 +303,12 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                             </div>
                             {isRouletteDiscountPrize(prize) && (
                               <p className="text-white/80 text-xs mb-4">
-                                El descuento se aplicar? autom?ticamente en tu carrito.
+                                El descuento se aplicará automáticamente en tu carrito.
                               </p>
                             )}
                             {prize === "tour_regalo" && (
                               <p className="text-white/80 text-xs mb-4">
-                                Al armar tu paquete podr?s elegir tu tour adicional de regalo.
+                                Al armar tu paquete podrás elegir tu tour adicional de regalo.
                               </p>
                             )}
                             {isRouletteGiftPrize(prize) && prize !== "tour_regalo" && (
@@ -292,8 +329,8 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                           </>
                         ) : (
                           <>
-                            <p className="text-xl font-bold mb-2">Para la pr?xima tendr? m?s suerte</p>
-                            <p className="text-white/80 text-sm mb-4">?Gracias por unirte a la familia N?mada!</p>
+                            <p className="text-xl font-bold mb-2">Para la próxima tendrás más suerte</p>
+                            <p className="text-white/80 text-sm mb-4">¡Gracias por unirte a la familia Nómada!</p>
                             <Button
                               onClick={handleClose}
                               className="w-full bg-white/20 hover:bg-white/30 text-white font-bold rounded-full h-11 border border-white/30"
@@ -302,7 +339,7 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
                             </Button>
                           </>
                         )}
-                      </motion.div>
+                      </div>
                     )}
                   </div>
                 )}
