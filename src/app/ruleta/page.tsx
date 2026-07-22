@@ -46,10 +46,43 @@ export default function RuletaPage() {
         expiresAt?: string;
         segmentIndex?: number;
       };
-      if (res.status === 409) {
+      if (res.status === 409 || data.alreadyRegistered) {
         toast.error(
-          data.error ?? "Ya estás registrado. Este correo ya participó en la ruleta.",
+          data.error ??
+            data.message ??
+            "Ya estás registrado. Este correo ya participó en la ruleta.",
         );
+        if (data.prize && data.spinId) {
+          try {
+            saveStoredRoulettePrize(
+              {
+                spinId: data.spinId,
+                prize: data.prize,
+                email: form.email.trim(),
+                nombre: form.nombre.trim(),
+                telefono: form.telefono.trim(),
+                expiresAt: data.expiresAt ?? new Date().toISOString(),
+                segmentIndex: data.segmentIndex ?? 0,
+              },
+              { silent: true },
+            );
+            sessionStorage.setItem(
+              "un_roulette_result",
+              JSON.stringify({
+                spinId: data.spinId,
+                prize: data.prize,
+                prizeLabel: data.prizeLabel ?? "",
+                expiresAt: data.expiresAt,
+              }),
+            );
+          } catch {
+            // ignore
+          }
+          window.location.assign(
+            `/ruleta/premio?spinId=${encodeURIComponent(String(data.spinId))}&email=${encodeURIComponent(form.email.trim())}`,
+          );
+          return;
+        }
         setSubmitting(false);
         return;
       }

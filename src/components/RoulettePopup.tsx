@@ -118,7 +118,9 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
           telefono: form.telefono.trim(),
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as {
+
+      const rawText = await res.text();
+      let data: {
         error?: string;
         message?: string;
         alreadySpun?: boolean;
@@ -128,22 +130,49 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
         prizeLabel?: string;
         spinId?: number;
         expiresAt?: string;
-      };
+      } = {};
+      try {
+        data = rawText ? (JSON.parse(rawText) as typeof data) : {};
+      } catch {
+        data = {};
+      }
 
-      // Correo ya usado / premio vencido o canjeado
-      if (res.status === 409 || (data.alreadyRegistered && !data.prize)) {
-        const msg =
-          data.error ??
-          data.message ??
-          "Ya estás registrado. Este correo ya participó en la ruleta.";
-        setFormError(msg);
+      const registeredMsg =
+        data.error ||
+        data.message ||
+        "Ya estás registrado. Este correo ya participó en la ruleta.";
+
+      // Cualquier correo ya usado → mensaje claro (con o sin premio activo)
+      if (
+        res.status === 409 ||
+        data.alreadyRegistered === true ||
+        data.alreadySpun === true ||
+        /ya est[aá]s registrado|ya participaste/i.test(`${data.error ?? ""} ${data.message ?? ""}`)
+      ) {
+        setFormError(registeredMsg);
         setAlreadyRegistered(true);
-        toast.error(msg);
+        toast.error(registeredMsg);
+
+        if (data.prize && typeof data.segmentIndex === "number") {
+          persistPrize({
+            spinId: data.spinId,
+            prize: data.prize,
+            prizeLabel: data.prizeLabel,
+            expiresAt: data.expiresAt,
+            segmentIndex: data.segmentIndex,
+          });
+          setSegmentIndex(data.segmentIndex);
+          setPrize(data.prize);
+          setPrizeLabel(data.prizeLabel ?? "");
+          endedRef.current = true;
+          setSpinning(false);
+          setPhase("result");
+        }
         return;
       }
 
       if (!res.ok) {
-        const msg = data.error ?? "No se pudo girar la ruleta";
+        const msg = data.error || data.message || "No se pudo girar la ruleta";
         setFormError(msg);
         toast.error(msg);
         return;
@@ -162,21 +191,10 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
         segmentIndex: data.segmentIndex,
       });
 
+      endedRef.current = false;
       setSegmentIndex(data.segmentIndex);
       setPrize(data.prize);
       setPrizeLabel(data.prizeLabel ?? "");
-
-      // Ya registrado con premio activo: mostrar resultado sin girar (evita crash)
-      if (data.alreadySpun || data.alreadyRegistered) {
-        setAlreadyRegistered(true);
-        toast.message(data.message ?? "Ya estás registrado. Este es tu premio activo.");
-        endedRef.current = true;
-        setSpinning(false);
-        setPhase("result");
-        return;
-      }
-
-      endedRef.current = false;
       setPhase("spinning");
       setSpinning(true);
     } catch {

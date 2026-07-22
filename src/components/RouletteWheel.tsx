@@ -15,9 +15,7 @@ const SEG = 360 / N;
 const SPIN_MS = 4000;
 
 function spinToDeg(segmentIndex: number, from: number): number {
-  // Centro del segmento (grados, 0 = arriba en SVG con rotate -90 en arcos)
   const center = segmentIndex * SEG + SEG / 2;
-  // Puntero a la derecha = 90° desde arriba
   const align = 90 - center;
   const base = Math.ceil(from / 360) * 360;
   let target = base + 360 * 5 + ((align % 360) + 360) % 360;
@@ -25,7 +23,7 @@ function spinToDeg(segmentIndex: number, from: number): number {
   return target;
 }
 
-/** Ruleta SVG estática + un solo CSS rotate (sin canvas / rAF). */
+/** Ruleta SVG: texto radial (centro → afuera) + CSS rotate. */
 export function RouletteWheel({
   segmentIndex,
   spinning,
@@ -39,6 +37,8 @@ export function RouletteWheel({
   const onEndRef = useRef(onSpinEnd);
   onEndRef.current = onSpinEnd;
   const r = size / 2;
+  const fontSize = Math.max(8, Math.round(size / 32));
+  const lineGap = fontSize * 0.95;
 
   useEffect(() => {
     if (!spinning || endedRef.current) return;
@@ -92,9 +92,10 @@ export function RouletteWheel({
           const y1 = r + (r - 2) * Math.sin(start);
           const x2 = r + (r - 2) * Math.cos(end);
           const y2 = r + (r - 2) * Math.sin(end);
-          const mid = ((i + 0.5) * SEG - 90) * (Math.PI / 180);
-          const tx = r + r * 0.55 * Math.cos(mid);
-          const ty = r + r * 0.55 * Math.sin(mid);
+          // Ángulo del centro del segmento (grados); texto sale del centro hacia afuera
+          const midDeg = (i + 0.5) * SEG - 90;
+          const lines = seg.wheelLines;
+
           return (
             <g key={i}>
               <path
@@ -103,18 +104,28 @@ export function RouletteWheel({
                 stroke="#fff"
                 strokeWidth="2"
               />
-              <text
-                x={tx}
-                y={ty}
-                fill="#fff"
-                fontSize={Math.max(9, size / 28)}
-                fontWeight="700"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                transform={`rotate(${(i + 0.5) * SEG}, ${tx}, ${ty})`}
-              >
-                {seg.shortLabel}
-              </text>
+              <g transform={`translate(${r}, ${r}) rotate(${midDeg})`}>
+                {lines.map((line, li) => (
+                  <text
+                    key={li}
+                    x={r * 0.52}
+                    y={
+                      lines.length === 1
+                        ? 0
+                        : li === 0
+                          ? -lineGap * 0.45
+                          : lineGap * 0.45
+                    }
+                    fill="#fff"
+                    fontSize={fontSize}
+                    fontWeight="800"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                  >
+                    {line}
+                  </text>
+                ))}
+              </g>
             </g>
           );
         })}

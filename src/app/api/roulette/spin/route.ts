@@ -27,32 +27,44 @@ export async function POST(request: NextRequest) {
 
     const existing = await db.rouletteSpin.findUnique({ where: { email } });
     if (existing) {
-      if (!existing.redeemed && existing.expiresAt.getTime() > Date.now()) {
-        const segmentIndex = [0, 1, 2, 3, 4, 5, 6, 7].find((i) => {
+      const active = !existing.redeemed && existing.expiresAt.getTime() > Date.now();
+      const segmentIndex =
+        [0, 1, 2, 3, 4, 5, 6, 7].find((i) => {
           const prizes: RoulettePrizeId[] = [
-            "discount_5", "kit_viajero", "tour_regalo", "discount_50000",
-            "regalo_sorpresa", "discount_7", "no_luck", "no_luck",
+            "discount_5",
+            "kit_viajero",
+            "tour_regalo",
+            "discount_50000",
+            "regalo_sorpresa",
+            "discount_7",
+            "no_luck",
+            "no_luck",
           ];
           return prizes[i] === existing.prize;
         }) ?? 0;
-        return NextResponse.json({
-          ok: true,
-          alreadySpun: true,
-          alreadyRegistered: true,
-          message: "Ya estás registrado. Este es tu premio activo.",
-          spinId: existing.id,
-          prize: existing.prize,
-          prizeLabel: roulettePrizeLabel(existing.prize as RoulettePrizeId),
-          expiresAt: existing.expiresAt.toISOString(),
-          segmentIndex,
-          nombre: existing.nombre,
-          telefono: existing.telefono,
-        });
-      }
+
+      const msg = active
+        ? "Ya estás registrado. Este es tu premio activo."
+        : "Ya estás registrado. Este correo ya participó en la ruleta.";
+
       return NextResponse.json(
         {
-          error: "Ya estás registrado. Este correo ya participó en la ruleta.",
+          ok: false,
           alreadyRegistered: true,
+          alreadySpun: active,
+          error: msg,
+          message: msg,
+          ...(active
+            ? {
+                spinId: existing.id,
+                prize: existing.prize,
+                prizeLabel: roulettePrizeLabel(existing.prize as RoulettePrizeId),
+                expiresAt: existing.expiresAt.toISOString(),
+                segmentIndex,
+                nombre: existing.nombre,
+                telefono: existing.telefono,
+              }
+            : {}),
         },
         { status: 409 },
       );
@@ -88,6 +100,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (e) {
     console.error("[roulette/spin]", e);
+    const code = (e as { code?: string })?.code;
+    if (code === "P2002") {
+      return NextResponse.json(
+        {
+          error: "Ya estás registrado. Este correo ya participó en la ruleta.",
+          alreadyRegistered: true,
+        },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "Error al girar la ruleta" }, { status: 500 });
   }
 }
