@@ -84,12 +84,19 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   const from = emailFrom();
 
   try {
-    // Prioridad: Resend (si está configurado) → SMTP del hosting → log en consola
+    // Prioridad: Resend → si falla o no está, SMTP → si no hay config, skip (dev)
     const resend = await sendViaResend(input, from);
-    if (resend) return resend;
+    if (resend?.ok) return resend;
+    if (resend && !resend.ok) {
+      console.warn("[email] Resend falló, intentando SMTP…", resend.error);
+    }
 
     const smtp = await sendViaSmtp(input, from);
-    if (smtp) return smtp;
+    if (smtp?.ok) return smtp;
+    if (smtp && !smtp.ok) return smtp;
+
+    // Resend configurado pero falló, y no hay SMTP
+    if (resend && !resend.ok) return resend;
 
     console.log("[email:skip] Configura SMTP_HOST/SMTP_USER/SMTP_PASS o RESEND_API_KEY");
     console.log("[email:to]", to);

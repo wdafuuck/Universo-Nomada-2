@@ -10,6 +10,7 @@ import {
   hashOtp,
   normalizeEmail,
   otpExpiresAt,
+  resolveOtpDelivery,
 } from "@/lib/otp-auth";
 import { ensureWelcomeDiscountCode, WELCOME_DISCOUNT_CODE } from "@/lib/welcome-discount";
 import { notifyNewLead } from "@/lib/notify";
@@ -97,27 +98,17 @@ export async function POST(request: NextRequest) {
       text,
     });
 
-    const devSkipped = !emailResult.ok && "skipped" in emailResult && emailResult.skipped;
-    if (!emailResult.ok && !devSkipped) {
-      console.error("[welcome-signup] email error:", "error" in emailResult ? emailResult.error : "unknown");
-      return NextResponse.json(
-        { error: "No pudimos enviar el correo. Intenta más tarde." },
-        { status: 500 },
-      );
-    }
-
-    if (devSkipped) {
-      console.log(`[welcome-signup/dev] Código para ${email}: ${code}`);
+    const delivery = resolveOtpDelivery(emailResult, code, email, "welcome-signup");
+    if (!delivery.ok) {
+      return NextResponse.json({ error: delivery.error }, { status: 500 });
     }
 
     return NextResponse.json({
       ok: true,
       needsOtp: true,
       discountCode,
-      message: devSkipped
-        ? "Modo desarrollo: revisa el toast o la consola con el código"
-        : "Te enviamos un código a tu correo",
-      devCode: devSkipped ? code : undefined,
+      message: delivery.message,
+      devCode: delivery.devCode,
     });
   } catch (e) {
     console.error("[welcome-signup]", e);

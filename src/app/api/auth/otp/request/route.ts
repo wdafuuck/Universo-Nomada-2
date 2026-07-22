@@ -8,6 +8,7 @@ import {
   hashOtp,
   normalizeEmail,
   otpExpiresAt,
+  resolveOtpDelivery,
 } from "@/lib/otp-auth";
 
 import { guardPublicApi } from "@/lib/api-guard";
@@ -24,11 +25,14 @@ export async function POST(request: NextRequest) {
     }
     const email = normalizeEmail(parsed.data.email ?? "");
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: "Ingresa un correo v?lido" }, { status: 400 });
+      return NextResponse.json({ error: "Ingresa un correo válido" }, { status: 400 });
     }
 
     if (!rateLimit(`otp-email:${email}`, 3, 10 * 60_000)) {
-      return NextResponse.json({ error: "Ya enviamos varios c?digos. Revisa tu bandeja o espera unos minutos." }, { status: 429 });
+      return NextResponse.json(
+        { error: "Ya enviamos varios códigos. Revisa tu bandeja o espera unos minutos." },
+        { status: 429 },
+      );
     }
 
     const code = generateOtpCode();
@@ -46,35 +50,31 @@ export async function POST(request: NextRequest) {
     const { html, text } = otpEmailHtml(code);
     const emailResult = await sendEmail({
       to: email,
-      subject: `${code} ? Tu c?digo Universo N?mada`,
+      subject: `${code} — Tu código Universo Nómada`,
       html,
       text,
     });
 
-    if (!emailResult.ok) {
-      if ("skipped" in emailResult && emailResult.skipped) {
-        console.log(`[otp/dev] C?digo para ${email}: ${code}`);
-      } else {
-        console.error("[otp/request] email error:", "error" in emailResult ? emailResult.error : "unknown");
-        return NextResponse.json({ error: "No pudimos enviar el correo. Intenta m?s tarde." }, { status: 500 });
-      }
+    const delivery = resolveOtpDelivery(emailResult, code, email, "otp/request");
+    if (!delivery.ok) {
+      return NextResponse.json({ error: delivery.error }, { status: 500 });
     }
 
-    const devSkipped = !emailResult.ok && "skipped" in emailResult && emailResult.skipped;
-
-    // Sin SMTP/Resend: en desarrollo igual permitimos continuar con el c?digo en consola/toast
     return NextResponse.json({
       ok: true,
-      message: devSkipped
-        ? "Modo desarrollo: revisa la consola del servidor o el toast con el c?digo"
-        : "Te enviamos un c?digo a tu correo",
-      devCode: devSkipped ? code : undefined,
+      message: delivery.message,
+      devCode: delivery.devCode,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.error("[otp/request]", message, e);
     return NextResponse.json(
-      { error: process.env.NODE_ENV !== "production" ? `Error al enviar c?digo: ${message}` : "Error al enviar c?digo" },
+      {
+        error:
+          process.env.NODE_ENV !== "production"
+            ? `Error al enviar código: ${message}`
+            : "Error al enviar código",
+      },
       { status: 500 },
     );
   }
