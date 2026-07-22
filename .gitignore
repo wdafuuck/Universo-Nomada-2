@@ -61,8 +61,11 @@ prompt
 3001
 content-dump.json
 
-# local IDE
-.cursor/
+# local IDE (mantener hooks del proyecto)
+.cursor/*
+!.cursor/hooks.json
+!.cursor/hooks/
+!.cursor/hooks/**
 
 # uploaded images (keep folder via .gitkeep)
 /public/uploads/*
