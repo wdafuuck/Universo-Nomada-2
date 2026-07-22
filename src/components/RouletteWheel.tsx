@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ROULETTE_SEGMENTS } from "@/lib/roulette-shared";
 
 type Props = {
@@ -9,26 +9,21 @@ type Props = {
   onSpinEnd?: () => void;
   size?: number;
   idle?: boolean;
-  /** Si false, no monta el canvas (fase resultado) */
   active?: boolean;
 };
 
 const SEGMENT_ANGLE = (Math.PI * 2) / ROULETTE_SEGMENTS.length;
-const SPIN_MS = 3800;
+const SPIN_MS = 3500;
 
-function drawWheel(
-  ctx: CanvasRenderingContext2D,
-  diameter: number,
-  rotationRad: number,
-) {
+function buildWheelDataUrl(diameter: number): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = diameter;
+  canvas.height = diameter;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+
   const r = diameter / 2;
-  const cx = r;
-  const cy = r;
-  ctx.clearRect(0, 0, diameter, diameter);
-
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(rotationRad);
+  ctx.translate(r, r);
 
   for (let i = 0; i < ROULETTE_SEGMENTS.length; i++) {
     const seg = ROULETTE_SEGMENTS[i];
@@ -41,161 +36,145 @@ function drawWheel(
     ctx.closePath();
     ctx.fillStyle = seg.color;
     ctx.fill();
-    ctx.strokeStyle = "#ffffff";
+    ctx.strokeStyle = "#fff";
     ctx.lineWidth = 2;
     ctx.stroke();
 
     const mid = start + SEGMENT_ANGLE / 2;
-    const textR = r * 0.58;
     ctx.save();
     ctx.rotate(mid);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `700 ${Math.max(11, Math.round(diameter / 30))}px system-ui, sans-serif`;
+    ctx.fillStyle = "#fff";
+    ctx.font = `700 ${Math.max(11, Math.round(diameter / 30))}px system-ui,sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const lines = seg.wheelLines;
     const lineH = Math.max(12, Math.round(diameter / 34));
     for (let li = 0; li < lines.length; li++) {
       const y = lines.length === 1 ? 0 : li === 0 ? -lineH * 0.45 : lineH * 0.45;
-      ctx.fillText(lines[li], textR, y, r * 0.55);
+      ctx.fillText(lines[li], r * 0.58, y, r * 0.55);
     }
     ctx.restore();
   }
 
   ctx.beginPath();
   ctx.arc(0, 0, r * 0.06, 0, Math.PI * 2);
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = "#fff";
   ctx.fill();
-  ctx.restore();
 
-  ctx.beginPath();
-  ctx.arc(cx, cy, r - 1.5, 0, Math.PI * 2);
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 5;
-  ctx.stroke();
+  return canvas.toDataURL("image/png");
 }
 
-function easeOutCubic(t: number) {
-  return 1 - (1 - t) ** 3;
+function spinDegrees(segmentIndex: number): number {
+  const centerDeg = (segmentIndex + 0.5) * (360 / ROULETTE_SEGMENTS.length);
+  // Puntero a la derecha (90° en CSS desde arriba… usamos rotate desde 0)
+  // Con dibujo empezando en -90°, el centro del segmento i está en centerDeg-90 desde +X.
+  // Para alinear con el puntero derecho (+X): rotación = 360*n + (90 - (centerDeg))
+  const align = 90 - centerDeg;
+  return 360 * 5 + ((align % 360) + 360) % 360;
 }
 
 /**
- * Canvas + rAF. Sin CSS transform / SVG (crash en Chrome/Safari móvil al terminar).
+ * Ruleta: imagen estática + CSS transition (sin rAF).
+ * El rAF/canvas continuo crasheaba Safari/Chrome móvil.
  */
 export function RouletteWheel({
   segmentIndex,
   spinning,
   onSpinEnd,
-  size = 240,
-  idle = false,
+  size = 210,
   active = true,
 }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rotationRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
-  const spinningRef = useRef(false);
+  const diameter = Math.round(size * 1.65);
+  const [src, setSrc] = useState<string>("");
+  const [rotation, setRotation] = useState(0);
+  const [animating, setAnimating] = useState(false);
+  const endedRef = useRef(false);
   const onSpinEndRef = useRef(onSpinEnd);
   onSpinEndRef.current = onSpinEnd;
-
-  const diameter = Math.round(size * 1.65);
-
-  const stopRaf = () => {
-    if (rafRef.current != null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-  };
-
-  const paint = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) return;
-    drawWheel(ctx, diameter, rotationRef.current);
-  };
+  const rotationBaseRef = useRef(0);
 
   useEffect(() => {
-    if (!active) {
-      stopRaf();
-      spinningRef.current = false;
-      return;
+    if (!active || typeof document === "undefined") return;
+    try {
+      setSrc(buildWheelDataUrl(diameter));
+    } catch {
+      setSrc("");
     }
-    paint();
   }, [active, diameter]);
 
-  // Idle desactivado: el rAF continuo crasheaba Safari/Chrome móvil al abrir el popup
   useEffect(() => {
-    if (!active || spinning) return;
-    paint();
-  }, [active, idle, spinning, diameter]);
+    if (!spinning || endedRef.current) return;
+    endedRef.current = false;
 
-  // Spin
-  useEffect(() => {
-    if (!active || !spinning || spinningRef.current) return;
-    spinningRef.current = true;
-    stopRaf();
+    const base = rotationBaseRef.current;
+    const next = base + spinDegrees(segmentIndex);
+    rotationBaseRef.current = next;
 
-    const from = rotationRef.current;
-    const centerOffset = segmentIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
-    const align = -centerOffset + Math.PI / 2;
-    const fromNorm = ((from % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-    const alignNorm = ((align % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-    let extra = alignNorm - fromNorm;
-    if (extra < 0) extra += Math.PI * 2;
-    const to = from + Math.PI * 2 * 5 + extra;
-    const start = performance.now();
-    let finished = false;
+    // Frame 1: sin transición; frame 2: aplicar giro
+    setAnimating(false);
+    setRotation(base);
+    const startId = window.setTimeout(() => {
+      setAnimating(true);
+      setRotation(next);
+    }, 40);
 
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      spinningRef.current = false;
-      stopRaf();
-      // Fuera del frame de animación — evita crash Safari/Chrome móvil
+    const endId = window.setTimeout(() => {
+      if (endedRef.current) return;
+      endedRef.current = true;
+      setAnimating(false);
       window.setTimeout(() => {
         try {
           onSpinEndRef.current?.();
         } catch {
           // ignore
         }
-      }, 50);
-    };
-
-    const step = (now: number) => {
-      if (finished) return;
-      const t = Math.min(1, (now - start) / SPIN_MS);
-      rotationRef.current = from + (to - from) * easeOutCubic(t);
-      paint();
-      if (t < 1) {
-        rafRef.current = requestAnimationFrame(step);
-      } else {
-        finish();
-      }
-    };
-    rafRef.current = requestAnimationFrame(step);
-
-    // Failsafe si el tab queda en background
-    const failsafe = window.setTimeout(finish, SPIN_MS + 800);
+      }, 80);
+    }, SPIN_MS + 80);
 
     return () => {
-      window.clearTimeout(failsafe);
-      // No cancelar si ya terminó y está por llamar onSpinEnd
-      if (!finished) stopRaf();
+      window.clearTimeout(startId);
+      window.clearTimeout(endId);
     };
-  }, [active, spinning, segmentIndex, diameter]);
+  }, [spinning, segmentIndex]);
+
+  useEffect(() => {
+    if (!spinning) endedRef.current = false;
+  }, [spinning]);
+
+  const style = useMemo(
+    () => ({
+      width: diameter,
+      height: diameter,
+      transform: `rotate(${rotation}deg)`,
+      transition: animating
+        ? `transform ${SPIN_MS}ms cubic-bezier(0.15, 0.85, 0.2, 1)`
+        : "none",
+      willChange: animating ? "transform" : "auto",
+    }),
+    [diameter, rotation, animating],
+  );
 
   if (!active) return null;
 
   return (
     <div className="relative mx-auto" style={{ width: diameter, height: diameter }}>
-      <canvas
-        ref={canvasRef}
-        width={diameter}
-        height={diameter}
-        className="block rounded-full"
-        style={{ width: diameter, height: diameter }}
-        aria-hidden
-      />
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          width={diameter}
+          height={diameter}
+          draggable={false}
+          className="block rounded-full select-none"
+          style={style}
+        />
+      ) : (
+        <div
+          className="rounded-full bg-white/20"
+          style={{ width: diameter, height: diameter }}
+        />
+      )}
       <div
         className="absolute top-1/2 -translate-y-1/2 z-20 pointer-events-none"
         style={{

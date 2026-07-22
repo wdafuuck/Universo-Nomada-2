@@ -34,8 +34,21 @@ type Props = {
   onClose: () => void;
 };
 
+function useIsCoarsePointer() {
+  const [coarse, setCoarse] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    const update = () => setCoarse(mq.matches || navigator.maxTouchPoints > 0);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+  return coarse;
+}
+
 export function RoulettePopup({ isOpen, onClose }: Props) {
   const { t } = useLanguage();
+  const isMobile = useIsCoarsePointer();
   const lp = t("leadPopup") as {
     title: string;
     subtitle: string;
@@ -90,6 +103,20 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
     }
   };
 
+  const handleSpinEnd = () => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    setSpinning(false);
+    setPhase("result");
+  };
+
+  // En móvil: sin CSS transform (crashea). Solo espera + loader.
+  useEffect(() => {
+    if (!spinning || !isMobile) return;
+    const id = window.setTimeout(handleSpinEnd, 2800);
+    return () => window.clearTimeout(id);
+  }, [spinning, isMobile]);
+
   const handleSpin = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -140,7 +167,6 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
         expiresAt: data.expiresAt ?? new Date().toISOString(),
       };
       pendingSaveRef.current = pending;
-      // Guardar ya (sin notificar barra) por si el tab se cierra
       persistPrize(pending);
 
       setSegmentIndex(pending.segmentIndex);
@@ -156,13 +182,6 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
     }
   };
 
-  const handleSpinEnd = () => {
-    if (endedRef.current) return;
-    endedRef.current = true;
-    setSpinning(false);
-    setPhase("result");
-  };
-
   const handleClose = () => {
     if (phase === "spinning") return;
     try {
@@ -176,7 +195,8 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   const hasBenefit = prize ? roulettePrizeHasBenefit(prize) : false;
-  const showWheel = phase === "register" || phase === "spinning";
+  // En móvil no montamos la rueda animada durante el giro
+  const showWheel = phase === "register" || (phase === "spinning" && !isMobile);
 
   return (
     <div
@@ -205,10 +225,10 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
             <div className="flex justify-center mb-4 sm:mb-6">
               <RouletteWheel
                 segmentIndex={segmentIndex}
-                spinning={spinning}
+                spinning={spinning && !isMobile}
                 onSpinEnd={handleSpinEnd}
                 size={210}
-                idle={phase === "register"}
+                idle={false}
                 active={showWheel}
               />
             </div>
@@ -279,7 +299,12 @@ export function RoulettePopup({ isOpen, onClose }: Props) {
           )}
 
           {phase === "spinning" && (
-            <div className="text-center pb-4">
+            <div className="text-center py-8">
+              {/* Sin CSS rotate en móvil: solo pulso (rotate crashea Safari) */}
+              <div
+                className="h-16 w-16 mx-auto mb-4 rounded-full bg-white/90 animate-pulse"
+                aria-hidden
+              />
               <h2 className="text-2xl font-black mb-2">¡Girando!</h2>
               <p className="text-white/90">Tu premio está por salir...</p>
             </div>
