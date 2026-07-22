@@ -32,14 +32,17 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!isOpen) return;
-    setPhase("form");
-    setForm({ nombre: "", email: "", telefono: "" });
-    setOtp("");
-    setDiscountCode(WELCOME_DISCOUNT_CODE);
-    setLoading(false);
-    setCopied(false);
-    setError("");
+    if (isOpen) return;
+    const t = window.setTimeout(() => {
+      setPhase("form");
+      setForm({ nombre: "", email: "", telefono: "" });
+      setOtp("");
+      setDiscountCode(WELCOME_DISCOUNT_CODE);
+      setLoading(false);
+      setCopied(false);
+      setError("");
+    }, 200);
+    return () => window.clearTimeout(t);
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -86,7 +89,7 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
       }
 
       if (data.discountCode) setDiscountCode(data.discountCode);
-      if (data.devCode) toast.message(`Modo desarrollo: código ${data.devCode}`);
+      if (data.devCode) toast.message(`Tu código de verificación: ${data.devCode}`);
       toast.success(data.message || "Te enviamos un código a tu correo");
       setPhase("otp");
     } catch {
@@ -127,12 +130,13 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
         return;
       }
 
-      const codeToSave = data.discountCode || discountCode;
-      if (data.discountCode) setDiscountCode(data.discountCode);
+      const codeToSave = data.discountCode || discountCode || WELCOME_DISCOUNT_CODE;
+      setDiscountCode(codeToSave);
       saveWelcomeDiscountCode(codeToSave);
-      onRegistered(data.user);
+      // Primero mostrar el código; luego notificar sesión (sin cerrar el popup)
       setPhase("success");
-      toast.success("¡Cuenta creada! Te enviamos tu código de descuento al correo");
+      onRegistered(data.user);
+      toast.success(`Tu código de descuento: ${codeToSave}`);
     } catch {
       setError("Error al verificar. Intenta de nuevo.");
     } finally {
@@ -147,27 +151,28 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
       toast.success("Código copiado");
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("No se pudo copiar");
+      // Fallback móvil: seleccionar texto
+      toast.message(`Tu código: ${discountCode}`);
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/55"
-      onClick={onClose}
+      className="fixed inset-0 z-[200] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-4"
+      onClick={phase === "success" ? undefined : onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="welcome-popup-title"
     >
       <div
-        className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
+        className="relative max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="relative bg-gradient-to-br from-navy via-navy to-teal-900 px-6 py-6 text-white">
+        <div className="relative bg-gradient-to-br from-navy via-navy to-teal-900 px-5 py-5 text-white sm:px-6 sm:py-6">
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+            className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
             aria-label="Cerrar"
           >
             <X className="h-4 w-4" />
@@ -177,23 +182,27 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
               <Gift className="h-5 w-5 text-teal-200" />
             </div>
             <div>
-              <h2 id="welcome-popup-title" className="text-xl font-bold leading-tight">
-                Regístrate y obtén un {WELCOME_DISCOUNT_PERCENT}% de descuento
+              <h2 id="welcome-popup-title" className="text-lg font-bold leading-tight sm:text-xl">
+                {phase === "success"
+                  ? "¡Listo! Este es tu descuento"
+                  : `Regístrate y obtén un ${WELCOME_DISCOUNT_PERCENT}% de descuento`}
               </h2>
               <p className="mt-1 text-sm text-white/70">
-                Únete a la familia Nómada y úsalo en tu próxima reserva
+                {phase === "success"
+                  ? "Guárdalo o cópialo para usarlo en el carrito"
+                  : "Únete a la familia Nómada y úsalo en tu próxima reserva"}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-5 sm:p-6">
           {phase === "form" && (
             <form onSubmit={handleRegister} className="space-y-3">
               <div className="relative">
                 <User className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  className="pl-9"
+                  className="pl-9 h-12 text-base"
                   placeholder="Nombre"
                   value={form.nombre}
                   onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
@@ -204,7 +213,7 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
               <div className="relative">
                 <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  className="pl-9"
+                  className="pl-9 h-12 text-base"
                   type="email"
                   placeholder="Correo"
                   value={form.email}
@@ -216,7 +225,7 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
               <div className="relative">
                 <Phone className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  className="pl-9"
+                  className="pl-9 h-12 text-base"
                   type="tel"
                   placeholder="Teléfono / WhatsApp"
                   value={form.telefono}
@@ -226,13 +235,13 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
                 />
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
-              <Button type="submit" className="w-full bg-teal hover:bg-teal/90" disabled={loading}>
+              <Button type="submit" className="h-12 w-full bg-teal text-base hover:bg-teal/90" disabled={loading}>
                 {loading ? "Enviando…" : "Registrarme y obtener 5%"}
               </Button>
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full text-center text-sm text-muted-foreground hover:text-foreground"
+                className="w-full py-2 text-center text-sm text-muted-foreground hover:text-foreground"
               >
                 Ahora no
               </button>
@@ -250,9 +259,9 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
               </button>
               <p className="text-sm text-muted-foreground">
                 Escribe el código de 6 dígitos que enviamos a{" "}
-                <span className="font-medium text-foreground">{form.email.trim()}</span>
+                <span className="font-medium break-all text-foreground">{form.email.trim()}</span>
               </p>
-              <div className="flex justify-center">
+              <div className="flex justify-center overflow-x-auto py-1">
                 <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
@@ -265,7 +274,7 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
                 </InputOTP>
               </div>
               {error && <p className="text-center text-sm text-red-600">{error}</p>}
-              <Button type="submit" className="w-full bg-teal hover:bg-teal/90" disabled={loading}>
+              <Button type="submit" className="h-12 w-full bg-teal text-base hover:bg-teal/90" disabled={loading}>
                 {loading ? "Verificando…" : "Confirmar registro"}
               </Button>
             </form>
@@ -273,28 +282,39 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
 
           {phase === "success" && (
             <div className="space-y-4 text-center">
-              <p className="text-sm text-emerald-700 font-medium">¡Ya estás en la familia Nómada!</p>
+              <p className="text-base font-semibold text-emerald-700">¡Ya estás en la familia Nómada!</p>
               <p className="text-sm text-muted-foreground">
                 Tu código de {WELCOME_DISCOUNT_PERCENT}% de descuento:
               </p>
-              <div className="flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                <span className="font-mono text-2xl font-black tracking-wider text-emerald-900">
-                  {discountCode}
-                </span>
-                <button
-                  type="button"
-                  onClick={copyCode}
-                  className="rounded-lg p-2 text-emerald-800 hover:bg-emerald-100"
-                  aria-label="Copiar código"
+              <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50 px-4 py-5">
+                <p
+                  className="select-all font-mono text-3xl font-black tracking-[0.2em] text-emerald-900 sm:text-4xl"
+                  aria-label={`Código de descuento ${discountCode}`}
                 >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </button>
+                  {discountCode}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 w-full border-emerald-300 text-base text-emerald-900"
+                onClick={copyCode}
+              >
+                {copied ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" /> Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 h-4 w-4" /> Copiar código
+                  </>
+                )}
+              </Button>
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 También te lo enviamos al correo. Válido una sola vez por persona; úsalo en el
                 carrito al reservar.
               </p>
-              <Button type="button" className="w-full bg-navy hover:bg-navy/90" onClick={onClose}>
+              <Button type="button" className="h-12 w-full bg-navy text-base hover:bg-navy/90" onClick={onClose}>
                 Empezar a explorar
               </Button>
             </div>
@@ -308,7 +328,7 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
               </p>
               <Button
                 type="button"
-                className="w-full bg-teal hover:bg-teal/90"
+                className="h-12 w-full bg-teal text-base hover:bg-teal/90"
                 onClick={() => {
                   onClose();
                   onRequestLogin();
@@ -320,7 +340,7 @@ export function WelcomeRegisterPopup({ isOpen, onClose, onRegistered, onRequestL
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full text-sm text-muted-foreground hover:text-foreground"
+                className="w-full py-2 text-sm text-muted-foreground hover:text-foreground"
               >
                 Cerrar
               </button>

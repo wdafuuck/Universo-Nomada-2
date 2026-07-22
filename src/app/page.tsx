@@ -511,10 +511,9 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    if (user) {
-      setIsWelcomeOpen(false);
-      return;
-    }
+    // Si ya hay sesión, no abrir el popup (pero no forzar cierre:
+    // tras registrarse debe verse la pantalla del código de descuento).
+    if (user) return;
     if (popupShownToday()) return;
 
     let opened = false;
@@ -534,6 +533,16 @@ export default function LandingPage() {
   const closeWelcomePopup = () => {
     markPopupShownToday();
     setIsWelcomeOpen(false);
+  };
+
+  const handleWelcomeRegistered = (u: {
+    id: string;
+    email: string;
+    name: string | null;
+    role: string;
+  }) => {
+    setUser(u);
+    // No cerrar: el popup muestra el código NOMAD5
   };
 
   const handleLogin = (u: { id: string; email: string; name: string | null; role: string }) => {
@@ -1234,9 +1243,9 @@ export default function LandingPage() {
 
       {/* ═══════ POPUPS ═══════ */}
       <WelcomeRegisterPopup
-        isOpen={isWelcomeOpen && !user}
+        isOpen={isWelcomeOpen}
         onClose={closeWelcomePopup}
-        onRegistered={handleLogin}
+        onRegistered={handleWelcomeRegistered}
         onRequestLogin={() => setIsMemberAuthOpen(true)}
       />
       <TravelFormPopup isOpen={isTravelFormOpen} onClose={() => setIsTravelFormOpen(false)} />
