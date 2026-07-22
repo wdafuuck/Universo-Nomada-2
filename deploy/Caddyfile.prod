@@ -1,4 +1,13 @@
 # Producción — Universo Nómada (DigitalOcean + Caddy)
+#
+# HTTP/3 (QUIC) desactivado: Chrome en algunos Mac/ISP cancelaba
+# peticiones (H3_REQUEST_CANCELLED) y mostraba "This page couldn't load".
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
 universonomada.cl, www.universonomada.cl {
 	encode gzip zstd
 	reverse_proxy 127.0.0.1:3001
