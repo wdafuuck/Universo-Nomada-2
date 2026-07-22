@@ -263,9 +263,20 @@ html {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Ruleta: sin animación de giro (crash GPU en Chrome) */
 .roulette-idle-spin {
   animation: none;
+}
+
+/* Mientras la ruleta está abierta: apagar animaciones pesadas del home (evita crash móvil) */
+html.roulette-open .flow-field,
+html.roulette-open .flow-orb,
+html.roulette-open .flow-mesh {
+  animation: none !important;
+  transition: none !important;
+  display: none !important;
+}
+html.roulette-open {
+  overflow: hidden;
 }
 
 /* Hide scrollbar for horizontal scroll */

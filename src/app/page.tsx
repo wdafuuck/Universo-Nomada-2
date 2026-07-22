@@ -530,7 +530,7 @@ export default function LandingPage() {
     };
 
     const onScroll = () => {
-      if (window.scrollY > window.innerHeight * 0.35) openRoulette();
+      if (window.scrollY > 120) openRoulette();
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
