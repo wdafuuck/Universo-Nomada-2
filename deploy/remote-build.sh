@@ -41,6 +41,18 @@ if [ "$ok" -ne 1 ]; then
   journalctl -u universo-nomada -n 40 --no-pager || true
   exit 1
 fi
+# Verificar que el HTML de home no sea 500 (manifests incompletos)
+home_code=$(curl -s -o /tmp/un-home.html -w "%{http_code}" http://127.0.0.1:3001/)
+if [ "$home_code" != "200" ] || grep -qi "Internal Server Error" /tmp/un-home.html; then
+  echo ":: error: home respondió $home_code (posible standalone incompleto)"
+  head -c 300 /tmp/un-home.html; echo
+  journalctl -u universo-nomada -n 40 --no-pager || true
+  exit 1
+fi
+if [ ! -f .next/standalone/.next/server/app/page_client-reference-manifest.js ]; then
+  echo ":: error: falta page_client-reference-manifest.js en standalone"
+  exit 1
+fi
 head -c 200 /tmp/un-health.json
 echo
 echo "==> Deploy OK"
