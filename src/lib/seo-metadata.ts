@@ -36,7 +36,7 @@ export function pageMetadata(opts: PageMetaOpts): Metadata {
       images: [{ url: image, width: 1563, height: 1563, alt: "Universo Nómada®" }],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: opts.title,
       description: opts.description,
       images: [image],
