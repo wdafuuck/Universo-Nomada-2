@@ -292,6 +292,8 @@ function TravelFormPopup({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
         cantidadPersonas: "1",
         saludRestricciones: ""
       });
+      window.location.assign("/cotizacion-enviada");
+      return;
       setTimeout(onClose, 1500);
     } catch {
       toast.error("Error al enviar. Intenta de nuevo.");
@@ -570,6 +572,8 @@ export default function LandingPage({
       trackGenerateLead({ source: "cotizacion-home", value: 0 });
       toast.success("Cotizacion enviada! Te contactaremos pronto.");
       setFormData({ nombre: "", email: "", telefono: "", destino: "", mensaje: "" });
+      window.location.assign("/cotizacion-enviada");
+      return;
     } catch { toast.error("Error al enviar."); }
     finally { setIsSubmitting(false); }
   };
