@@ -5,7 +5,6 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { FALLBACK_HERO_IMAGES } from "@/lib/default-hero-slides";
 import { FlowField } from "@/components/motion/FlowField";
 import { MagneticHover } from "@/components/motion/MagneticHover";
 import { staggerContainer, antiGravityRise } from "@/lib/motion-presets";
@@ -14,17 +13,24 @@ import { WAVE_COLORS } from "@/components/WildlifeBackground";
 type HeroCinematicProps = {
   onPlanTrip: () => void;
   refreshKey?: number;
+  /** Imágenes reales desde SSR — evita flash de fotos default */
+  initialImages?: string[];
 };
 
-export function HeroCinematic({ onPlanTrip, refreshKey = 0 }: HeroCinematicProps) {
+export function HeroCinematic({
+  onPlanTrip,
+  refreshKey = 0,
+  initialImages = [],
+}: HeroCinematicProps) {
   const { t } = useLanguage();
   const h = t("hero");
   const [slide, setSlide] = useState(0);
-  const [images, setImages] = useState<string[]>(FALLBACK_HERO_IMAGES);
+  const [images, setImages] = useState<string[]>(initialImages);
 
   useEffect(() => {
-    const bust = refreshKey > 0 ? `?t=${refreshKey}` : "";
-    fetch(`/api/hero-slides${bust}`, refreshKey > 0 ? { cache: "no-store" } : {})
+    // Solo refetch tras editar en admin (refreshKey > 0)
+    if (refreshKey === 0) return;
+    fetch(`/api/hero-slides?t=${refreshKey}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         const urls = (data.slides ?? [])
@@ -42,7 +48,8 @@ export function HeroCinematic({ onPlanTrip, refreshKey = 0 }: HeroCinematicProps
     return () => clearInterval(id);
   }, [images]);
 
-  const slides = images.length > 0 ? images : FALLBACK_HERO_IMAGES;
+  // Sin fallback de fotos hardcodeadas: evita flash de imágenes que no están en admin
+  const slides = images;
 
   return (
     <section
