@@ -164,7 +164,7 @@ function TravelerPhotosPanel({
       </motion.a>
 
       {photos.length > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-3">
+        <div className="flex items-center justify-center gap-2 mt-3" aria-label="Galería de fotos">
           <button
             type="button"
             onClick={() => goPhoto(-1)}
@@ -173,7 +173,7 @@ function TravelerPhotosPanel({
           >
             <ChevronLeft className="h-3.5 w-3.5 text-white/70" />
           </button>
-          <div className="flex gap-1.5 flex-wrap justify-center max-w-[120px]">
+          <div className="flex gap-1.5 flex-wrap justify-center max-w-[140px]">
             {photos.map((_, i) => (
               <button
                 key={i}
@@ -186,6 +186,7 @@ function TravelerPhotosPanel({
                   i === photoIndex ? "w-4 bg-teal-300" : "w-1.5 bg-white/30 hover:bg-white/50"
                 }`}
                 aria-label={`Foto ${i + 1}`}
+                aria-current={i === photoIndex ? "true" : undefined}
               />
             ))}
           </div>
@@ -316,7 +317,7 @@ export function GoogleReviewsSlider() {
                 : "grid-cols-1"
             }`}
           >
-            <div className="relative bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-5 sm:p-7 shadow-xl min-h-[200px] overflow-hidden">
+            <div className="relative bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-5 sm:p-7 shadow-xl min-h-[200px] overflow-hidden flex flex-col">
               {loading ? (
                 <div className="flex items-center justify-center h-36 text-white/50 text-sm">{tr.loading}</div>
               ) : !review ? (
@@ -330,7 +331,7 @@ export function GoogleReviewsSlider() {
                     initial="enter"
                     animate="center"
                     exit="exit"
-                    className="flex items-start gap-4"
+                    className="flex items-start gap-4 flex-1"
                   >
                     <div className="relative shrink-0">
                       <ReviewAvatar src={review.photo} name={review.name} />
@@ -373,6 +374,48 @@ export function GoogleReviewsSlider() {
                   </motion.div>
                 </AnimatePresence>
               )}
+
+              {/* Controles de reseñas dentro de la tarjeta (evita barra duplicada bajo fotos en móvil) */}
+              {total > 1 && (
+                <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => goReview(-1)}
+                    className="h-10 w-10 rounded-full border border-white/20 bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
+                    aria-label={tr.reviewPrev ?? "Reseña anterior"}
+                  >
+                    <ChevronLeft className="h-5 w-5 text-white/80" />
+                  </button>
+
+                  <div className="flex gap-1.5 max-w-[60%] flex-wrap justify-center" role="tablist" aria-label="Reseñas">
+                    {reviews.map((r, i) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={i === current}
+                        onClick={() => {
+                          setDirection(i > current ? 1 : -1);
+                          setCurrent(i);
+                        }}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          i === current ? "w-6 bg-teal-300" : "w-2 bg-white/30 hover:bg-white/50"
+                        }`}
+                        aria-label={`Reseña ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => goReview(1)}
+                    className="h-10 w-10 rounded-full border border-white/20 bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
+                    aria-label={tr.reviewNext ?? "Reseña siguiente"}
+                  >
+                    <ChevronRight className="h-5 w-5 text-white/80" />
+                  </button>
+                </div>
+              )}
             </div>
 
             <TravelerPhotosPanel
@@ -383,45 +426,6 @@ export function GoogleReviewsSlider() {
               photoNext={tr.photoNext}
             />
           </div>
-
-          {total > 1 && (
-            <div className="flex items-center justify-between mt-5">
-              <button
-                type="button"
-                onClick={() => goReview(-1)}
-                className="h-11 w-11 rounded-full border border-white/20 bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
-                aria-label={tr.reviewPrev ?? "Reseña anterior"}
-              >
-                <ChevronLeft className="h-5 w-5 text-white/80" />
-              </button>
-
-              <div className="flex gap-1.5 max-w-[60%] flex-wrap justify-center">
-                {reviews.map((r, i) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => {
-                      setDirection(i > current ? 1 : -1);
-                      setCurrent(i);
-                    }}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      i === current ? "w-6 bg-teal-300" : "w-2 bg-white/30 hover:bg-white/50"
-                    }`}
-                    aria-label={`Reseña ${i + 1}`}
-                  />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => goReview(1)}
-                className="h-11 w-11 rounded-full border border-white/20 bg-white/10 backdrop-blur flex items-center justify-center hover:bg-white/20 transition-colors"
-                aria-label={tr.reviewNext ?? "Reseña siguiente"}
-              >
-                <ChevronRight className="h-5 w-5 text-white/80" />
-              </button>
-            </div>
-          )}
 
           <div className="text-center mt-6">
             <a
