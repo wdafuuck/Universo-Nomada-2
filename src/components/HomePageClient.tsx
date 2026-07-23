@@ -1177,6 +1177,9 @@ export default function LandingPage({
                 <Link href="/terminos-vuelos" className="block hover:text-teal transition-colors">
                   {(t("footer") as { vuelos?: string }).vuelos ?? "Términos sobre Vuelos"}
                 </Link>
+                <Link href="/accesibilidad" className="block hover:text-teal transition-colors">
+                  Accesibilidad
+                </Link>
               </div>
               
               {/* Registro SERNATUR — img nativo evita fallo de Next Image en Safari/Instagram */}

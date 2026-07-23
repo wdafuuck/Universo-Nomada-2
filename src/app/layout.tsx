@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AnnouncerProvider } from "@/contexts/AnnouncerContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { ConditionalAnalytics } from "@/components/ConditionalAnalytics";
+import { GtmNoscript } from "@/components/GtmNoscript";
 import { JsonLd } from "@/components/JsonLd";
 import { ReviewsJsonLd } from "@/components/seo/ReviewsJsonLd";
 import { PageAmbient } from "@/components/motion/PageAmbient";
@@ -69,6 +70,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
+        <GtmNoscript />
         <LanguageProvider>
           <AnnouncerProvider>
             <CartProvider>
