@@ -17,17 +17,23 @@ declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
     fbq?: (...args: unknown[]) => void;
+    dataLayer?: Record<string, unknown>[];
   }
 }
 
-export function trackViewItem(item: ItemPayload) {
+/** Empuja a dataLayer (GTM / Google Ads) + gtag si existe. */
+function pushAnalytics(event: string, payload: Record<string, unknown>) {
   if (!canTrack()) return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event, ...payload });
+  window.gtag?.("event", event, payload);
+}
+
+export function trackViewItem(item: ItemPayload) {
   const value = item.price * (item.quantity ?? 1);
-  window.gtag?.("event", "view_item", {
-    currency: "CLP",
-    value,
-    items: [{ item_id: item.item_id, item_name: item.item_name, price: item.price, quantity: 1 }],
-  });
+  const items = [{ item_id: item.item_id, item_name: item.item_name, price: item.price, quantity: 1 }];
+  pushAnalytics("view_item", { currency: "CLP", value, items });
+  if (!canTrack()) return;
   window.fbq?.("track", "ViewContent", {
     content_ids: [item.item_id],
     content_name: item.item_name,
@@ -37,12 +43,12 @@ export function trackViewItem(item: ItemPayload) {
 }
 
 export function trackGenerateLead(params: { source: string; value?: number }) {
-  if (!canTrack()) return;
-  window.gtag?.("event", "generate_lead", {
+  pushAnalytics("generate_lead", {
     currency: "CLP",
     value: params.value ?? 0,
     lead_source: params.source,
   });
+  if (!canTrack()) return;
   window.fbq?.("track", "Lead", {
     content_name: params.source,
     value: params.value ?? 0,
@@ -51,13 +57,10 @@ export function trackGenerateLead(params: { source: string; value?: number }) {
 }
 
 export function trackAddToCart(item: ItemPayload) {
-  if (!canTrack()) return;
   const value = item.price * (item.quantity ?? 1);
-  window.gtag?.("event", "add_to_cart", {
-    currency: "CLP",
-    value,
-    items: [{ item_id: item.item_id, item_name: item.item_name, price: item.price, quantity: 1 }],
-  });
+  const items = [{ item_id: item.item_id, item_name: item.item_name, price: item.price, quantity: 1 }];
+  pushAnalytics("add_to_cart", { currency: "CLP", value, items });
+  if (!canTrack()) return;
   window.fbq?.("track", "AddToCart", {
     content_ids: [item.item_id],
     content_name: item.item_name,
@@ -67,8 +70,7 @@ export function trackAddToCart(item: ItemPayload) {
 }
 
 export function trackBeginCheckout(items: ItemPayload[], total: number) {
-  if (!canTrack()) return;
-  window.gtag?.("event", "begin_checkout", {
+  pushAnalytics("begin_checkout", {
     currency: "CLP",
     value: total,
     items: items.map((i) => ({
@@ -78,6 +80,7 @@ export function trackBeginCheckout(items: ItemPayload[], total: number) {
       quantity: i.quantity ?? 1,
     })),
   });
+  if (!canTrack()) return;
   window.fbq?.("track", "InitiateCheckout", {
     value: total,
     currency: "CLP",
@@ -90,8 +93,7 @@ export function trackPurchase(params: {
   value: number;
   items: ItemPayload[];
 }) {
-  if (!canTrack()) return;
-  window.gtag?.("event", "purchase", {
+  pushAnalytics("purchase", {
     transaction_id: params.transactionId,
     currency: "CLP",
     value: params.value,
@@ -102,6 +104,7 @@ export function trackPurchase(params: {
       quantity: i.quantity ?? 1,
     })),
   });
+  if (!canTrack()) return;
   window.fbq?.("track", "Purchase", {
     value: params.value,
     currency: "CLP",
