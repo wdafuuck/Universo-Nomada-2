@@ -1179,9 +1179,26 @@ export default function LandingPage({
                 </Link>
               </div>
               
-              {/* Registro R */}
+              {/* Registro SERNATUR — img nativo evita fallo de Next Image en Safari/Instagram */}
               <div className="mt-6 flex justify-center">
-                <Image src="/images/logo_r-1.png" alt="Registro R" width={80} height={80} className="opacity-80 hover:opacity-100 transition-opacity" />
+                <a
+                  href={SERNATUR_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex rounded-full bg-white/95 p-1.5 shadow-md ring-1 ring-white/20 transition-opacity hover:opacity-100 opacity-90"
+                  aria-label="Registro Nacional SERNATUR — verificar agencia"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/logo-registro-sernatur.png"
+                    alt="Registro Nacional de Servicios Turísticos SERNATUR"
+                    width={80}
+                    height={80}
+                    className="h-20 w-20 object-contain"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </a>
               </div>
             </div>
           </div>
