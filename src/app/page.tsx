@@ -666,31 +666,6 @@ export default function LandingPage() {
             </nav>
 
             <div className="flex items-center justify-end gap-1 sm:gap-1.5 shrink-0">
-              {user && (
-                <>
-                  {user.role === "admin" && (
-                    <Button
-                      onClick={() => setShowAdmin(true)}
-                      size="sm"
-                      variant="outline"
-                      title="Admin"
-                      className="hidden sm:flex bg-white/5 border-white/10 text-white/80 hover:bg-teal hover:text-navy rounded-full text-xs px-2.5 xl:px-3 shrink-0"
-                    >
-                      <LayoutDashboard className="h-3.5 w-3.5 xl:mr-1" />
-                      <span className="hidden xl:inline">Admin</span>
-                    </Button>
-                  )}
-                  <Button
-                    onClick={handleLogout}
-                    size="sm"
-                    variant="ghost"
-                    title={t("auth").logout}
-                    className="hidden sm:flex text-white/40 hover:text-white rounded-full text-xs shrink-0 px-2"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
               <motion.button
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
@@ -1219,7 +1194,7 @@ export default function LandingPage() {
             >
               {t("footer").sernatur}
             </a>
-            {!user && (
+            {!user ? (
               <div className="flex flex-col gap-1 mt-2">
                 <button
                   onClick={() => setIsMemberAuthOpen(true)}
@@ -1233,6 +1208,30 @@ export default function LandingPage() {
                 >
                   {t("footer").adminLogin}
                 </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 mt-2">
+                {user.role === "admin" && (
+                  <Button
+                    onClick={() => setShowAdmin(true)}
+                    size="sm"
+                    variant="outline"
+                    title="Admin"
+                    className="bg-white/5 border-white/10 text-white/70 hover:bg-teal hover:text-navy rounded-full text-xs px-3"
+                  >
+                    <LayoutDashboard className="h-3.5 w-3.5 mr-1" />
+                    Admin
+                  </Button>
+                )}
+                <Button
+                  onClick={handleLogout}
+                  size="sm"
+                  variant="ghost"
+                  title={t("auth").logout}
+                  className="text-white/40 hover:text-white rounded-full text-xs px-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
             )}
           </div>
