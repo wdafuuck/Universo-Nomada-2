@@ -10,15 +10,39 @@ const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
 /** Si es "true", solo GTM (GA4/Meta deben estar como tags en el contenedor). */
 const GTM_ONLY = process.env.NEXT_PUBLIC_ANALYTICS_GTM_ONLY === "true";
 
+function pushConsentUpdate(granted: boolean) {
+  const w = window as Window & {
+    dataLayer?: object[];
+    gtag?: (...args: unknown[]) => void;
+  };
+  w.dataLayer = w.dataLayer || [];
+  const gtag = function gtag(..._args: unknown[]) {
+    // GTM espera el objeto Arguments (como el snippet oficial)
+    // eslint-disable-next-line prefer-rest-params
+    w.dataLayer!.push(arguments as unknown as object);
+  };
+  w.gtag = w.gtag || gtag;
+  w.gtag("consent", "update", {
+    analytics_storage: granted ? "granted" : "denied",
+    ad_storage: granted ? "granted" : "denied",
+    ad_user_data: granted ? "granted" : "denied",
+    ad_personalization: granted ? "granted" : "denied",
+  });
+}
+
 /**
- * Analytics tras consentimiento de cookies.
- * GTM + (opcional) GA4/Meta directos hasta que migres todo al contenedor.
+ * GTM se carga siempre (Consent Mode: denegado por defecto).
+ * GA4/Meta directos solo tras «Aceptar todas».
  */
 export function ConditionalAnalytics() {
-  const [enabled, setEnabled] = useState(false);
+  const [analyticsOk, setAnalyticsOk] = useState(false);
 
   useEffect(() => {
-    const sync = () => setEnabled(hasAnalyticsConsent());
+    const sync = () => {
+      const ok = hasAnalyticsConsent();
+      setAnalyticsOk(ok);
+      pushConsentUpdate(ok);
+    };
     sync();
     window.addEventListener("un-cookie-consent", sync);
     window.addEventListener("storage", sync);
@@ -29,25 +53,38 @@ export function ConditionalAnalytics() {
   }, []);
 
   useEffect(() => {
-    if (getCookieConsent() === "all") setEnabled(true);
+    if (getCookieConsent() === "all") setAnalyticsOk(true);
   }, []);
 
-  if (!enabled) return null;
-
-  const loadDirectGaMeta = !GTM_ID || !GTM_ONLY;
+  const loadDirectGaMeta = analyticsOk && (!GTM_ID || !GTM_ONLY);
 
   return (
     <>
       {GTM_ID ? (
-        <Script id="google-tag-manager" strategy="afterInteractive">
-          {`
-            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-            })(window,document,'script','dataLayer','${GTM_ID}');
-          `}
-        </Script>
+        <>
+          <Script id="gtm-consent-default" strategy="beforeInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('consent', 'default', {
+                analytics_storage: 'denied',
+                ad_storage: 'denied',
+                ad_user_data: 'denied',
+                ad_personalization: 'denied',
+                wait_for_update: 500
+              });
+            `}
+          </Script>
+          <Script id="google-tag-manager" strategy="afterInteractive">
+            {`
+              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','${GTM_ID}');
+            `}
+          </Script>
+        </>
       ) : null}
 
       {loadDirectGaMeta && GA_ID ? (
