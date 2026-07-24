@@ -1,12 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { Shield, Clock, CreditCard, Star, ExternalLink } from "lucide-react";
+import { Shield, Clock, CreditCard, Star, ExternalLink, Wallet } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export function CheckoutTrustBar({ minDepositPerPerson }: { minDepositPerPerson?: number }) {
   const { t } = useLanguage();
-  const trust = t("checkoutTrust");
+  const trust = t("checkoutTrust") as {
+    title: string;
+    sernatur: string;
+    response24h: string;
+    depositFrom: string;
+    installments?: string;
+    googleReviews: string;
+    cancellationPolicy: string;
+    paymentMethods: string;
+  };
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
@@ -39,6 +48,12 @@ export function CheckoutTrustBar({ minDepositPerPerson }: { minDepositPerPerson?
             </span>
           </li>
         )}
+        {trust.installments ? (
+          <li className="flex items-start gap-2.5">
+            <Wallet className="h-4 w-4 text-teal shrink-0 mt-0.5" />
+            <span className="font-semibold text-slate-800">{trust.installments}</span>
+          </li>
+        ) : null}
         <li className="flex items-start gap-2.5">
           <Star className="h-4 w-4 text-amber-500 shrink-0 mt-0.5 fill-amber-500" />
           <span>{trust.googleReviews}</span>
@@ -53,8 +68,8 @@ export function CheckoutTrustBar({ minDepositPerPerson }: { minDepositPerPerson?
 
 export function PaymentMethodBadges({ variant = "light" }: { variant?: "light" | "dark" }) {
   const { t } = useLanguage();
-  const heading = t("checkoutTrust").paymentMethods;
-  const methods = ["Crédito", "Débito", "Transferencia"];
+  const heading = (t("checkoutTrust") as { paymentMethods: string }).paymentMethods;
+  const methods = ["Crédito", "Débito", "Cuotas", "Transferencia"];
   const isDark = variant === "dark";
 
   return (

@@ -111,6 +111,7 @@ export const ptTranslations = {
     sernatur: 'Agência registrada na',
     response24h: 'Resposta de um assessor em menos de 24 horas',
     depositFrom: 'Reserve com sinal a partir de {amount} por pessoa',
+    installments: 'Pague o restante em parcelas sem juros ou por transferência',
     googleReviews: '5.0 no Google — mais de 28 avaliações',
     cancellationPolicy: 'Ver políticas de cancelamento',
     paymentMethods: 'Formas de pagamento',

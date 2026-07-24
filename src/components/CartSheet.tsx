@@ -556,13 +556,13 @@ export function CartSheet({ open, onOpenChange }: Props) {
                       selected={paymentMethod === "sumup"}
                       onClick={() => setPaymentMethod("sumup")}
                       title={c.payCard ?? "Tarjeta de débito o crédito"}
-                      subtitle={c.payCardHint ?? "Pago seguro en línea"}
+                      subtitle={c.payCardHint ?? "Incluye cuotas según tu banco · pago seguro"}
                     />
                     <OptionCard
                       selected={paymentMethod === "transferencia"}
                       onClick={() => setPaymentMethod("transferencia")}
                       title={c.bankTransfer ?? "Transferencia bancaria"}
-                      subtitle={c.bankTransferHint ?? "6 horas para transferir"}
+                      subtitle={c.bankTransferHint ?? "Abono ahora · saldo en cuotas con nosotros"}
                     />
                   </div>
                 </div>

@@ -543,8 +543,8 @@ export default function DetallePaquete() {
                 />
                 <p className="mt-3 text-sm text-teal font-semibold leading-snug">
                   {(liveTour?.minDepositPerPerson ?? 0) > 0
-                    ? `Puedes reservar con abono desde $${(liveTour!.minDepositPerPerson!).toLocaleString("es-CL")} por persona`
-                    : "Puedes reservar con abono mínimo"}
+                    ? `Abono desde $${(liveTour!.minDepositPerPerson!).toLocaleString("es-CL")} · cuotas sin interés · transferencia`
+                    : "Abono mínimo · cuotas sin interés · transferencia"}
                 </p>
               </div>
 

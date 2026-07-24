@@ -108,6 +108,7 @@ export const zhTranslations = {
     sernatur: '已在',
     response24h: '顾问将在24小时内回复',
     depositFrom: '每人定金从 {amount} 起',
+    installments: '余额可分期免息或银行转账',
     googleReviews: 'Google 5.0 — 28+ 条旅客评价',
     cancellationPolicy: '查看取消政策',
     paymentMethods: '支付方式',
