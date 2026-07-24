@@ -244,6 +244,121 @@ export function TrafficSeoAdmin() {
           </div>
 
           <div className={cn("rounded-2xl border p-5", card)}>
+            <h3 className={cn("font-bold mb-1 flex items-center gap-2", title)}>
+              <Target className="h-4 w-4 text-teal" /> Checklist conexiones (4 pasos)
+            </h3>
+            <p className={cn("text-xs mb-4", muted)}>
+              Ricardo y Rocío: completar una vez. Luego ambos ven lo mismo.
+            </p>
+            <ol className="space-y-4 text-sm">
+              <li className="flex gap-3">
+                <span className="shrink-0 h-6 w-6 rounded-full bg-teal/20 text-teal text-xs font-black flex items-center justify-center">
+                  1
+                </span>
+                <div>
+                  <p className={cn("font-semibold", title)}>Vincular Search Console ↔ GA4</p>
+                  <p className={cn("text-xs mt-0.5 leading-relaxed", muted)}>
+                    En Analytics: Admin (engranaje) → Vínculos de productos → Search Console → Vincular →
+                    elegir la propiedad <span className="font-mono">universonomada.cl</span>.
+                  </p>
+                  <a
+                    href="https://analytics.google.com/analytics/web/#/a/admin/product-link/search-console"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-teal text-xs mt-1.5 hover:underline"
+                  >
+                    Abrir vínculos Search Console <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 h-6 w-6 rounded-full bg-teal/20 text-teal text-xs font-black flex items-center justify-center">
+                  2
+                </span>
+                <div>
+                  <p className={cn("font-semibold", title)}>Etiqueta GA4 dentro de GTM</p>
+                  <p className={cn("text-xs mt-0.5 leading-relaxed", muted)}>
+                    Contenedor <span className="font-mono">GTM-N9BH38RF</span>: Etiquetas → Nueva →
+                    Configuración de Google Analytics: GA4 → ID de medición (G-…) → Activación: All Pages →
+                    Enviar. Hoy el sitio ya manda GA directo tras cookies; GTM debe tener la misma etiqueta
+                    para Ads y eventos futuros.
+                  </p>
+                  <a
+                    href="https://tagmanager.google.com/#/container/accounts"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-teal text-xs mt-1.5 hover:underline"
+                  >
+                    Abrir Tag Manager <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 h-6 w-6 rounded-full bg-teal/20 text-teal text-xs font-black flex items-center justify-center">
+                  3
+                </span>
+                <div>
+                  <p className={cn("font-semibold", title)}>Probar Tiempo real</p>
+                  <p className={cn("text-xs mt-0.5 leading-relaxed", muted)}>
+                    Ventana de incógnito →{" "}
+                    <a href="https://universonomada.cl/" className="text-teal hover:underline">
+                      universonomada.cl
+                    </a>{" "}
+                    → Aceptar todas → en GA: Informes → Tiempo real. Debes aparecer vos (1 usuario).
+                  </p>
+                  <a
+                    href="https://analytics.google.com/analytics/web/#/p/realtime/overview"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-teal text-xs mt-1.5 hover:underline"
+                  >
+                    Abrir Tiempo real <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 h-6 w-6 rounded-full bg-teal/20 text-teal text-xs font-black flex items-center justify-center">
+                  4
+                </span>
+                <div>
+                  <p className={cn("font-semibold", title)}>Acceso cruzado Ricardo ↔ Rocío</p>
+                  <p className={cn("text-xs mt-0.5 leading-relaxed", muted)}>
+                    En GA, GTM y Search Console: añadir el correo del otro como{" "}
+                    <strong className={title}>Editor</strong> (o Administrador). Misma cuenta de negocio,
+                    dos personas.
+                  </p>
+                  <div className="flex flex-wrap gap-3 mt-1.5">
+                    <a
+                      href="https://analytics.google.com/analytics/web/#/a/admin/account/users"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-teal text-xs hover:underline"
+                    >
+                      Usuarios GA <ExternalLink className="h-3 w-3" />
+                    </a>
+                    <a
+                      href="https://tagmanager.google.com/#/admin"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-teal text-xs hover:underline"
+                    >
+                      Usuarios GTM <ExternalLink className="h-3 w-3" />
+                    </a>
+                    <a
+                      href="https://search.google.com/search-console/users"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-teal text-xs hover:underline"
+                    >
+                      Usuarios Search Console <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              </li>
+            </ol>
+          </div>
+
+          <div className={cn("rounded-2xl border p-5", card)}>
             <h3 className={cn("font-bold mb-3 flex items-center gap-2", title)}>
               <Target className="h-4 w-4 text-teal" /> Dónde atacar (auto)
             </h3>
