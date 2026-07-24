@@ -60,13 +60,29 @@ export function TrafficSeoAdmin() {
   const muted = isLight ? "text-slate-500" : "text-white/50";
   const title = isLight ? "text-slate-900" : "text-white";
 
+  const parseJsonSafe = async (res: Response): Promise<Record<string, unknown>> => {
+    const raw = await res.text();
+    if (!raw.trim()) {
+      throw new Error(
+        res.status === 502 || res.status === 503
+          ? "El servidor se estaba reiniciando. Espera 10 s y reintenta."
+          : `Respuesta vacía del servidor (HTTP ${res.status}).`,
+      );
+    }
+    try {
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      throw new Error(`Respuesta no válida del servidor (HTTP ${res.status}).`);
+    }
+  };
+
   const load = useCallback(async (d: number) => {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/analytics/overview?days=${d}`, { credentials: "include" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error");
-      setOverview(data);
+      const data = await parseJsonSafe(res);
+      if (!res.ok) throw new Error(String(data.error || "Error"));
+      setOverview(data as unknown as Overview);
     } catch {
       toast.error("No se pudieron cargar las métricas");
     } finally {
@@ -85,11 +101,12 @@ export function TrafficSeoAdmin() {
     setChat((c) => [...c, { role: "user", text: msg }]);
     setSending(true);
     try {
-      const competitorUrls = competitorInput
+      const fromBox = competitorInput
         .split(/[\n,]+/)
         .map((s) => s.trim())
-        .filter(Boolean)
-        .slice(0, 3);
+        .filter(Boolean);
+      const fromMsg = (msg.match(/https?:\/\/[^\s<>"')\]]+/gi) ?? []).map((u) => u.trim());
+      const competitorUrls = [...new Set([...fromMsg, ...fromBox])].slice(0, 3);
 
       const res = await fetch("/api/admin/seo/chat", {
         method: "POST",
@@ -97,21 +114,22 @@ export function TrafficSeoAdmin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg, competitorUrls, days }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error");
+      const data = await parseJsonSafe(res);
+      if (!res.ok) throw new Error(String(data.error || "Error"));
       setChat((c) => [
         ...c,
         {
           role: "assistant",
-          text: data.reply as string,
-          provider: data.provider as string,
+          text: String(data.reply ?? ""),
+          provider: typeof data.provider === "string" ? data.provider : undefined,
         },
       ]);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Error del asistente");
+      const errMsg = e instanceof Error ? e.message : "Error del asistente";
+      toast.error(errMsg);
       setChat((c) => [
         ...c,
-        { role: "assistant", text: "No pude responder ahora. Reintenta en un momento." },
+        { role: "assistant", text: `No pude responder ahora. ${errMsg}` },
       ]);
     } finally {
       setSending(false);

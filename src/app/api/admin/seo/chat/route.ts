@@ -30,9 +30,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Escribe un mensaje (máx. 4000 caracteres)" }, { status: 400 });
   }
 
-  const urls = (body.competitorUrls ?? [])
-    .map((u) => String(u).trim())
-    .filter(Boolean)
+  const fromMessage = (message.match(/https?:\/\/[^\s<>"')\]]+/gi) ?? []).map((u) => u.trim());
+  const urls = [...new Set([...(body.competitorUrls ?? []).map((u) => String(u).trim()).filter(Boolean), ...fromMessage])]
     .slice(0, 3);
 
   const days = [7, 14, 28, 90].includes(Number(body.days)) ? Number(body.days) : 28;
