@@ -1,7 +1,7 @@
 import { SITE_URL } from "@/lib/site-url";
 
-const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+/** Free-tier friendly models; first that responds wins. */
+const GEMINI_MODELS = ["gemini-flash-latest", "gemini-2.0-flash"] as const;
 
 export type CompetitorSnapshot = {
   url: string;
@@ -98,44 +98,66 @@ export async function fetchCompetitorSnapshot(rawUrl: string): Promise<Competito
 export async function callGeminiFree(prompt: string): Promise<{ text: string; provider: "gemini" | "rules" }> {
   const key = process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_GEMINI_API_KEY?.trim();
   if (!key) {
-    return { text: buildRulesFallback(prompt), provider: "rules" };
+    return { text: buildRulesFallback(prompt, "missing_key"), provider: "rules" };
   }
 
-  try {
-    const res = await fetch(`${GEMINI_URL}?key=${encodeURIComponent(key)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.6, maxOutputTokens: 2048 },
-      }),
-      signal: AbortSignal.timeout(45000),
-    });
+  const body = JSON.stringify({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.6, maxOutputTokens: 2048 },
+  });
 
-    if (!res.ok) {
-      const err = await res.text().catch(() => "");
-      console.error("[seo-ai] Gemini error", res.status, err.slice(0, 300));
-      return { text: buildRulesFallback(prompt), provider: "rules" };
+  let lastReason: "api_error" | "quota" | "empty" = "api_error";
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        signal: AbortSignal.timeout(45000),
+      });
+
+      if (!res.ok) {
+        const err = await res.text().catch(() => "");
+        console.error("[seo-ai] Gemini error", model, res.status, err.slice(0, 300));
+        if (res.status === 429) lastReason = "quota";
+        continue;
+      }
+
+      const data = (await res.json()) as {
+        candidates?: { content?: { parts?: { text?: string }[] } }[];
+      };
+      const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("\n").trim();
+      if (!text) {
+        lastReason = "empty";
+        continue;
+      }
+      return { text, provider: "gemini" };
+    } catch (e) {
+      console.error("[seo-ai] Gemini fail", model, e);
     }
-
-    const data = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
-    };
-    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("\n").trim();
-    if (!text) return { text: buildRulesFallback(prompt), provider: "rules" };
-    return { text, provider: "gemini" };
-  } catch (e) {
-    console.error("[seo-ai] Gemini fail", e);
-    return { text: buildRulesFallback(prompt), provider: "rules" };
   }
+
+  return { text: buildRulesFallback(prompt, lastReason), provider: "rules" };
 }
 
-function buildRulesFallback(prompt: string): string {
+function buildRulesFallback(
+  prompt: string,
+  reason: "missing_key" | "quota" | "api_error" | "empty" = "missing_key",
+): string {
   const lower = prompt.toLowerCase();
+  const reasonLine =
+    reason === "missing_key"
+      ? "Para activar la IA gratis: crea una API key en https://aistudio.google.com/apikey y pon `GEMINI_API_KEY` en el `.env` del servidor (plan free de Google AI Studio)."
+      : reason === "quota"
+        ? "Gemini respondió cuota agotada (429) en los modelos disponibles. Espera unos minutos o revisa límites en AI Studio; mientras tanto, plan por reglas:"
+        : "Gemini no respondió (error de API o respuesta vacía). Revisa logs `[seo-ai]` en el servidor. Mientras tanto, plan por reglas:";
+
   const lines = [
-    "## Recomendaciones Universo Nómada (modo sin API Gemini)",
+    "## Recomendaciones Universo Nómada (modo reglas)",
     "",
-    "Para activar la IA gratis: crea una API key en https://aistudio.google.com/apikey y pon `GEMINI_API_KEY` en el `.env` del servidor (sin costo en el plan free de Google AI Studio).",
+    reasonLine,
     "",
     "### Dónde atacar esta semana",
     "1. **Rapa Nui / Tapati 2027** — landing `/viajes/tapati-2027` + Reels + Search Ads cuando activen campaña.",
