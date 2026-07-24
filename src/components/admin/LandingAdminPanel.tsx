@@ -59,6 +59,10 @@ const CampaignsAdmin = dynamic(
   () => import("@/components/admin/CampaignsAdmin").then((m) => ({ default: m.CampaignsAdmin })),
   { loading: () => <div className="text-white/40 py-12 text-center">Cargando anuncios...</div> }
 );
+const TrafficSeoAdmin = dynamic(
+  () => import("@/components/admin/TrafficSeoAdmin").then((m) => ({ default: m.TrafficSeoAdmin })),
+  { loading: () => <div className="text-white/40 py-12 text-center">Cargando tráfico & SEO...</div> }
+);
 
 export function LandingAdminPanel({ onClose }: { onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<AdminTab>("paquetes");
@@ -164,6 +168,8 @@ export function LandingAdminPanel({ onClose }: { onClose: () => void }) {
       {activeTab === "dashboard" && !statsData && (
         <div className="flex items-center justify-center py-20 text-white/40">Cargando estadísticas...</div>
       )}
+
+      {activeTab === "trafico" && <TrafficSeoAdmin />}
 
       {activeTab === "clientes" && <MembersAdmin />}
       {activeTab === "leads" && <LeadsAdmin />}

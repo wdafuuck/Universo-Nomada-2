@@ -1,15 +1,16 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { LayoutDashboard, MapPin, DollarSign, Tag, Users, X, Sparkles, ImageIcon, CalendarDays, FileText, Sun, Moon, Gift, Stamp, UserCircle, BookOpen, Mail, Ticket } from "lucide-react";
+import { LayoutDashboard, MapPin, DollarSign, Tag, Users, X, Sparkles, ImageIcon, CalendarDays, FileText, Sun, Moon, Gift, Stamp, UserCircle, BookOpen, Mail, Ticket, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminThemeProvider, useAdminTheme } from "@/contexts/AdminThemeContext";
 import { cn } from "@/lib/utils";
 
-export type AdminTab = "dashboard" | "portada" | "paquetes" | "precios" | "promos" | "codigos" | "grupales" | "contenido" | "blog" | "anuncios" | "clientes" | "leads" | "beneficios" | "pasaporte";
+export type AdminTab = "dashboard" | "trafico" | "portada" | "paquetes" | "precios" | "promos" | "codigos" | "grupales" | "contenido" | "blog" | "anuncios" | "clientes" | "leads" | "beneficios" | "pasaporte";
 
 const TABS: { id: AdminTab; label: string; desc: string; icon: typeof MapPin }[] = [
   { id: "dashboard", label: "Inicio", desc: "Resumen general", icon: LayoutDashboard },
+  { id: "trafico", label: "Tráfico & SEO", desc: "Métricas e IA", icon: LineChart },
   { id: "portada", label: "Banner principal", desc: "Fotos del hero", icon: ImageIcon },
   { id: "paquetes", label: "Paquetes", desc: "Precios, fotos y tours", icon: MapPin },
   { id: "grupales", label: "Viajes grupales", desc: "Fechas y cupos", icon: CalendarDays },
