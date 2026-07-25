@@ -1,19 +1,28 @@
 # Producción — Universo Nómada (DigitalOcean + Caddy)
-{
-	servers {
-		protocols h1 h2
-	}
-}
-
+# Tras editar en el servidor: caddy validate && systemctl reload caddy
 universonomada.cl, www.universonomada.cl {
 	encode gzip zstd
+
 	header {
-		Alt-Svc "clear"
 		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 	}
+
 	@recover path /recuperar /recuperar/
 	header @recover {
 		Clear-Site-Data `"cache", "storage"`
 	}
-	reverse_proxy 127.0.0.1:3001
+
+	# Uploads persistentes (Next standalone no sirve bien el symlink)
+	handle /uploads/* {
+		root * /var/www/universo-nomada/public
+		# Permite exportar a canvas en el admin (ajuste de insignias)
+		header Access-Control-Allow-Origin "https://universonomada.cl"
+		header Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+		header Vary Origin
+		file_server
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3001
+	}
 }

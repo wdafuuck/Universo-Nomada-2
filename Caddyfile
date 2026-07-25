@@ -15,6 +15,10 @@ universonomada.cl, www.universonomada.cl {
 	# Uploads persistentes (Next standalone no sirve bien el symlink)
 	handle /uploads/* {
 		root * /var/www/universo-nomada/public
+		# Permite exportar a canvas en el admin (ajuste de insignias)
+		header Access-Control-Allow-Origin "https://universonomada.cl"
+		header Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+		header Vary Origin
 		file_server
 	}
 

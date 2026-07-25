@@ -32,6 +32,8 @@ set +a
 export HOSTNAME=127.0.0.1
 export PORT="${PORT:-3001}"
 export NODE_ENV=production
+# Ruta absoluta: standalone cambia cwd a .next/standalone
+export UPLOAD_DIR="${UPLOAD_DIR:-/var/www/universo-nomada/public/uploads}"
 # Standalone a veces no resuelve el engine tras el restart; fijar ruta explícita
 ENGINE_CANDIDATES=(
   ".next/standalone/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node"

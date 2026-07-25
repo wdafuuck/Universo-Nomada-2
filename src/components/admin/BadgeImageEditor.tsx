@@ -67,15 +67,24 @@ export function BadgeImageEditor({ open, imageSrc, onClose, onApply }: Props) {
     setReady(false);
     const img = new Image();
     img.decoding = "async";
-    // Misma origen (/uploads) o blob:; evita canvas “tainted” al exportar
-    if (!imageSrc.startsWith("blob:")) {
+    // crossOrigin solo si es URL absoluta de otro origen.
+    // En /uploads same-origin, forzarlo sin ACAO deja el canvas “tainted” o onerror.
+    const absolute = /^https?:\/\//i.test(imageSrc);
+    if (
+      absolute &&
+      typeof window !== "undefined" &&
+      !imageSrc.startsWith(window.location.origin)
+    ) {
       img.crossOrigin = "anonymous";
     }
     img.onload = () => {
       imgRef.current = img;
       setReady(true);
     };
-    img.onerror = () => setReady(false);
+    img.onerror = () => {
+      setReady(false);
+      toast.error("No se pudo cargar la imagen para ajustar. Probá subirla de nuevo.");
+    };
     img.src = imageSrc;
   }, [open, imageSrc]);
 

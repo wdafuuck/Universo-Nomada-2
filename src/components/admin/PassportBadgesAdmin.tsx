@@ -74,7 +74,6 @@ export function PassportBadgesAdmin() {
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const localObjectUrl = useRef<string | null>(null);
 
   const load = async () => {
     const res = await fetch("/api/admin/passport-badges");
@@ -86,18 +85,12 @@ export function PassportBadgesAdmin() {
     void load();
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (localObjectUrl.current) URL.revokeObjectURL(localObjectUrl.current);
-    };
-  }, []);
-
   const openEditorWithSrc = (src: string) => {
     setEditorSrc(src);
     setEditorOpen(true);
   };
 
-  const uploadImage = async (file: File) => {
+  const uploadImage = async (file: File): Promise<string> => {
     setUploading(true);
     try {
       const fd = new FormData();
@@ -109,8 +102,10 @@ export function PassportBadgesAdmin() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al subir");
-      setEditing((e) => (e ? { ...e, image: data.url as string, emoji: "" } : e));
+      const url = data.url as string;
+      setEditing((e) => (e ? { ...e, image: url, emoji: "" } : e));
       toast.success("Insignia actualizada");
+      return url;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error al subir");
       throw e;
@@ -120,11 +115,14 @@ export function PassportBadgesAdmin() {
     }
   };
 
-  const onPickFile = (file: File) => {
-    if (localObjectUrl.current) URL.revokeObjectURL(localObjectUrl.current);
-    const url = URL.createObjectURL(file);
-    localObjectUrl.current = url;
-    openEditorWithSrc(url);
+  const onPickFile = async (file: File) => {
+    // Subir primero (flujo confiable); después abrir editor para ajustar.
+    try {
+      const url = await uploadImage(file);
+      openEditorWithSrc(url);
+    } catch {
+      // toast ya mostrado en uploadImage
+    }
   };
 
   const save = async () => {
@@ -336,10 +334,6 @@ export function PassportBadgesAdmin() {
         imageSrc={editorSrc}
         onClose={() => {
           setEditorOpen(false);
-          if (localObjectUrl.current) {
-            URL.revokeObjectURL(localObjectUrl.current);
-            localObjectUrl.current = null;
-          }
           setEditorSrc(null);
         }}
         onApply={async (file) => {
