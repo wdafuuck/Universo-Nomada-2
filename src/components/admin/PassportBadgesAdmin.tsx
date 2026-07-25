@@ -42,22 +42,19 @@ function slugify(name: string): string {
 
 function BadgeThumb({ src, size = "sm" }: { src?: string; size?: "sm" | "lg" }) {
   const [broken, setBroken] = useState(false);
-  const box =
-    size === "lg"
-      ? "h-28 w-28 rounded-2xl"
-      : "h-14 w-14 rounded-xl";
+  const box = size === "lg" ? "h-28 w-28 rounded-2xl" : "h-16 w-16 rounded-xl";
   const icon = size === "lg" ? "h-10 w-10" : "h-6 w-6";
 
   return (
     <div
-      className={`relative ${box} shrink-0 border border-white/15 bg-black/30 overflow-hidden flex items-center justify-center`}
+      className={`relative ${box} shrink-0 border border-white/10 bg-white/5 overflow-hidden flex items-center justify-center p-1`}
     >
       {src && !broken ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover"
+          className="max-h-full max-w-full object-contain"
           onError={() => setBroken(true)}
         />
       ) : (

@@ -378,12 +378,22 @@ function BadgeTile({
         ? "border-teal/30 bg-gradient-to-b from-teal/10 to-white shadow-sm hover:shadow-md hover:border-teal/50"
         : "border-slate-200 bg-slate-50 opacity-60 grayscale"
     }`}>
-      <div className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md overflow-hidden ${earned ? "ring-2 ring-teal/30" : ""}`}>
+      <div
+        className={`mx-auto mb-3 flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl bg-transparent ${
+          earned ? "drop-shadow-md" : ""
+        }`}
+      >
         {badge.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={badge.image} alt={badge.name} className="h-full w-full object-cover" />
+          <img
+            src={badge.image}
+            alt={badge.name}
+            className="h-full w-full object-contain"
+          />
         ) : (
-          <Stamp className="h-7 w-7 text-slate-300" />
+          <div className="flex h-full w-full items-center justify-center rounded-xl bg-white shadow-md">
+            <Stamp className="h-10 w-10 text-slate-300" />
+          </div>
         )}
       </div>
       <p className="font-bold text-slate-900">{badge.name}</p>
