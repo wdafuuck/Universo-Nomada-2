@@ -40,6 +40,33 @@ function slugify(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
+function BadgeThumb({ src, size = "sm" }: { src?: string; size?: "sm" | "lg" }) {
+  const [broken, setBroken] = useState(false);
+  const box =
+    size === "lg"
+      ? "h-28 w-28 rounded-2xl"
+      : "h-14 w-14 rounded-xl";
+  const icon = size === "lg" ? "h-10 w-10" : "h-6 w-6";
+
+  return (
+    <div
+      className={`relative ${box} shrink-0 border border-white/15 bg-black/30 overflow-hidden flex items-center justify-center`}
+    >
+      {src && !broken ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        <Stamp className={`${icon} text-white/30`} />
+      )}
+    </div>
+  );
+}
+
 export function PassportBadgesAdmin() {
   const [items, setItems] = useState<Badge[]>([]);
   const [editing, setEditing] = useState<(Partial<Badge> & { id?: number }) | null>(null);
@@ -163,19 +190,7 @@ export function PassportBadgesAdmin() {
         <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start">
             <div className="shrink-0">
-              <div className="relative h-28 w-28 rounded-2xl border border-white/15 bg-black/30 overflow-hidden flex items-center justify-center">
-                {editing?.image ? (
-                  // uploads dinámicos: sin optimizer (evita 404/HTML → "isn't a valid image")
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={editing.image}
-                    alt={editing.name || "Insignia"}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                ) : (
-                  <Stamp className="h-10 w-10 text-white/30" />
-                )}
-              </div>
+              <BadgeThumb src={editing?.image} size="lg" />
               <input
                 ref={fileRef}
                 type="file"
@@ -251,14 +266,7 @@ export function PassportBadgesAdmin() {
       <div className="grid sm:grid-cols-2 gap-3">
         {items.map((item) => (
           <div key={item.id} className="p-4 bg-white/5 rounded-2xl border border-white/10 flex gap-3">
-            <div className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-black/30 border border-white/10 flex items-center justify-center">
-              {item.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.image} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
-              ) : (
-                <Stamp className="h-6 w-6 text-white/30" />
-              )}
-            </div>
+            <BadgeThumb src={item.image} />
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold truncate">{item.name}</p>
               {item.description ? (

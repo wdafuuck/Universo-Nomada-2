@@ -1,23 +1,24 @@
-:81 {
-	@transform_port_query {
-		query XTransformPort=*
+# Producción — Universo Nómada (DigitalOcean + Caddy)
+# Tras editar en el servidor: caddy validate && systemctl reload caddy
+universonomada.cl, www.universonomada.cl {
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 	}
 
-	handle @transform_port_query {
-		reverse_proxy localhost:{query.XTransformPort} {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
+	@recover path /recuperar /recuperar/
+	header @recover {
+		Clear-Site-Data `"cache", "storage"`
+	}
+
+	# Uploads persistentes (Next standalone no sirve bien el symlink)
+	handle /uploads/* {
+		root * /var/www/universo-nomada/public
+		file_server
 	}
 
 	handle {
-		reverse_proxy localhost:3001 {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
+		reverse_proxy 127.0.0.1:3001
 	}
 }
