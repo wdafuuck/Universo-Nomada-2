@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001 2>&1 | tee dev.log",
-    "build": "next build && mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/ && rsync -a --delete .next/server/ .next/standalone/.next/server/ && cp -r public .next/standalone/ && mkdir -p public/uploads .next/standalone/node_modules && rm -rf .next/standalone/public/uploads && ln -sfn \"$(pwd)/public/uploads\" .next/standalone/public/uploads && cp -R node_modules/.prisma .next/standalone/node_modules/ && cp -R node_modules/@prisma .next/standalone/node_modules/",
+    "build": "next build && mkdir -p .next/standalone/.next && rsync -a --delete .next/static/ .next/standalone/.next/static/ && rsync -a --delete .next/server/ .next/standalone/.next/server/ && cp -r public .next/standalone/ && mkdir -p public/uploads .next/standalone/node_modules && rm -rf .next/standalone/public/uploads && ln -sfn \"$(pwd)/public/uploads\" .next/standalone/public/uploads && cp -R node_modules/.prisma .next/standalone/node_modules/ && cp -R node_modules/@prisma .next/standalone/node_modules/ && test -f .next/standalone/server.js && test -f .next/standalone/.next/server/app/page_client-reference-manifest.js && test \"$(ls .next/standalone/.next/server/chunks/ssr | wc -l)\" -ge \"$(ls .next/server/chunks/ssr | wc -l)\"",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

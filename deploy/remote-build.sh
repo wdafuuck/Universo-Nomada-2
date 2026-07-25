@@ -73,6 +73,15 @@ if [[ ! -f .next/standalone/.next/server/app/page_client-reference-manifest.js ]
   exit 1
 fi
 
+ssr_standalone=$(ls .next/standalone/.next/server/chunks/ssr | wc -l | tr -d ' ')
+ssr_root=$(ls .next/server/chunks/ssr | wc -l | tr -d ' ')
+if [[ "$ssr_standalone" -lt "$ssr_root" ]]; then
+  echo ":: error: chunks SSR incompletos ($ssr_standalone < $ssr_root)"
+  rollback_standalone
+  exit 1
+fi
+echo "    SSR chunks OK ($ssr_standalone)"
+
 echo "==> Symlink uploads persistente"
 mkdir -p public/uploads
 rm -rf .next/standalone/public/uploads

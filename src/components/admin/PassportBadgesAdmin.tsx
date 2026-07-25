@@ -51,7 +51,6 @@ function BadgeThumb({ src, size = "sm" }: { src?: string; size?: "sm" | "lg" }) 
       className={`relative ${box} shrink-0 border border-white/10 bg-white/5 overflow-hidden flex items-center justify-center p-1`}
     >
       {src && !broken ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
           alt=""
