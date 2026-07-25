@@ -44,9 +44,12 @@ export const metadata: Metadata = {
   category: "travel",
   verification: siteVerificationMetadata(),
   icons: {
-    icon: [{ url: "/images/logo-icon.png", type: "image/png", sizes: "192x192" }],
-    apple: [{ url: "/images/logo-un.png", type: "image/png" }],
-    shortcut: "/images/logo-icon.png",
+    icon: [
+      { url: "/images/favicon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/images/logo-un.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/images/favicon-192.png", type: "image/png", sizes: "180x180" }],
+    shortcut: "/images/favicon-192.png",
   },
   manifest: "/manifest.json",
   formatDetection: { telephone: true, email: true },
