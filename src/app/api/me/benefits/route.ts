@@ -26,6 +26,6 @@ export async function GET() {
     benefits,
     message: globallyEligible
       ? undefined
-      : "Los beneficios se desbloquean con un viaje vigente o haber viajado con nosotros en el último año.",
+      : "Los beneficios se desbloquean con una reserva activa.",
   });
 }

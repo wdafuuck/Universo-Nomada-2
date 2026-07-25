@@ -282,13 +282,17 @@ function BenefitTile({ benefit, onOpen }: { benefit: Benefit; onOpen: () => void
         </div>
       )}
       <div className="p-4">
-        <p className="text-xs font-bold uppercase text-teal truncate">{benefit.brandName}</p>
-        <h3 className="font-bold text-slate-900 mt-1 line-clamp-2">{benefit.title}</h3>
-        {benefit.discountLabel && (
+        <h3 className="font-bold text-slate-900 line-clamp-2">{benefit.title}</h3>
+        {benefit.available && benefit.discountLabel ? (
           <span className="inline-block mt-2 rounded-full bg-amber/15 text-amber-800 text-xs font-bold px-2 py-0.5">
             {benefit.discountLabel}
           </span>
-        )}
+        ) : !benefit.available ? (
+          <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
+            <Lock className="h-3 w-3 shrink-0" />
+            Se desbloquea con una reserva activa
+          </p>
+        ) : null}
       </div>
     </button>
   );
@@ -312,50 +316,55 @@ function BenefitDetailDialog({
   };
 
   const instructions = benefit.instructions?.trim() || benefit.description;
+  const lockMessage = benefit.lockReason || "Se desbloquea con una reserva activa.";
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          {benefit.image && (
+          {benefit.available && benefit.image ? (
             <div className="relative h-40 w-full rounded-xl overflow-hidden mb-2 -mx-1">
               <UploadAwareImage src={benefit.image} alt={benefit.title} fill className="object-cover" />
             </div>
-          )}
-          <p className="text-xs font-bold uppercase text-teal">{benefit.brandName}</p>
+          ) : null}
+          {benefit.available ? (
+            <p className="text-xs font-bold uppercase text-teal">{benefit.brandName}</p>
+          ) : null}
           <DialogTitle className="text-xl">{benefit.title}</DialogTitle>
-          {benefit.discountLabel && (
+          {benefit.available && benefit.discountLabel ? (
             <span className="inline-block w-fit rounded-full bg-amber/15 text-amber-800 text-xs font-bold px-3 py-1">
               {benefit.discountLabel}
             </span>
-          )}
+          ) : null}
         </DialogHeader>
 
-        {!benefit.available && (
+        {!benefit.available ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 flex gap-2">
             <Lock className="h-5 w-5 shrink-0 mt-0.5" />
-            <p>{benefit.lockReason || "Este beneficio no está disponible en este momento."}</p>
+            <p>{lockMessage}</p>
           </div>
-        )}
+        ) : (
+          <>
+            {benefit.lockReason ? (
+              <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{benefit.lockReason}</p>
+            ) : null}
 
-        {benefit.available && benefit.lockReason && (
-          <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">{benefit.lockReason}</p>
-        )}
+            <div className="space-y-3 text-sm text-slate-600">
+              <h4 className="font-bold text-slate-900">Cómo utilizar este beneficio</h4>
+              <div className="whitespace-pre-wrap leading-relaxed">{instructions}</div>
+            </div>
 
-        <div className="space-y-3 text-sm text-slate-600">
-          <h4 className="font-bold text-slate-900">Cómo utilizar este beneficio</h4>
-          <div className="whitespace-pre-wrap leading-relaxed">{instructions}</div>
-        </div>
-
-        {benefit.couponCode && benefit.available && (
-          <button
-            type="button"
-            onClick={copyCode}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-teal/40 bg-teal/5 px-4 py-3 text-sm font-mono font-bold text-teal"
-          >
-            {benefit.couponCode}
-            <Copy className="h-4 w-4" />
-          </button>
+            {benefit.couponCode ? (
+              <button
+                type="button"
+                onClick={copyCode}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-teal/40 bg-teal/5 px-4 py-3 text-sm font-mono font-bold text-teal"
+              >
+                {benefit.couponCode}
+                <Copy className="h-4 w-4" />
+              </button>
+            ) : null}
+          </>
         )}
       </DialogContent>
     </Dialog>
@@ -593,14 +602,17 @@ export function MemberAccountView() {
               <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
                 {benefitsEligible
                   ? "Pronto agregaremos cupones y descuentos exclusivos para ti."
-                  : "Los beneficios se desbloquean con un viaje vigente o haber viajado con nosotros en el último año."}
+                  : "Los beneficios se desbloquean con una reserva activa."}
               </div>
             ) : (
               <>
                 {!benefitsEligible && (
                   <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 mb-4 text-sm text-amber-900 flex gap-2">
                     <Lock className="h-5 w-5 shrink-0" />
-                    <p>Algunos beneficios pueden tener restricciones adicionales según tu historial de viajes.</p>
+                    <p>
+                      Podés ver los títulos de los beneficios. El detalle y el código se desbloquean con una
+                      reserva activa.
+                    </p>
                   </div>
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

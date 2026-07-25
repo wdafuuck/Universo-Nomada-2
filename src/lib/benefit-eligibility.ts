@@ -38,7 +38,7 @@ export function evaluateBenefitAvailability(
   if (!globallyEligible) {
     return {
       available: false,
-      lockReason: "Se desbloquea con un viaje vigente o haber viajado con nosotros en el último año.",
+      lockReason: "Se desbloquea con una reserva activa.",
     };
   }
 
@@ -48,7 +48,7 @@ export function evaluateBenefitAvailability(
         available: false,
         lockReason:
           benefit.restrictionNote.trim() ||
-          "Este beneficio aplica solo mientras tienes un viaje programado con nosotros.",
+          "Se desbloquea con una reserva activa.",
       };
     }
     return { available: true, lockReason: null };
@@ -86,6 +86,17 @@ export function mapBenefitsForMember(benefits: BenefitRow[], trips: MemberTrip[]
   const globallyEligible = isBenefitsEligible(trips);
   return benefits.map((benefit) => {
     const { available, lockReason } = evaluateBenefitAvailability(benefit, trips, globallyEligible);
-    return { ...benefit, available, lockReason };
+    if (available) {
+      return { ...benefit, available, lockReason };
+    }
+    // No filtrar contenido sensible a quien aún no desbloqueó el beneficio
+    return {
+      ...benefit,
+      description: "",
+      instructions: "",
+      couponCode: "",
+      available,
+      lockReason,
+    };
   });
 }
