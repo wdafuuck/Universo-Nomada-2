@@ -34,6 +34,9 @@ export PORT="${PORT:-3001}"
 export NODE_ENV=production
 # Ruta absoluta: standalone cambia cwd a .next/standalone
 export UPLOAD_DIR="${UPLOAD_DIR:-/var/www/universo-nomada/public/uploads}"
+# Caddy (user caddy) debe poder leer uploads
+chmod a+rx /var/www/universo-nomada /var/www/universo-nomada/public 2>/dev/null || true
+chmod -R a+rX "${UPLOAD_DIR}" 2>/dev/null || true
 # Standalone a veces no resuelve el engine tras el restart; fijar ruta explícita
 ENGINE_CANDIDATES=(
   ".next/standalone/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node"

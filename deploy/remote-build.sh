@@ -86,6 +86,9 @@ echo "==> Symlink uploads persistente"
 mkdir -p public/uploads
 rm -rf .next/standalone/public/uploads
 ln -sfn "$(pwd)/public/uploads" .next/standalone/public/uploads
+# Caddy corre como user `caddy` — necesita atravesar dirs y leer archivos
+chmod a+rx /var/www/universo-nomada /var/www/universo-nomada/public 2>/dev/null || true
+chmod -R a+rX public/uploads 2>/dev/null || true
 
 echo "==> Permisos scripts"
 chmod +x deploy/universo-nomada-start.sh deploy/remote-build.sh deploy/universo-nomada-watchdog.sh 2>/dev/null || true

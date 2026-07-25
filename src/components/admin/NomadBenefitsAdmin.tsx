@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Plus, Save, Trash2, Pencil, Upload, Gift, ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 
 import { BENEFIT_RESTRICTION_TYPES } from "@/lib/benefit-constants";
 
@@ -249,7 +249,7 @@ export function NomadBenefitsAdmin() {
           </div>
           {editing?.image && (
             <div className="relative h-24 w-full max-w-xs rounded-xl overflow-hidden">
-              <Image src={editing.image} alt="" fill className="object-cover" />
+              <UploadAwareImage src={editing.image} alt="" fill className="object-cover" />
             </div>
           )}
           <div className="flex gap-2">
@@ -267,7 +267,7 @@ export function NomadBenefitsAdmin() {
           <div key={item.id} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/10">
             {item.image && (
               <div className="relative h-16 w-16 rounded-xl overflow-hidden shrink-0">
-                <Image src={item.image} alt="" fill className="object-cover" />
+                <UploadAwareImage src={item.image} alt="" fill className="object-cover" />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -352,7 +352,7 @@ export function NomadBenefitsAdmin() {
             </div>
             {editingLogo?.imageUrl && (
               <div className="relative h-16 w-40 rounded-xl overflow-hidden bg-white border border-white/10">
-                <Image src={editingLogo.imageUrl} alt="" fill className="object-contain p-2" />
+                <UploadAwareImage src={editingLogo.imageUrl} alt="" fill className="object-contain p-2" />
               </div>
             )}
             <div className="flex gap-2">
@@ -374,7 +374,7 @@ export function NomadBenefitsAdmin() {
           {logos.map((logo) => (
             <div key={logo.id} className="flex flex-col items-center gap-2 p-3 bg-white/5 rounded-xl border border-white/10 w-36">
               <div className="relative h-12 w-full rounded-lg bg-white overflow-hidden">
-                <Image src={logo.imageUrl} alt={logo.name} fill className="object-contain p-1" />
+                <UploadAwareImage src={logo.imageUrl} alt={logo.name} fill className="object-contain p-1" />
               </div>
               <p className="text-white/50 text-xs truncate w-full text-center">{logo.name || "Sin nombre"}</p>
               <div className="flex gap-1">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -15,6 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { MemberAuthPanel } from "@/components/MemberAuthPanel";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 import type { MemberTrip } from "@/lib/member-trips";
 import { buildTransferProofMailto, buildTransferProofWhatsApp } from "@/lib/bank-transfer";
 import type { EarnedBadge, PassportBadgeDef } from "@/lib/passport-badges";
@@ -269,7 +269,7 @@ function BenefitTile({ benefit, onOpen }: { benefit: Benefit; onOpen: () => void
     >
       {benefit.image ? (
         <div className="relative h-32 w-full bg-slate-100">
-          <Image src={benefit.image} alt={benefit.title} fill className="object-cover" />
+          <UploadAwareImage src={benefit.image} alt={benefit.title} fill className="object-cover" />
           {!benefit.available && (
             <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center">
               <Lock className="h-8 w-8 text-white" />
@@ -319,7 +319,7 @@ function BenefitDetailDialog({
         <DialogHeader>
           {benefit.image && (
             <div className="relative h-40 w-full rounded-xl overflow-hidden mb-2 -mx-1">
-              <Image src={benefit.image} alt={benefit.title} fill className="object-cover" />
+              <UploadAwareImage src={benefit.image} alt={benefit.title} fill className="object-cover" />
             </div>
           )}
           <p className="text-xs font-bold uppercase text-teal">{benefit.brandName}</p>
@@ -384,7 +384,6 @@ function BadgeTile({
         }`}
       >
         {badge.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={badge.image}
             alt={badge.name}
