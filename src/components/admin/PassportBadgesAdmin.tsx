@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { Plus, Save, Trash2, Pencil, Upload, Stamp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -166,12 +165,12 @@ export function PassportBadgesAdmin() {
             <div className="shrink-0">
               <div className="relative h-28 w-28 rounded-2xl border border-white/15 bg-black/30 overflow-hidden flex items-center justify-center">
                 {editing?.image ? (
-                  <Image
+                  // uploads dinámicos: sin optimizer (evita 404/HTML → "isn't a valid image")
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
                     src={editing.image}
                     alt={editing.name || "Insignia"}
-                    fill
-                    className="object-cover"
-                    sizes="112px"
+                    className="absolute inset-0 h-full w-full object-cover"
                   />
                 ) : (
                   <Stamp className="h-10 w-10 text-white/30" />
@@ -254,7 +253,8 @@ export function PassportBadgesAdmin() {
           <div key={item.id} className="p-4 bg-white/5 rounded-2xl border border-white/10 flex gap-3">
             <div className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-black/30 border border-white/10 flex items-center justify-center">
               {item.image ? (
-                <Image src={item.image} alt={item.name} fill className="object-cover" sizes="56px" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.image} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
               ) : (
                 <Stamp className="h-6 w-6 text-white/30" />
               )}

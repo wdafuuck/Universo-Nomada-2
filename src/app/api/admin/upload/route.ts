@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile } from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 import { requireAdmin } from "@/lib/auth-session";
+import { ensureUploadsDir } from "@/lib/uploads-dir";
 
 const IMAGE_MAX_INPUT = 25 * 1024 * 1024;
 const PDF_MAX = 15 * 1024 * 1024;
@@ -62,8 +63,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
+    const uploadDir = await ensureUploadsDir();
 
     const raw = Buffer.from(await file.arrayBuffer());
     const optimized = isPdf ? null : await optimizeImage(raw, file.type);

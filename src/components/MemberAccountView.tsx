@@ -380,7 +380,8 @@ function BadgeTile({
     }`}>
       <div className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md overflow-hidden ${earned ? "ring-2 ring-teal/30" : ""}`}>
         {badge.image ? (
-          <Image src={badge.image} alt={badge.name} width={64} height={64} className="h-full w-full object-cover" />
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={badge.image} alt={badge.name} className="h-full w-full object-cover" />
         ) : (
           <Stamp className="h-7 w-7 text-slate-300" />
         )}
