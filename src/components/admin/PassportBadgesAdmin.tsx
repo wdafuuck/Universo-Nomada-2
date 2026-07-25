@@ -116,10 +116,9 @@ export function PassportBadgesAdmin() {
   };
 
   const onPickFile = async (file: File) => {
-    // Subir primero (flujo confiable); después abrir editor para ajustar.
+    // Solo subir; el ajuste es opcional con el botón "Ajustar".
     try {
-      const url = await uploadImage(file);
-      openEditorWithSrc(url);
+      await uploadImage(file);
     } catch {
       // toast ya mostrado en uploadImage
     }
