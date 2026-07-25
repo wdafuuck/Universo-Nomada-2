@@ -26,6 +26,12 @@ sleep 1
 echo "==> Build"
 npm run build
 
+if [ ! -f .next/standalone/server.js ]; then
+  echo ":: error: falta .next/standalone/server.js tras el build"
+  systemctl start universo-nomada || true
+  exit 1
+fi
+
 if [ ! -f .next/standalone/.next/server/app/page_client-reference-manifest.js ]; then
   echo ":: error: falta page_client-reference-manifest.js tras el build"
   systemctl start universo-nomada || true
@@ -36,6 +42,8 @@ echo "==> Permisos scripts"
 chmod +x deploy/universo-nomada-start.sh deploy/remote-build.sh 2>/dev/null || true
 
 echo "==> Start"
+# Evitar arrancar a medias si el build aún no escribió server.js
+test -f .next/standalone/server.js
 systemctl start universo-nomada
 
 ok=0
