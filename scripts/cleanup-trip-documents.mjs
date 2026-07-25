@@ -1,11 +1,11 @@
 /**
- * Elimina documentos de viaje vencidos (30 días post-viaje).
+ * Elimina documentos de viaje vencidos (90 días / 3 meses post-viaje).
  * Uso: node --env-file=.env scripts/cleanup-trip-documents.mjs
  */
 import { PrismaClient } from "@prisma/client";
 import path from "node:path";
 
-const RETENTION_DAYS = 30;
+const RETENTION_DAYS = 90;
 
 function parseDuration(raw) {
   const s = (raw ?? "").trim();

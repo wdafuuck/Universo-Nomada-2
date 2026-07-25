@@ -8,6 +8,7 @@ import {
   getFirstCartLineMeta,
 } from "@/lib/trip-dates";
 import { TRIP_DOCUMENT_RETENTION_DAYS } from "@/lib/trip-documents";
+import { getUploadsDir } from "@/lib/uploads-dir";
 
 export { TRIP_DOCUMENT_RETENTION_DAYS };
 
@@ -70,7 +71,9 @@ export function daysUntilDocumentExpiry(lead: LeadForRetention, now = new Date()
 
 async function deleteUploadFile(fileUrl: string): Promise<void> {
   if (!fileUrl.startsWith("/uploads/")) return;
-  const filePath = path.join(process.cwd(), "public", fileUrl);
+  const filename = fileUrl.slice("/uploads/".length);
+  if (!filename || filename.includes("..") || filename.includes("/")) return;
+  const filePath = path.join(getUploadsDir(), filename);
   try {
     await fs.unlink(filePath);
   } catch {

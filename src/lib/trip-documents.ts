@@ -16,8 +16,8 @@ export function tripDocumentLabel(docType: string, customLabel?: string | null):
 
 export const TRIP_SOURCES = ["carrito", "admin-manual"] as const;
 
-/** Días que el pasajero puede descargar documentos después de finalizar el viaje. */
-export const TRIP_DOCUMENT_RETENTION_DAYS = 30;
+/** Días que el pasajero puede descargar documentos después de finalizar el viaje (≈ 3 meses). */
+export const TRIP_DOCUMENT_RETENTION_DAYS = 90;
 
 export type TripSource = (typeof TRIP_SOURCES)[number];
 

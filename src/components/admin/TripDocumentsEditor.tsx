@@ -60,7 +60,7 @@ export function TripDocumentsEditor({
         };
         if (!retention?.tripEnded) {
           setRetentionNote(
-            `El pasajero podrá descargar estos archivos hasta ${retentionDays ?? 30} días después de la fecha de fin del viaje.`,
+            `El pasajero podrá descargar estos archivos hasta ${retentionDays ?? 90} días después de la fecha de fin del viaje.`,
           );
         } else if (retention.available && retention.daysRemaining != null) {
           setRetentionNote(
