@@ -1,16 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Loader2, X, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 const VIEW = 320;
 const EXPORT = 768;
@@ -35,6 +29,11 @@ export function BadgeImageEditor({ open, imageSrc, onClose, onApply }: Props) {
   const [zoom, setZoom] = useState(1);
   const [ready, setReady] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const paint = () => {
     const canvas = canvasRef.current;
@@ -106,13 +105,22 @@ export function BadgeImageEditor({ open, imageSrc, onClose, onApply }: Props) {
       img.onload = null;
       img.onerror = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- paint via refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, imageSrc]);
 
   useEffect(() => {
     if (ready) schedulePaint();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, zoom]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !applying && !dragRef.current) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, applying, onClose]);
 
   const endDrag = (canvas: HTMLCanvasElement, pointerId: number) => {
     if (dragRef.current?.pointerId === pointerId) {
@@ -210,31 +218,35 @@ export function BadgeImageEditor({ open, imageSrc, onClose, onApply }: Props) {
     }
   };
 
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!v && !dragRef.current && !applying) onClose();
+  if (!open || !mounted) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Ajustar insignia"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !dragRef.current && !applying) onClose();
       }}
     >
-      <DialogContent
-        className="bg-[#0f1f35] border-white/10 text-white sm:max-w-md"
-        onPointerDownOutside={(e) => {
-          if (dragRef.current) e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          if (dragRef.current || applying) e.preventDefault();
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle>Ajustar insignia</DialogTitle>
-        </DialogHeader>
+      <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#0f1f35] p-6 text-white shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={applying}
+          className="absolute top-4 right-4 rounded-lg p-1 text-white/50 hover:text-white hover:bg-white/10"
+          aria-label="Cerrar"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <h2 className="text-lg font-semibold pr-8">Ajustar insignia</h2>
+        <p className="text-xs text-white/50 mt-2 mb-4">
+          Arrastrá para mover, usá el zoom o tocá Centrar. Se guarda el recuadro completo.
+        </p>
 
         <div className="space-y-4">
-          <p className="text-xs text-white/50">
-            Arrastrá para mover, usá el zoom o tocá Centrar. Se guarda el recuadro completo.
-          </p>
-
           <div className="mx-auto w-fit rounded-2xl border border-white/15 overflow-hidden bg-black/40 touch-none select-none">
             <canvas
               ref={canvasRef}
@@ -251,6 +263,12 @@ export function BadgeImageEditor({ open, imageSrc, onClose, onApply }: Props) {
               }}
             />
           </div>
+
+          {!ready ? (
+            <p className="text-center text-xs text-white/40 flex items-center justify-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando imagen…
+            </p>
+          ) : null}
 
           <div className="flex items-center gap-3">
             <ZoomOut className="h-4 w-4 text-white/50 shrink-0" />
@@ -282,29 +300,30 @@ export function BadgeImageEditor({ open, imageSrc, onClose, onApply }: Props) {
           >
             Centrar
           </Button>
-        </div>
 
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={applying}
-            onClick={onClose}
-            className="border-white/15 bg-white/5 text-white rounded-xl"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            disabled={!ready || applying}
-            onClick={() => void handleApply()}
-            className="bg-teal text-[#070f1a] font-bold rounded-xl"
-          >
-            {applying ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-            Aplicar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={applying}
+              onClick={onClose}
+              className="border-white/15 bg-white/5 text-white rounded-xl"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              disabled={!ready || applying}
+              onClick={() => void handleApply()}
+              className="bg-teal text-[#070f1a] font-bold rounded-xl"
+            >
+              {applying ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Aplicar
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
