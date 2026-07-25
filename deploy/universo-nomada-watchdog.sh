@@ -34,7 +34,7 @@ if [[ ! -f "$ROOT/.next/standalone/server.js" ]]; then
   if [[ -f "$ROOT/.next/standalone.bak/server.js" ]]; then
     echo "$(ts) restaurando standalone.bak" >>"$LOG"
     rm -rf "$ROOT/.next/standalone"
-    mv "$ROOT/.next/standalone.bak" "$ROOT/.next/standalone"
+    cp -a "$ROOT/.next/standalone.bak" "$ROOT/.next/standalone"
     mkdir -p "$ROOT/public/uploads"
     rm -rf "$ROOT/.next/standalone/public/uploads"
     ln -sfn "$ROOT/public/uploads" "$ROOT/.next/standalone/public/uploads"

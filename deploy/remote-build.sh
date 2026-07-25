@@ -20,8 +20,9 @@ fi
 rollback_standalone() {
   echo "==> ROLLBACK → .next/standalone.bak"
   if [[ -f .next/standalone.bak/server.js ]]; then
+    # cp (no mv): el .bak debe seguir existiendo para el watchdog
     rm -rf .next/standalone
-    mv .next/standalone.bak .next/standalone
+    cp -a .next/standalone.bak .next/standalone
     mkdir -p public/uploads
     rm -rf .next/standalone/public/uploads
     ln -sfn "$(pwd)/public/uploads" .next/standalone/public/uploads

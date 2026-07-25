@@ -37,6 +37,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Evita el require hasheado `@prisma/client-<hash>` en standalone (caídas SSR).
+  serverExternalPackages: ["@prisma/client", "prisma"],
   poweredByHeader: false,
   allowedDevOrigins: ["127.0.0.1", "localhost", "192.168.0.4"],
   async headers() {
