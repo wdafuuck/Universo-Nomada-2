@@ -2,6 +2,27 @@
 # Arranque producción — usado por systemd (universo-nomada.service)
 set -euo pipefail
 cd /var/www/universo-nomada
+
+# Si falta server.js, restaurar backup antes de que systemd marque fallo
+if [[ ! -f .next/standalone/server.js ]]; then
+  echo "[start] ERROR: falta .next/standalone/server.js" >&2
+  if [[ -f .next/standalone.bak/server.js ]]; then
+    echo "[start] Restaurando standalone.bak…" >&2
+    rm -rf .next/standalone
+    mv .next/standalone.bak .next/standalone
+    mkdir -p public/uploads
+    rm -rf .next/standalone/public/uploads
+    ln -sfn "$(pwd)/public/uploads" .next/standalone/public/uploads
+  else
+    exit 1
+  fi
+fi
+
+if [[ ! -f .next/standalone/server.js ]]; then
+  echo "[start] FATAL: sin server.js ni backup" >&2
+  exit 1
+fi
+
 set -a
 # shellcheck disable=SC1091
 source ./.env

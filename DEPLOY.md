@@ -73,9 +73,35 @@ Sube el código actual por SSH, build en el servidor y reinicia. **No** toca `.e
 | `SUMUP_API_KEY` | Pagos internacional |
 | `TRANSBANK_*` | Webpay Plus |
 
+## Confiabilidad (anti-caídas)
+
+El deploy remoto (`deploy/remote-build.sh`) es **atómico**:
+
+1. `flock` — un solo build a la vez  
+2. Backup de `.next/standalone` → `.next/standalone.bak` **sin** detener la app  
+3. `npm run build` con el servicio aún vivo  
+4. `systemctl restart` solo si hay `server.js` válido  
+5. Healthcheck (`/api/health` + home 200); si falla → **rollback** al `.bak`
+
+**Watchdog** (cron cada minuto): `deploy/universo-nomada-watchdog.sh`  
+Si health falla, intenta `systemctl start` y, si falta `server.js`, restaura el backup.
+
+Instalar/actualizar en el droplet (una vez):
+
+```bash
+cp /var/www/universo-nomada/deploy/universo-nomada.service /etc/systemd/system/
+systemctl daemon-reload
+chmod +x /var/www/universo-nomada/deploy/universo-nomada-watchdog.sh
+touch /var/log/universo-nomada-watchdog.log
+(crontab -l 2>/dev/null | grep -v universo-nomada-watchdog; echo '* * * * * /var/www/universo-nomada/deploy/universo-nomada-watchdog.sh') | crontab -
+```
+
+Regla viva del agente: `.cursor/rules/prod-reliability.mdc` (bitácora de incidentes).
+
 ## Post-deploy
 
-- [ ] `GET /api/health` → `status: ok`
+- [ ] `GET /api/health` → `status: ok` y `db: connected`
+- [ ] Home `https://universonomada.cl/` → 200
 - [ ] Probar checkout con pago de prueba
 - [ ] Verificar emails de confirmación
 - [ ] Google Search Console + sitemap
