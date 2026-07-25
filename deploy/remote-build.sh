@@ -5,6 +5,13 @@
 set -euo pipefail
 cd /var/www/universo-nomada
 
+# Evitar dos deploys a la vez (dejan el sitio sin server.js)
+exec 9>/var/lock/universo-nomada-build.lock
+if ! flock -n 9; then
+  echo ":: error: ya hay un build/deploy en curso. Esperá a que termine."
+  exit 1
+fi
+
 # El repo local puede traer sqlite; en producción siempre PostgreSQL
 if grep -q 'provider = "sqlite"' prisma/schema.prisma; then
   echo "==> Ajustando Prisma provider → postgresql"

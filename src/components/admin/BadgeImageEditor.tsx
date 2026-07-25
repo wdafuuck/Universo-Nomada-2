@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -66,6 +67,10 @@ export function BadgeImageEditor({ open, imageSrc, onClose, onApply }: Props) {
     setReady(false);
     const img = new Image();
     img.decoding = "async";
+    // Misma origen (/uploads) o blob:; evita canvas “tainted” al exportar
+    if (!imageSrc.startsWith("blob:")) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => {
       imgRef.current = img;
       setReady(true);
@@ -128,6 +133,14 @@ export function BadgeImageEditor({ open, imageSrc, onClose, onApply }: Props) {
       const file = await exportFile();
       await onApply(file);
       onClose();
+    } catch (e) {
+      const msg =
+        e instanceof Error && /tainted|security/i.test(e.message)
+          ? "No se pudo exportar esa imagen. Volvé a subirla y ajustala."
+          : e instanceof Error
+            ? e.message
+            : "Error al aplicar";
+      toast.error(msg);
     } finally {
       setApplying(false);
     }
