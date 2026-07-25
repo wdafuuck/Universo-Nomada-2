@@ -16,10 +16,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
       data: {
         slug: body.slug,
         name: body.name,
-        destination: body.destination,
+        destination: body.destination ?? body.name,
         description: body.description,
         image: body.image,
-        emoji: body.emoji,
+        emoji: body.emoji ?? "",
         matchTerms: typeof body.matchTerms === "string" ? body.matchTerms : JSON.stringify(body.matchTerms ?? []),
         active: body.active !== false,
         sortOrder: Number(body.sortOrder) || 0,

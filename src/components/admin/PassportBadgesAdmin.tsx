@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Plus, Save, Trash2, Pencil, Upload, Stamp } from "lucide-react";
+import { Plus, Save, Trash2, Pencil, Upload, Stamp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 type Badge = {
   id: number;
@@ -27,17 +26,28 @@ const empty = (): Omit<Badge, "id"> => ({
   destination: "",
   description: "",
   image: "",
-  emoji: "🌍",
+  emoji: "",
   matchTerms: "[]",
   active: true,
   sortOrder: 0,
 });
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 export function PassportBadgesAdmin() {
   const [items, setItems] = useState<Badge[]>([]);
   const [editing, setEditing] = useState<(Partial<Badge> & { id?: number }) | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     const res = await fetch("/api/admin/passport-badges");
@@ -45,18 +55,54 @@ export function PassportBadgesAdmin() {
     setItems(data.badges ?? []);
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const uploadImage = async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: fd,
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Error al subir");
+      setEditing((e) => (e ? { ...e, image: data.url as string, emoji: "" } : e));
+      toast.success("Insignia subida");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al subir");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   const save = async () => {
     if (!editing?.name?.trim()) {
-      toast.error("Nombre obligatorio");
+      toast.error("Nombre del lugar obligatorio");
+      return;
+    }
+    if (!editing.image?.trim()) {
+      toast.error("Sube la imagen de la insignia");
       return;
     }
     setSaving(true);
     try {
+      const name = editing.name.trim();
+      const slug = editing.slug?.trim() || slugify(name);
       const payload = {
         ...editing,
-        slug: editing.slug?.trim() || editing.name!.toLowerCase().replace(/\s+/g, "-"),
+        name,
+        slug,
+        destination: name,
+        description: (editing.description ?? "").trim(),
+        image: editing.image.trim(),
+        emoji: "",
+        matchTerms: editing.matchTerms?.trim() || JSON.stringify([name.toLowerCase()]),
       };
       const url = isNew ? "/api/admin/passport-badges" : `/api/admin/passport-badges/${editing.id}`;
       const res = await fetch(url, {
@@ -80,8 +126,14 @@ export function PassportBadgesAdmin() {
 
   const remove = async (id: number) => {
     if (!confirm("¿Eliminar insignia?")) return;
-    const res = await fetch(`/api/admin/passport-badges/${id}`, { method: "DELETE", credentials: "include" });
-    if (!res.ok) { toast.error("Error"); return; }
+    const res = await fetch(`/api/admin/passport-badges/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      toast.error("Error");
+      return;
+    }
     toast.success("Eliminada");
     await load();
   };
@@ -94,45 +146,105 @@ export function PassportBadgesAdmin() {
             <Stamp className="h-5 w-5 text-teal" /> Pasaporte Nómada — Insignias
           </h2>
           <p className="text-white/40 text-sm mt-1">
-            Se desbloquean cuando el cliente completa un viaje a ese destino. Usa términos de búsqueda en JSON.
+            Solo imagen de la insignia, nombre del lugar y una línea de descripción. Se desbloquean al completar un viaje a ese destino.
           </p>
         </div>
-        <Button onClick={() => { setEditing(empty()); setIsNew(true); }} className="bg-teal text-[#070f1a] font-bold rounded-xl">
+        <Button
+          onClick={() => {
+            setEditing(empty());
+            setIsNew(true);
+          }}
+          className="bg-teal text-[#070f1a] font-bold rounded-xl"
+        >
           <Plus className="h-4 w-4 mr-1" /> Nueva
         </Button>
       </div>
 
       {(isNew || editing) && (
-        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-3">
-          <div className="grid sm:grid-cols-2 gap-3">
-            <Input placeholder="Nombre (ej: Rapa Nui)" value={editing?.name ?? ""}
-              onChange={(e) => setEditing({ ...editing!, name: e.target.value })}
-              className="bg-white/5 border-white/10 text-white" />
-            <Input placeholder="Slug (ej: rapa-nui)" value={editing?.slug ?? ""}
-              onChange={(e) => setEditing({ ...editing!, slug: e.target.value })}
-              className="bg-white/5 border-white/10 text-white" />
-            <Input placeholder="Destino" value={editing?.destination ?? ""}
-              onChange={(e) => setEditing({ ...editing!, destination: e.target.value })}
-              className="bg-white/5 border-white/10 text-white" />
-            <Input placeholder="Emoji 🗿" value={editing?.emoji ?? ""}
-              onChange={(e) => setEditing({ ...editing!, emoji: e.target.value })}
-              className="bg-white/5 border-white/10 text-white" />
+        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-start">
+            <div className="shrink-0">
+              <div className="relative h-28 w-28 rounded-2xl border border-white/15 bg-black/30 overflow-hidden flex items-center justify-center">
+                {editing?.image ? (
+                  <Image
+                    src={editing.image}
+                    alt={editing.name || "Insignia"}
+                    fill
+                    className="object-cover"
+                    sizes="112px"
+                  />
+                ) : (
+                  <Stamp className="h-10 w-10 text-white/30" />
+                )}
+              </div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void uploadImage(file);
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={uploading}
+                onClick={() => fileRef.current?.click()}
+                className="mt-2 w-28 border-white/15 text-white bg-white/5 rounded-xl text-xs"
+              >
+                {uploading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <>
+                    <Upload className="h-3.5 w-3.5 mr-1" /> Subir
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="flex-1 w-full space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-white/50 mb-1 block">Nombre del lugar</label>
+                <Input
+                  placeholder="Ej: Rapa Nui"
+                  value={editing?.name ?? ""}
+                  onChange={(e) => setEditing({ ...editing!, name: e.target.value })}
+                  className="bg-white/5 border-white/10 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-white/50 mb-1 block">Descripción (una línea)</label>
+                <Input
+                  placeholder="Ej: Has explorado el ombligo del mundo"
+                  value={editing?.description ?? ""}
+                  onChange={(e) => setEditing({ ...editing!, description: e.target.value })}
+                  maxLength={120}
+                  className="bg-white/5 border-white/10 text-white"
+                />
+              </div>
+            </div>
           </div>
-          <Textarea placeholder='Términos match JSON: ["rapa nui","isla de pascua"]' value={editing?.matchTerms ?? "[]"}
-            onChange={(e) => setEditing({ ...editing!, matchTerms: e.target.value })}
-            className="bg-white/5 border-white/10 text-white min-h-[60px] font-mono text-xs" />
-          <Textarea placeholder="Descripción" value={editing?.description ?? ""}
-            onChange={(e) => setEditing({ ...editing!, description: e.target.value })}
-            className="bg-white/5 border-white/10 text-white min-h-[60px]" />
-          <Input placeholder="URL imagen (opcional)" value={editing?.image ?? ""}
-            onChange={(e) => setEditing({ ...editing!, image: e.target.value })}
-            className="bg-white/5 border-white/10 text-white" />
+
           <div className="flex gap-2">
-            <Button onClick={() => void save()} disabled={saving} className="bg-teal text-[#070f1a] font-bold rounded-xl">
+            <Button
+              onClick={() => void save()}
+              disabled={saving || uploading}
+              className="bg-teal text-[#070f1a] font-bold rounded-xl"
+            >
               <Save className="h-4 w-4 mr-1" /> Guardar
             </Button>
-            <Button variant="outline" onClick={() => { setEditing(null); setIsNew(false); }}
-              className="border-white/10 text-white bg-white/5 rounded-xl">Cancelar</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditing(null);
+                setIsNew(false);
+              }}
+              className="border-white/10 text-white bg-white/5 rounded-xl"
+            >
+              Cancelar
+            </Button>
           </div>
         </div>
       )}
@@ -140,16 +252,37 @@ export function PassportBadgesAdmin() {
       <div className="grid sm:grid-cols-2 gap-3">
         {items.map((item) => (
           <div key={item.id} className="p-4 bg-white/5 rounded-2xl border border-white/10 flex gap-3">
-            <div className="text-3xl shrink-0">{item.emoji}</div>
+            <div className="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-black/30 border border-white/10 flex items-center justify-center">
+              {item.image ? (
+                <Image src={item.image} alt={item.name} fill className="object-cover" sizes="56px" />
+              ) : (
+                <Stamp className="h-6 w-6 text-white/30" />
+              )}
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white font-semibold">{item.name}</p>
-              <p className="text-white/40 text-xs">{item.destination}</p>
+              <p className="text-white font-semibold truncate">{item.name}</p>
+              {item.description ? (
+                <p className="text-white/45 text-xs mt-0.5 line-clamp-2">{item.description}</p>
+              ) : null}
             </div>
             <div className="flex gap-1 shrink-0">
-              <button type="button" onClick={() => { setEditing(item); setIsNew(false); }} className="text-teal p-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing({ ...item, emoji: "" });
+                  setIsNew(false);
+                }}
+                className="text-teal p-2"
+                aria-label="Editar"
+              >
                 <Pencil className="h-4 w-4" />
               </button>
-              <button type="button" onClick={() => void remove(item.id)} className="text-red-400 p-2">
+              <button
+                type="button"
+                onClick={() => void remove(item.id)}
+                className="text-red-400 p-2"
+                aria-label="Eliminar"
+              >
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>

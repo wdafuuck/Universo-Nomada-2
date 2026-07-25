@@ -378,16 +378,17 @@ function BadgeTile({
         ? "border-teal/30 bg-gradient-to-b from-teal/10 to-white shadow-sm hover:shadow-md hover:border-teal/50"
         : "border-slate-200 bg-slate-50 opacity-60 grayscale"
     }`}>
-      <div className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md text-3xl ${earned ? "ring-2 ring-teal/30" : ""}`}>
+      <div className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md overflow-hidden ${earned ? "ring-2 ring-teal/30" : ""}`}>
         {badge.image ? (
-          <Image src={badge.image} alt={badge.name} width={48} height={48} className="rounded-full object-cover" />
+          <Image src={badge.image} alt={badge.name} width={64} height={64} className="h-full w-full object-cover" />
         ) : (
-          badge.emoji
+          <Stamp className="h-7 w-7 text-slate-300" />
         )}
       </div>
       <p className="font-bold text-slate-900">{badge.name}</p>
-      <p className="text-xs text-slate-500 mt-1">{badge.destination}</p>
-      <p className="text-xs text-slate-400 mt-2">{badge.description}</p>
+      {badge.description ? (
+        <p className="text-xs text-slate-500 mt-1.5 leading-snug">{badge.description}</p>
+      ) : null}
       {earned && "earnedAt" in badge && (
         <p className="text-[10px] text-teal font-semibold mt-2 flex items-center justify-center gap-1">
           <CheckCircle2 className="h-3 w-3" /> Conseguida

@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
       data: {
         slug: String(body.slug ?? `badge-${Date.now()}`),
         name: String(body.name ?? ""),
-        destination: String(body.destination ?? ""),
+        destination: String(body.destination ?? body.name ?? ""),
         description: String(body.description ?? ""),
         image: String(body.image ?? ""),
-        emoji: String(body.emoji ?? "🌍"),
+        emoji: String(body.emoji ?? ""),
         matchTerms: typeof body.matchTerms === "string" ? body.matchTerms : JSON.stringify(body.matchTerms ?? []),
         active: body.active !== false,
         sortOrder: Number(body.sortOrder) || 0,
