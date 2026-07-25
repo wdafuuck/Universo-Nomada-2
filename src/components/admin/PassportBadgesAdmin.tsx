@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, Save, Trash2, Pencil, Upload, Stamp, Loader2 } from "lucide-react";
+import { Plus, Save, Trash2, Pencil, Upload, Stamp, Loader2, Crop } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BadgeImageEditor } from "@/components/admin/BadgeImageEditor";
 
 type Badge = {
   id: number;
@@ -70,7 +71,10 @@ export function PassportBadgesAdmin() {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [editorSrc, setEditorSrc] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const localObjectUrl = useRef<string | null>(null);
 
   const load = async () => {
     const res = await fetch("/api/admin/passport-badges");
@@ -81,6 +85,17 @@ export function PassportBadgesAdmin() {
   useEffect(() => {
     void load();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (localObjectUrl.current) URL.revokeObjectURL(localObjectUrl.current);
+    };
+  }, []);
+
+  const openEditorWithSrc = (src: string) => {
+    setEditorSrc(src);
+    setEditorOpen(true);
+  };
 
   const uploadImage = async (file: File) => {
     setUploading(true);
@@ -95,13 +110,21 @@ export function PassportBadgesAdmin() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al subir");
       setEditing((e) => (e ? { ...e, image: data.url as string, emoji: "" } : e));
-      toast.success("Insignia subida");
+      toast.success("Insignia actualizada");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error al subir");
+      throw e;
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const onPickFile = (file: File) => {
+    if (localObjectUrl.current) URL.revokeObjectURL(localObjectUrl.current);
+    const url = URL.createObjectURL(file);
+    localObjectUrl.current = url;
+    openEditorWithSrc(url);
   };
 
   const save = async () => {
@@ -169,7 +192,7 @@ export function PassportBadgesAdmin() {
             <Stamp className="h-5 w-5 text-teal" /> Pasaporte Nómada — Insignias
           </h2>
           <p className="text-white/40 text-sm mt-1">
-            Solo imagen de la insignia, nombre del lugar y una línea de descripción. Se desbloquean al completar un viaje a ese destino.
+            Subí la insignia, ajustá zoom y centro, y guardá con nombre + descripción.
           </p>
         </div>
         <Button
@@ -186,7 +209,7 @@ export function PassportBadgesAdmin() {
       {(isNew || editing) && (
         <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start">
-            <div className="shrink-0">
+            <div className="shrink-0 space-y-2">
               <BadgeThumb src={editing?.image} size="lg" />
               <input
                 ref={fileRef}
@@ -195,24 +218,37 @@ export function PassportBadgesAdmin() {
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) void uploadImage(file);
+                  if (file) onPickFile(file);
                 }}
               />
-              <Button
-                type="button"
-                variant="outline"
-                disabled={uploading}
-                onClick={() => fileRef.current?.click()}
-                className="mt-2 w-28 border-white/15 text-white bg-white/5 rounded-xl text-xs"
-              >
-                {uploading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <>
-                    <Upload className="h-3.5 w-3.5 mr-1" /> Subir
-                  </>
-                )}
-              </Button>
+              <div className="flex flex-col gap-1.5 w-28">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={uploading}
+                  onClick={() => fileRef.current?.click()}
+                  className="border-white/15 text-white bg-white/5 rounded-xl text-xs"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <>
+                      <Upload className="h-3.5 w-3.5 mr-1" /> Subir
+                    </>
+                  )}
+                </Button>
+                {editing?.image ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={uploading}
+                    onClick={() => openEditorWithSrc(editing.image!)}
+                    className="border-white/15 text-white bg-white/5 rounded-xl text-xs"
+                  >
+                    <Crop className="h-3.5 w-3.5 mr-1" /> Ajustar
+                  </Button>
+                ) : null}
+              </div>
             </div>
 
             <div className="flex-1 w-full space-y-3">
@@ -294,6 +330,22 @@ export function PassportBadgesAdmin() {
           </div>
         ))}
       </div>
+
+      <BadgeImageEditor
+        open={editorOpen}
+        imageSrc={editorSrc}
+        onClose={() => {
+          setEditorOpen(false);
+          if (localObjectUrl.current) {
+            URL.revokeObjectURL(localObjectUrl.current);
+            localObjectUrl.current = null;
+          }
+          setEditorSrc(null);
+        }}
+        onApply={async (file) => {
+          await uploadImage(file);
+        }}
+      />
     </div>
   );
 }
