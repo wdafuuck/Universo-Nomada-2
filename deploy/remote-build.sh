@@ -3,13 +3,16 @@
 #
 # Estrategia anti-caídas:
 # 1) flock — un solo deploy a la vez
-# 2) backup de standalone ANTES del build
-# 3) NO detener la app hasta que el build nuevo esté listo
-#    (el Node en curso sigue con los inodes viejos aunque se reescriba el tree)
-# 4) restart corto + healthcheck
-# 5) rollback automático a standalone.bak si el arranque falla
+# 2) si standalone está roto → restaurar bak ANTES de tocar nada
+# 3) backup atómico solo desde standalone válido (nunca dejar sin bak)
+# 4) build sin detener el servicio
+# 5) validar manifests + smoke (health, home, mi-cuenta) ANTES/DESPUÉS del restart
+# 6) rollback automático si falla
 set -euo pipefail
 cd /var/www/universo-nomada
+
+# shellcheck disable=SC1091
+source ./deploy/standalone-utils.sh
 
 exec 9>/var/lock/universo-nomada-build.lock
 if ! flock -n 9; then
@@ -17,19 +20,42 @@ if ! flock -n 9; then
   exit 1
 fi
 
-rollback_standalone() {
-  echo "==> ROLLBACK → .next/standalone.bak"
-  if [[ -f .next/standalone.bak/server.js ]]; then
-    # cp (no mv): el .bak debe seguir existiendo para el watchdog
-    rm -rf .next/standalone
-    cp -a .next/standalone.bak .next/standalone
-    mkdir -p public/uploads
-    rm -rf .next/standalone/public/uploads
-    ln -sfn "$(pwd)/public/uploads" .next/standalone/public/uploads
-    systemctl start universo-nomada || true
-  else
-    echo ":: error: no hay backup válido para rollback"
+smoke_ok() {
+  local health_ok=0 home_ok=0 cuenta_ok=0
+  if curl -sf --max-time 8 http://127.0.0.1:3001/api/health >/tmp/un-health.json 2>/dev/null \
+    && grep -q '"db":"connected"' /tmp/un-health.json; then
+    health_ok=1
   fi
+  local home_code cuenta_code
+  home_code=$(curl -s -o /tmp/un-home.html -w "%{http_code}" --max-time 12 http://127.0.0.1:3001/ || echo 000)
+  cuenta_code=$(curl -s -o /tmp/un-cuenta.html -w "%{http_code}" --max-time 12 http://127.0.0.1:3001/mi-cuenta || echo 000)
+  if [[ "$home_code" == "200" ]] && ! grep -qi "Internal Server Error" /tmp/un-home.html 2>/dev/null; then
+    home_ok=1
+  fi
+  if [[ "$cuenta_code" == "200" ]] && ! grep -qi "Internal Server Error" /tmp/un-cuenta.html 2>/dev/null; then
+    cuenta_ok=1
+  fi
+  echo "    smoke health=$health_ok home=$home_code cuenta=$cuenta_code"
+  [[ "$health_ok" -eq 1 && "$home_ok" -eq 1 && "$cuenta_ok" -eq 1 ]]
+}
+
+rollback_and_verify() {
+  echo "==> ROLLBACK → .next/standalone.bak"
+  systemctl stop universo-nomada || true
+  if restore_standalone_from_bak; then
+    systemctl start universo-nomada || true
+    sleep 3
+    if smoke_ok; then
+      echo "==> Rollback OK (sitio restaurado)"
+      return 0
+    fi
+    echo ":: error: rollback restauró archivos pero smoke falló"
+    journalctl -u universo-nomada -n 40 --no-pager || true
+    return 1
+  fi
+  echo ":: error: no hay backup válido para rollback"
+  systemctl start universo-nomada || true
+  return 1
 }
 
 # El repo local puede traer sqlite; en producción siempre PostgreSQL
@@ -45,31 +71,36 @@ npx prisma generate
 echo "==> Schema DB (no destructivo)"
 npx prisma db push --skip-generate
 
+echo "==> Estado pre-build"
+if ! standalone_is_valid .next/standalone; then
+  echo "    standalone actual inválido — intentando restaurar bak antes del build"
+  if restore_standalone_from_bak; then
+    systemctl restart universo-nomada || true
+    sleep 2
+  else
+    echo "    aviso: sin bak válido; el servicio puede estar degradado durante el build"
+  fi
+fi
+
 echo "==> Backup standalone (app sigue viva)"
-if [[ -f .next/standalone/server.js ]]; then
-  rm -rf .next/standalone.bak
-  cp -a .next/standalone .next/standalone.bak
-  echo "    backup OK"
+if backup_standalone_atomic .next/standalone; then
+  :
+elif standalone_is_valid .next/standalone.bak; then
+  echo "    se conserva bak previo (válido)"
 else
-  echo "    sin standalone previo (primer deploy o ya roto)"
+  echo "    aviso: no hay bak válido — un fallo de build no podrá hacer rollback"
 fi
 
 echo "==> Build (sin detener servicio aún)"
 if ! npm run build; then
   echo ":: error: build falló — restaurando backup"
-  rollback_standalone
+  rollback_and_verify || true
   exit 1
 fi
 
-if [[ ! -f .next/standalone/server.js ]]; then
-  echo ":: error: falta .next/standalone/server.js tras el build"
-  rollback_standalone
-  exit 1
-fi
-
-if [[ ! -f .next/standalone/.next/server/app/page_client-reference-manifest.js ]]; then
-  echo ":: error: falta page_client-reference-manifest.js tras el build"
-  rollback_standalone
+if ! standalone_is_valid .next/standalone; then
+  echo ":: error: standalone post-build inválido"
+  rollback_and_verify || true
   exit 1
 fi
 
@@ -77,29 +108,25 @@ ssr_standalone=$(ls .next/standalone/.next/server/chunks/ssr | wc -l | tr -d ' '
 ssr_root=$(ls .next/server/chunks/ssr | wc -l | tr -d ' ')
 if [[ "$ssr_standalone" -lt "$ssr_root" ]]; then
   echo ":: error: chunks SSR incompletos ($ssr_standalone < $ssr_root)"
-  rollback_standalone
+  rollback_and_verify || true
   exit 1
 fi
 echo "    SSR chunks OK ($ssr_standalone)"
 
 echo "==> Symlink uploads persistente"
-mkdir -p public/uploads
-rm -rf .next/standalone/public/uploads
-ln -sfn "$(pwd)/public/uploads" .next/standalone/public/uploads
-# Caddy corre como user `caddy` — necesita atravesar dirs y leer archivos
+ensure_uploads_symlink .next/standalone "$(pwd)"
 chmod a+rx /var/www/universo-nomada /var/www/universo-nomada/public 2>/dev/null || true
 chmod -R a+rX public/uploads 2>/dev/null || true
 
 echo "==> Permisos scripts"
-chmod +x deploy/universo-nomada-start.sh deploy/remote-build.sh deploy/universo-nomada-watchdog.sh 2>/dev/null || true
+chmod +x deploy/*.sh 2>/dev/null || true
 
 echo "==> Restart (ventana corta)"
 systemctl restart universo-nomada
 
 ok=0
-for i in $(seq 1 45); do
-  if curl -sf http://127.0.0.1:3001/api/health >/tmp/un-health.json 2>/dev/null \
-    && grep -q '"db":"connected"' /tmp/un-health.json; then
+for i in $(seq 1 60); do
+  if smoke_ok; then
     ok=1
     break
   fi
@@ -108,28 +135,15 @@ done
 systemctl is-active universo-nomada || true
 
 if [[ "$ok" -ne 1 ]]; then
-  echo ":: error: health falló tras restart — rollback"
-  systemctl stop universo-nomada || true
-  rollback_standalone
-  sleep 2
-  if curl -sf http://127.0.0.1:3001/api/health >/tmp/un-health.json 2>/dev/null \
-    && grep -q '"db":"connected"' /tmp/un-health.json; then
-    echo "==> Rollback OK (sitio restaurado)"
-  else
-    echo ":: error: rollback también falló"
-    journalctl -u universo-nomada -n 40 --no-pager || true
-  fi
+  echo ":: error: smoke falló tras restart — rollback"
+  rollback_and_verify || true
   exit 1
 fi
 
-home_code=$(curl -s -o /tmp/un-home.html -w "%{http_code}" http://127.0.0.1:3001/)
-if [[ "$home_code" != "200" ]] || grep -qi "Internal Server Error" /tmp/un-home.html; then
-  echo ":: error: home respondió $home_code — rollback"
-  systemctl stop universo-nomada || true
-  rollback_standalone
-  exit 1
-fi
+# Tras deploy OK, refrescar bak con la versión nueva (último known-good)
+echo "==> Actualizando bak post-deploy (último known-good)"
+backup_standalone_atomic .next/standalone || true
 
-head -c 200 /tmp/un-health.json
+head -c 200 /tmp/un-health.json 2>/dev/null || true
 echo
 echo "==> Deploy OK"

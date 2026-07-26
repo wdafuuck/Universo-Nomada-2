@@ -3,25 +3,26 @@
 set -euo pipefail
 cd /var/www/universo-nomada
 
-# Si falta server.js, restaurar backup antes de que systemd marque fallo
-if [[ ! -f .next/standalone/server.js ]]; then
-  echo "[start] ERROR: falta .next/standalone/server.js" >&2
-  if [[ -f .next/standalone.bak/server.js ]]; then
+# shellcheck disable=SC1091
+source ./deploy/standalone-utils.sh
+
+# Si falta server.js o manifests, restaurar backup antes de que systemd marque fallo
+if ! standalone_is_valid .next/standalone; then
+  echo "[start] ERROR: standalone inválido o incompleto" >&2
+  if restore_standalone_from_bak; then
     echo "[start] Restaurando standalone.bak…" >&2
-    rm -rf .next/standalone
-    cp -a .next/standalone.bak .next/standalone
-    mkdir -p public/uploads
-    rm -rf .next/standalone/public/uploads
-    ln -sfn "$(pwd)/public/uploads" .next/standalone/public/uploads
   else
+    echo "[start] FATAL: sin standalone válido ni backup" >&2
     exit 1
   fi
 fi
 
-if [[ ! -f .next/standalone/server.js ]]; then
-  echo "[start] FATAL: sin server.js ni backup" >&2
+if ! standalone_is_valid .next/standalone; then
+  echo "[start] FATAL: restore no dejó un standalone válido" >&2
   exit 1
 fi
+
+ensure_uploads_symlink .next/standalone "$(pwd)"
 
 set -a
 # shellcheck disable=SC1091
