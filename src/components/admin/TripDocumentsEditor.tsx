@@ -54,7 +54,6 @@ function applyRetentionNote(
 export function TripDocumentsEditor({
   leadId,
   customerEmail,
-  customerName,
   initialDocuments = EMPTY_DOCS,
   onChange,
 }: Props) {
@@ -313,7 +312,7 @@ export function TripDocumentsEditor({
 
       {notifyOpen && (
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-120 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Enviar correo al pasajero"

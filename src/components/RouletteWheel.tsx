@@ -35,10 +35,13 @@ export function RouletteWheel({
   const fromRef = useRef(0);
   const endedRef = useRef(false);
   const onEndRef = useRef(onSpinEnd);
-  onEndRef.current = onSpinEnd;
   const r = size / 2;
   const fontSize = Math.max(8, Math.round(size / 32));
   const lineGap = fontSize * 0.95;
+
+  useEffect(() => {
+    onEndRef.current = onSpinEnd;
+  }, [onSpinEnd]);
 
   useEffect(() => {
     if (!spinning || endedRef.current) return;
