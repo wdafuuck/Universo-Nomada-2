@@ -442,6 +442,11 @@ export function CartSheet({ open, onOpenChange }: Props) {
                         {item.checkIn && item.checkOut && (
                           <p className="text-xs text-slate-400 mt-0.5">{item.checkIn} → {item.checkOut}</p>
                         )}
+                        {item.customerNote?.trim() && (
+                          <p className="text-xs text-teal-800/80 mt-1 leading-snug bg-teal/5 rounded-md px-2 py-1">
+                            Nota: {item.customerNote.trim()}
+                          </p>
+                        )}
                         <p className="text-black font-bold text-base mt-2">{formatCLP(item.totalPrice)}</p>
                       </div>
                       <button type="button" onClick={() => removeItem(item.cartLineId)}

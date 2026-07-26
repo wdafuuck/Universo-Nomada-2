@@ -144,6 +144,12 @@ export const translations = {
       selectAccommodation: 'Selecciona un alojamiento',
       selectDates: 'Selecciona la fecha de ida',
       selectDatesFirst: 'Selecciona la fecha de ida para ver alojamientos disponibles',
+      datesAvailabilityHint:
+        'El calendario muestra las fechas con mejor disponibilidad estimada. Si la tuya no aparece, elige una cercana y déjanos tu fecha ideal en el siguiente paso: te confirmamos si es posible.',
+      preferredDateNoteLabel: '¿Tu fecha ideal no aparece en el calendario?',
+      preferredDateNoteHint:
+        'Escríbela aquí (opcional). Reservamos con la fecha disponible que elegiste arriba y revisamos si podemos acomodar tu preferencia.',
+      preferredDateNotePlaceholder: 'Ej: Preferimos salir el 18 de agosto si es posible',
       checkingAvailability: 'Verificando disponibilidad de alojamiento...',
       available: 'Disponible',
       availableWithSurcharge: 'Disponible con recargo de {amount}/persona',
@@ -198,7 +204,7 @@ export const translations = {
       selectFlight: 'Selecciona un horario de vuelo',
       loadingFlights: 'Buscando horarios...',
       dateNotAllowed: 'Esta fecha no está disponible',
-      allowedDatesHint: 'Fechas con vuelo disponible',
+      allowedDatesHint: 'Fechas con disponibilidad estimada',
       travelerData: 'Datos de los pasajeros',
       traveler: 'Pasajero',
       fullName: 'Nombre completo',
@@ -262,6 +268,7 @@ export const translations = {
       items: [
         { q: '¿Qué incluye el precio publicado?', a: 'Cada experiencia detalla vuelos, alojamiento, traslados, tours y entradas según el paquete. En la cotización personalizada recibes un desglose completo antes de reservar.' },
         { q: '¿Los vuelos están incluidos?', a: 'En la mayoría de nuestros paquetes internacionales y viajes grupales sí. En tours dentro de Chile puede variar; siempre lo confirmamos por escrito en tu cotización.' },
+        { q: '¿Por qué no veo todas las fechas en el calendario?', a: 'El sistema muestra las fechas con mejor disponibilidad estimada en ese momento. Si la fecha que buscas no aparece, elige una cercana al reservar y déjanos tu fecha ideal en el comentario: nuestro equipo te confirma si es posible dentro de 24 horas. También puedes escribirnos por WhatsApp.' },
         { q: '¿Cómo reservo y qué formas de pago hay?', a: 'Puedes reservar con un abono (desde $100.000 en viajes grupales) y completar el pago según el calendario acordado. Aceptamos transferencia y coordinamos el resto contigo.' },
         { q: '¿Cuál es la política de cancelación?', a: 'Depende del proveedor y la anticipación. Te informamos las condiciones específicas antes de confirmar y buscamos alternativas si cambian tus planes.' },
         { q: '¿Puedo personalizar fechas y pasajeros?', a: 'Sí. Además de los viajes grupales con fechas fijas, diseñamos viajes privados y personalizados para tu ritmo, presupuesto y compañía.' },
@@ -605,6 +612,12 @@ export const translations = {
       selectAccommodation: 'Select accommodation',
       selectDates: 'Select departure date',
       selectDatesFirst: 'Select departure date to see available accommodations',
+      datesAvailabilityHint:
+        'The calendar shows dates with the best estimated availability. If yours is missing, pick a nearby date and leave your ideal date in the next step — we will confirm if it is possible.',
+      preferredDateNoteLabel: 'Is your ideal date missing from the calendar?',
+      preferredDateNoteHint:
+        'Write it here (optional). We book with the available date you selected above and check whether we can accommodate your preference.',
+      preferredDateNotePlaceholder: 'E.g. We would prefer to depart on August 18 if possible',
       checkingAvailability: 'Checking accommodation availability...',
       available: 'Available',
       availableWithSurcharge: 'Available with {amount}/person surcharge',
@@ -693,6 +706,7 @@ export const translations = {
       items: [
         { q: 'What does the listed price include?', a: 'Each experience details flights, accommodation, transfers, tours and entries. Custom quotes include a full breakdown before booking.' },
         { q: 'Are flights included?', a: 'Most international packages and group trips include them. Chile tours may vary — we always confirm in writing.' },
+        { q: 'Why don’t I see every date on the calendar?', a: 'The system shows dates with the best estimated availability at that moment. If your date is missing, pick a nearby one when booking and leave your ideal date in the comment — our team confirms within 24 hours. You can also message us on WhatsApp.' },
         { q: 'How do I book and pay?', a: 'You can reserve with a deposit (from $100,000 CLP on group trips) and complete payment on an agreed schedule. Bank transfer and other options available.' },
         { q: 'What is the cancellation policy?', a: 'It depends on suppliers and timing. We explain conditions before you confirm and look for alternatives if plans change.' },
         { q: 'Can I customize dates and travelers?', a: 'Yes. Besides fixed-date group trips, we design private and fully customized journeys.' },

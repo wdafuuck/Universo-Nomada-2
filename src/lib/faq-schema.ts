@@ -9,6 +9,10 @@ export const FAQ_SCHEMA_ITEMS: { q: string; a: string }[] = [
     a: "En la mayoría de nuestros paquetes internacionales y viajes grupales sí. En tours dentro de Chile puede variar; siempre lo confirmamos por escrito en tu cotización.",
   },
   {
+    q: "¿Por qué no veo todas las fechas en el calendario?",
+    a: "El sistema muestra las fechas con mejor disponibilidad estimada en ese momento. Si la fecha que buscas no aparece, elige una cercana al reservar y déjanos tu fecha ideal en el comentario: nuestro equipo te confirma si es posible dentro de 24 horas. También puedes escribirnos por WhatsApp.",
+  },
+  {
     q: "¿Cómo reservo y qué formas de pago hay?",
     a: "Puedes reservar con un abono (desde $100.000 en viajes grupales) y completar el pago según el calendario acordado. Aceptamos transferencia y coordinamos el resto contigo.",
   },

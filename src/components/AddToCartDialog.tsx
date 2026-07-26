@@ -103,6 +103,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
 
   const [validatingDate, setValidatingDate] = useState(false);
   const [flightContactAccepted, setFlightContactAccepted] = useState(false);
+  const [preferredDateNote, setPreferredDateNote] = useState("");
 
   const [accommodationId, setAccommodationId] = useState("");
   const [roomTypeId, setRoomTypeId] = useState("");
@@ -360,6 +361,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
       setCheckIn("");
       setAccommodationId("");
       setFlightContactAccepted(false);
+      setPreferredDateNote("");
       setAvailability({});
       setAvailSource(null);
       setTravelers([]);
@@ -675,6 +677,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
       flightLabel:
         c.flightContactCartLabel ??
         "El equipo enviará opciones de aerolínea y horarios dentro de 24 horas",
+      customerNote: preferredDateNote.trim() || undefined,
       travelers,
       contact: {
         email,
@@ -819,6 +822,10 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
                           .replace("{duration}", parsedDuration.label)}
                       </p>
                     )}
+                    <p className="text-xs text-slate-500 mt-3 leading-relaxed border-l-2 border-teal/40 pl-3">
+                      {c.datesAvailabilityHint ??
+                        "El calendario muestra las fechas con mejor disponibilidad estimada. Si la tuya no aparece, elige una cercana y déjanos tu fecha ideal en el siguiente paso: te confirmamos si es posible."}
+                    </p>
                   </div>
                 )}
 
@@ -893,6 +900,24 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
                         "Acepto que el equipo me contacte dentro de 24 horas con las opciones de aerolínea y horarios para esta fecha."}
                     </span>
                   </label>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2">
+                  <label htmlFor="preferred-date-note" className="text-sm font-semibold text-slate-900 block">
+                    {c.preferredDateNoteLabel ?? "¿Tu fecha ideal no aparece en el calendario?"}
+                  </label>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    {c.preferredDateNoteHint ??
+                      "Escríbela aquí (opcional). Reservamos con la fecha disponible que elegiste arriba y revisamos si podemos acomodar tu preferencia."}
+                  </p>
+                  <textarea
+                    id="preferred-date-note"
+                    value={preferredDateNote}
+                    onChange={(e) => setPreferredDateNote(e.target.value.slice(0, 400))}
+                    rows={3}
+                    placeholder={c.preferredDateNotePlaceholder ?? "Ej: Preferimos salir el 18 de agosto si es posible"}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal/30 resize-none"
+                  />
                 </div>
               </div>
             )}

@@ -8,6 +8,8 @@ export type StoredCartItem = {
   roomLabel?: string;
   passengers?: Partial<{ adults: number; children: number; infants: number; seniors: number }> | null;
   totalPrice: number;
+  customerNote?: string;
+  flightLabel?: string;
 };
 
 export function buildReservationItems(items: StoredCartItem[]): ReservationLineItem[] {

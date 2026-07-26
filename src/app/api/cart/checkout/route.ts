@@ -168,7 +168,11 @@ export async function POST(request: NextRequest) {
       const dates = item.checkIn && item.checkOut ? ` (${item.checkIn} → ${item.checkOut})` : "";
       const hotel = item.accommodationName ? ` | ${item.accommodationName}` : "";
       const tax = taxByTour[item.tourId] ?? "exento";
-      return `${item.tourName}${dates}${hotel} — ${pax} pax, ${item.roomLabel}, ${item.totalPrice.toLocaleString("es-CL")} CLP [${tax}]`;
+      const note = item.customerNote?.trim()
+        ? `\n  [NOTA CLIENTE] ${item.customerNote.trim()}`
+        : "";
+      const flight = item.flightLabel?.trim() ? `\n  [VUELO] ${item.flightLabel.trim()}` : "";
+      return `${item.tourName}${dates}${hotel} — ${pax} pax, ${item.roomLabel}, ${item.totalPrice.toLocaleString("es-CL")} CLP [${tax}]${flight}${note}`;
     }).join("\n");
 
     const expiresAt = paymentMethod === "transferencia" ? transferExpiresAt() : null;

@@ -11,6 +11,8 @@ export type CartLineInput = {
   checkOut?: string;
   roomLabel?: string;
   accommodationName?: string;
+  customerNote?: string;
+  flightLabel?: string;
 };
 
 export function normalizeCartItems(items: CartLineInput[]): Array<CartLineInput & { passengers: PassengerCounts }> {

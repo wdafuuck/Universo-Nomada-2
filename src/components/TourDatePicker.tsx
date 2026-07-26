@@ -193,8 +193,11 @@ export function TourDatePicker({
         </p>
       )}
 
-      {hasBudget && !loadingMonth && allowedDates.length === 0 && fetchMessage && open && (
-        <p className="text-xs text-amber-700 mt-2">{fetchMessage}</p>
+      {hasBudget && !loadingMonth && allowedDates.length === 0 && open && (
+        <p className="text-xs text-amber-700 mt-2 leading-relaxed">
+          {fetchMessage ||
+            "Este mes aún no muestra fechas en el sistema. Elige otro mes o déjanos tu fecha preferida en el siguiente paso."}
+        </p>
       )}
     </div>
   );

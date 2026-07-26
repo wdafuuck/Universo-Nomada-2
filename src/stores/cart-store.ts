@@ -56,6 +56,8 @@ export type CartItem = {
     pricePerPerson: number;
     passengers?: number;
   }[];
+  /** Nota del cliente (ej. fecha preferida que no aparece en el calendario) */
+  customerNote?: string;
   /** Tour adicional de regalo (ruleta) */
   rouletteGiftTourId?: string;
   rouletteGiftTourName?: string;
