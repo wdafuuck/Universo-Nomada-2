@@ -49,6 +49,15 @@ export function addDaysToIso(isoDate: string, days: number): string {
   return `${yy}-${mm}-${dd}`;
 }
 
+/** Noches entre dos fechas ISO (return - depart). */
+export function daysBetweenIso(fromIso: string, toIso: string): number {
+  const [y1, m1, d1] = fromIso.split("-").map(Number);
+  const [y2, m2, d2] = toIso.split("-").map(Number);
+  const a = new Date(y1, m1 - 1, d1).getTime();
+  const b = new Date(y2, m2 - 1, d2).getTime();
+  return Math.round((b - a) / 86_400_000);
+}
+
 export function checkOutFromCheckIn(checkIn: string, durationRaw?: string | null): string {
   const { nights } = parseTourDuration(durationRaw);
   return addDaysToIso(checkIn, nights);

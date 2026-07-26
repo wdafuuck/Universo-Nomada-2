@@ -81,8 +81,8 @@ export async function resolveFlightSearch(params: SearchParams): Promise<FlightS
       flightReferenceAmount: maxBudget,
       source: "travelpayouts",
       message: live.length
-        ? "Elige el horario de ida y regreso que prefieras."
-        : "No hay horarios para esta fecha. Elige otra fecha de ida.",
+        ? "Elige el horario de ida y regreso que prefieras. Mostramos tarifas disponibles en caché dentro del tope del paquete (no es el inventario completo de aerolíneas)."
+        : "No hay horarios en caché para esta fecha dentro del tope. Prueba otra fecha de ida.",
     };
   }
 

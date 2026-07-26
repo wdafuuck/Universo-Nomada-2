@@ -202,7 +202,9 @@ export function PackageContentFields({ value, onChange }: Props) {
           </div>
         </div>
         <p className="text-white/40 text-xs">
-          Solo se ofrecen fechas donde el vuelo ida+vuelta no supera este monto. El paquete ya incluye vuelo; si el cliente elige «Sin vuelo», se descuenta este valor del total (sin mostrarlo).
+          Tope ida+vuelta por persona (CLP). Solo se listan tarifas de Travelpayouts/Aviasales en caché bajo ese monto
+          (no es Google Flights: en rutas como Lima suele haber pocas opciones cacheadas). El paquete ya incluye vuelo;
+          si el cliente elige «Sin vuelo», se descuenta este valor del total (sin mostrarlo).
         </p>
       </div>
 
