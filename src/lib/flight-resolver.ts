@@ -154,7 +154,7 @@ export async function resolveAllowedDates(params: {
       source: "travelpayouts",
       message: allowed.length
         ? undefined
-        : "No hay fechas con vuelo dentro del tope configurado.",
+        : "No hay fechas con vuelo estimado dentro del tope este mes. Prueba otro mes o sube el tope.",
     };
   }
 

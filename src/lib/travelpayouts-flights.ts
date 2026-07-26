@@ -59,6 +59,16 @@ type WeekMatrixRow = {
   duration?: number;
 };
 
+type MonthMatrixRow = {
+  depart_date: string;
+  return_date?: string;
+  value: number;
+  number_of_changes?: number;
+  actual?: boolean;
+  gate?: string;
+  duration?: number;
+};
+
 type PricesForDatesRow = {
   price: number;
   airline?: string;
@@ -85,6 +95,7 @@ type PriceRangeRow = {
 
 const groupedMonthCache = new Map<string, { at: number; rows: Map<string, GroupedPriceRow> }>();
 const weekMatrixCache = new Map<string, { at: number; rows: WeekMatrixRow[] }>();
+const monthMatrixCache = new Map<string, { at: number; rows: MonthMatrixRow[] }>();
 const pricesForDatesCache = new Map<string, { at: number; rows: PricesForDatesRow[] }>();
 const priceRangeCache = new Map<string, { at: number; rows: PriceRangeRow[] }>();
 const CACHE_MS = 6 * 60 * 60 * 1000;
@@ -329,6 +340,71 @@ async function fetchWeekMatrix(params: {
   }
 }
 
+/**
+ * Matriz mensual (ida). Travelpayouts la documenta como one-way; return_date suele venir vacío.
+ * Estimamos ida+vuelta ≈ 2 × ida para filtrar por tope del paquete.
+ */
+async function fetchMonthMatrix(params: {
+  origin: string;
+  destination: string;
+  month: string;
+}): Promise<MonthMatrixRow[]> {
+  const token = getToken();
+  if (!token) return [];
+
+  const monthStart = `${params.month}-01`;
+  const key = cacheKey("month", params.origin, params.destination, params.month);
+  const cached = monthMatrixCache.get(key);
+  if (cached && Date.now() - cached.at < CACHE_MS) return cached.rows;
+
+  const url = new URL("https://api.travelpayouts.com/v2/prices/month-matrix");
+  url.searchParams.set("origin", params.origin.toUpperCase());
+  url.searchParams.set("destination", params.destination.toUpperCase());
+  url.searchParams.set("month", monthStart);
+  url.searchParams.set("currency", "clp");
+  url.searchParams.set("show_to_affiliates", "true");
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { "x-access-token": token },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+
+    const json = (await res.json()) as { success?: boolean; data?: MonthMatrixRow[] };
+    const rows = json.success && Array.isArray(json.data) ? json.data : [];
+    monthMatrixCache.set(key, { at: Date.now(), rows });
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
+/** Precio estimado ida+vuelta a partir de una tarifa one-way del month-matrix. */
+function estimatedRoundTripFromOneWay(oneWay: number): number {
+  return Math.round(oneWay * 2);
+}
+
+function monthMatrixRowToIndicativeOption(
+  row: MonthMatrixRow,
+  origin: string,
+  destination: string,
+  nights: number,
+  idx: number,
+): LiveFlightOption {
+  const returnDate = addDaysToIso(row.depart_date, nights);
+  const rtPrice = estimatedRoundTripFromOneWay(row.value);
+  return {
+    id: `tp-${origin}-${destination}-${row.depart_date}-mm-${idx}`,
+    airline: row.gate ? `Vuelo · ${row.gate}` : "Vuelo incluido",
+    outbound: formatDateShort(row.depart_date),
+    inbound: formatDateShort(returnDate),
+    price: rtPrice,
+    stops: row.number_of_changes ?? 0,
+    indicative: true,
+  };
+}
+
 async function fetchPricesForDatesMonth(params: {
   origin: string;
   destination: string;
@@ -449,7 +525,7 @@ export async function searchLiveFlights(params: {
   const month = params.departDate.slice(0, 7);
   const collected: LiveFlightOption[] = [];
 
-  const [matrixRows, pricesRows, rangeRows, grouped] = await Promise.all([
+  const [matrixRows, pricesRows, rangeRows, grouped, monthRows] = await Promise.all([
     findMatrixFaresForNights({
       origin,
       destination,
@@ -460,6 +536,7 @@ export async function searchLiveFlights(params: {
     fetchPricesForDatesMonth({ origin, destination, month }),
     fetchByPriceRange({ origin, destination, maxBudget: params.maxBudget }),
     fetchGroupedPricesMonth({ origin, destination, month }),
+    fetchMonthMatrix({ origin, destination, month }),
   ]);
 
   matrixRows.forEach((row, i) => {
@@ -497,6 +574,17 @@ export async function searchLiveFlights(params: {
     }
   }
 
+  // Si no hay ida+vuelta en caché, usar month-matrix (ida) como horario preferente.
+  const monthForDay = monthRows.filter(
+    (row) =>
+      row.actual !== false &&
+      row.depart_date === params.departDate &&
+      withinPerPersonBudget(estimatedRoundTripFromOneWay(row.value), params.maxBudget),
+  );
+  monthForDay.forEach((row, i) => {
+    collected.push(monthMatrixRowToIndicativeOption(row, origin, destination, params.nights, idx + i));
+  });
+
   return dedupeAndSort(collected);
 }
 
@@ -517,12 +605,24 @@ export async function allowedDatesFromCalendar(params: {
   const allowed = new Set<string>();
 
   const months = uniqueMonths(params.from, params.to);
-  const [rangeRows, ...monthRows] = await Promise.all([
+
+  const [rangeRows, ...rest] = await Promise.all([
     fetchByPriceRange({ origin, destination, maxBudget: params.maxBudget }),
-    ...months.map((month) => fetchPricesForDatesMonth({ origin, destination, month })),
+    ...months.flatMap((month) => [
+      fetchPricesForDatesMonth({ origin, destination, month }),
+      fetchMonthMatrix({ origin, destination, month }),
+    ]),
   ]);
 
-  const consider = (depart?: string | null, ret?: string | null, price?: number) => {
+  // rest alterna prices_for_dates y month-matrix por cada mes
+  const priceMonthBatches: PricesForDatesRow[][] = [];
+  const monthMatrixBatches: MonthMatrixRow[][] = [];
+  for (let i = 0; i < months.length; i++) {
+    priceMonthBatches.push(rest[i * 2] as PricesForDatesRow[]);
+    monthMatrixBatches.push(rest[i * 2 + 1] as MonthMatrixRow[]);
+  }
+
+  const considerRt = (depart?: string | null, ret?: string | null, price?: number) => {
     if (!depart || !ret || !rangeDates.has(depart)) return;
     if (!withinPerPersonBudget(price ?? 0, params.maxBudget)) return;
     if (!nightsMatchPackage(depart, ret, params.nights)) return;
@@ -530,30 +630,23 @@ export async function allowedDatesFromCalendar(params: {
   };
 
   for (const row of rangeRows) {
-    consider(isoDateFromDeparture(row.departure_at), isoDateFromDeparture(row.return_at), row.price);
+    considerRt(isoDateFromDeparture(row.departure_at), isoDateFromDeparture(row.return_at), row.price);
   }
-  for (const rows of monthRows) {
+  for (const rows of priceMonthBatches) {
     for (const row of rows) {
-      consider(isoDateFromDeparture(row.departure_at), isoDateFromDeparture(row.return_at), row.price);
+      considerRt(isoDateFromDeparture(row.departure_at), isoDateFromDeparture(row.return_at), row.price);
     }
   }
 
-  // Completar con week-matrix solo para fechas aún no cubiertas.
-  const missing = [...rangeDates].filter((d) => !allowed.has(d));
-  const matrixHits = await Promise.all(
-    missing.map(async (departDate) => {
-      const fares = await findMatrixFaresForNights({
-        origin,
-        destination,
-        departDate,
-        nights: params.nights,
-        maxBudget: params.maxBudget,
-      });
-      return fares.length ? departDate : null;
-    }),
-  );
-  for (const d of matrixHits) {
-    if (d) allowed.add(d);
+  // Fuente principal de fechas: month-matrix (muchas idas del mes).
+  for (const rows of monthMatrixBatches) {
+    for (const row of rows) {
+      if (row.actual === false) continue;
+      if (!rangeDates.has(row.depart_date)) continue;
+      const estimatedRt = estimatedRoundTripFromOneWay(row.value);
+      if (!withinPerPersonBudget(estimatedRt, params.maxBudget)) continue;
+      allowed.add(row.depart_date);
+    }
   }
 
   return [...allowed].sort();
