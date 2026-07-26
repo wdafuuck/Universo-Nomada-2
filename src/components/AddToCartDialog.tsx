@@ -408,8 +408,27 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
   };
 
   const validateDate = async (date: string) => {
-    setCheckIn(date);
-    setValidatingDate(false);
+    if (!date || !tour) {
+      setCheckIn(date);
+      return;
+    }
+    setValidatingDate(true);
+    try {
+      const res = await fetch(
+        `/api/flights/allowed-dates?tourId=${encodeURIComponent(tour.tourId)}&month=${date.slice(0, 7)}&adults=${total}`,
+      );
+      const data = await res.json();
+      if (data.hasBudget && Array.isArray(data.allowed) && data.allowed.length > 0 && !data.allowed.includes(date)) {
+        toast.error(c.dateNotAllowed ?? "Esta fecha no está disponible");
+        setCheckIn("");
+        return;
+      }
+      setCheckIn(date);
+    } catch {
+      setCheckIn(date);
+    } finally {
+      setValidatingDate(false);
+    }
   };
 
   const toggleIncludedTour = (id: string) => {
@@ -791,7 +810,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
                       validating={validatingDate}
                       label={c.checkIn}
                       placeholder={c.selectDates ?? "Selecciona la fecha de ida"}
-                      filterByFlightBudget={false}
+                      allowedDatesHint={c.allowedDatesHint ?? "Fechas disponibles según presupuesto de vuelo"}
                     />
                     {checkIn && (
                       <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg px-3 py-2">
