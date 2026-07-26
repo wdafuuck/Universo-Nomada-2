@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TripDocumentsEditor } from "@/components/admin/TripDocumentsEditor";
+import { TripPaymentEditor } from "@/components/admin/TripPaymentEditor";
 import type { EditableCartLine } from "@/lib/admin-lead-edit";
 import { checkOutFromCheckIn, parseTourDuration } from "@/lib/tour-duration";
 
@@ -15,6 +16,7 @@ type UserTrip = {
   status: string;
   source: string;
   cartTotal: number | null;
+  amountDue: number | null;
   tripEndDate: string | null;
   createdAt: string;
   _count: { documents: number };
@@ -82,9 +84,16 @@ export function MembersAdmin() {
       const res = await fetch("/api/admin/users", { credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-      setUsers(data.users ?? []);
+      const nextUsers = (data.users ?? []) as RegisteredUser[];
+      setUsers(nextUsers);
+      setSelected((prev) => {
+        if (!prev) return prev;
+        return nextUsers.find((u) => u.id === prev.id) ?? prev;
+      });
+      return nextUsers;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error cargando clientes");
+      return [] as RegisteredUser[];
     } finally {
       setLoading(false);
     }
@@ -504,7 +513,12 @@ export function MembersAdmin() {
                             </p>
                             <p className="text-white/40 text-xs mt-0.5 capitalize">
                               {trip.status.replace(/_/g, " ")} · {trip.source === "admin-manual" ? "Manual" : "Web"}
-                              {trip.cartTotal ? ` · $${trip.cartTotal.toLocaleString("es-CL")}` : ""}
+                              {trip.cartTotal ? ` · Total $${trip.cartTotal.toLocaleString("es-CL")}` : ""}
+                              {trip.cartTotal != null && trip.amountDue != null && trip.cartTotal > 0 && (
+                                trip.amountDue >= trip.cartTotal
+                                  ? " · Pagado completo"
+                                  : ` · Saldo $${Math.max(0, trip.cartTotal - trip.amountDue).toLocaleString("es-CL")}`
+                              )}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -513,6 +527,7 @@ export function MembersAdmin() {
                             </span>
                             <button
                               type="button"
+                              title="Editar pagos y documentos"
                               onClick={() => setEditingTripId(editingTripId === trip.id ? null : trip.id)}
                               className="text-teal p-2 hover:bg-teal/10 rounded-lg"
                             >
@@ -521,7 +536,11 @@ export function MembersAdmin() {
                           </div>
                         </div>
                         {editingTripId === trip.id && (
-                          <div className="px-4 pb-4 border-t border-white/10 pt-4">
+                          <div className="px-4 pb-4 border-t border-white/10 pt-4 space-y-6">
+                            <TripPaymentEditor
+                              leadId={trip.id}
+                              onUpdated={() => { void load(); }}
+                            />
                             <TripDocumentsEditor
                               leadId={trip.id}
                               customerEmail={selected.email}

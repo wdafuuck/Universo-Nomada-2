@@ -117,8 +117,24 @@ model Lead {
   roulettePrize         String?
   rouletteGiftTour      String?
   documents             TripDocument[]
+  payments              LeadPayment[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
+}
+
+/** Abonos / pagos parciales de una reserva (Lead). amountDue en Lead = suma de estos (monto ya pagado). */
+model LeadPayment {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  amount    Int
+  paidAt    DateTime @default(now())
+  method    String   @default("transferencia")
+  note      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([leadId])
 }
 
 model TripDocument {

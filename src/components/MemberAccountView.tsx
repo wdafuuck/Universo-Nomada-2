@@ -216,7 +216,7 @@ function TripCard({ trip, variant }: { trip: MemberTrip; variant: "upcoming" | "
       {trip.isFullyPaid && variant === "upcoming" && (
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
-          Reserva pagada al 100%
+          Reserva pagada al 100% — viaje pagado completo
         </div>
       )}
 

@@ -34,6 +34,7 @@ export async function GET() {
             status: true,
             source: true,
             cartTotal: true,
+            amountDue: true,
             tripEndDate: true,
             createdAt: true,
           },
@@ -163,6 +164,18 @@ export async function POST(request: NextRequest) {
           mensaje: "Cliente y viaje registrados manualmente por admin",
         },
       });
+
+      const initialPaid = Number(trip?.amountDue) || 0;
+      if (initialPaid > 0) {
+        await db.leadPayment.create({
+          data: {
+            leadId: lead.id,
+            amount: initialPaid,
+            method: "admin",
+            note: "Abono inicial al crear el viaje",
+          },
+        });
+      }
     }
 
     return NextResponse.json({ user, lead }, { status: 201 });

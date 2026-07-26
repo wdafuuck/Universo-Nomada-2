@@ -119,6 +119,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const initialPaid = Number(body.amountDue) || 0;
+    if (initialPaid > 0) {
+      await db.leadPayment.create({
+        data: {
+          leadId: lead.id,
+          amount: initialPaid,
+          method: body.paymentMethod || "admin",
+          note: "Abono inicial al crear el viaje",
+        },
+      });
+    }
+
     return NextResponse.json({ lead }, { status: 201 });
   } catch (e) {
     console.error("[admin/leads POST]", e);
