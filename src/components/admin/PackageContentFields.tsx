@@ -1,12 +1,13 @@
 "use client";
 
-import Image from "next/image";
+import { useState } from "react";
 import { Plus, Trash2, Upload, FileText, Plane } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 import {
   defaultFaqJson,
   parseFaq,
@@ -237,7 +238,7 @@ export function PackageContentFields({ value, onChange }: Props) {
           {gallery.map((image, i) => (
             <div key={`${image.url}-${i}`} className="relative rounded-lg overflow-hidden bg-white/5 border border-white/10">
               <div className="relative aspect-video">
-                <Image
+                <UploadAwareImage
                   src={image.url}
                   alt=""
                   fill
@@ -339,7 +340,7 @@ export function PackageContentFields({ value, onChange }: Props) {
             {(optional.bundledIncludedTours ?? []).map((tour, idx) => (
               <div key={tour.id} className="flex gap-3 p-3 bg-white/5 rounded-xl">
                 <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-white/10 shrink-0">
-                  {tour.image && <Image src={tour.image} alt="" fill className="object-cover" />}
+                  {tour.image && <UploadAwareImage src={tour.image} alt="" fill className="object-cover" />}
                 </div>
                 <div className="flex-1 space-y-2">
                   <Input
@@ -447,7 +448,7 @@ export function PackageContentFields({ value, onChange }: Props) {
           {optional.options.map((opt, idx) => (
             <div key={opt.id} className="flex gap-3 p-3 bg-white/5 rounded-xl">
               <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-white/10 shrink-0">
-                {opt.image && <Image src={opt.image} alt="" fill className="object-cover" />}
+                {opt.image && <UploadAwareImage src={opt.image} alt="" fill className="object-cover" />}
               </div>
               <div className="flex-1 space-y-2">
                 <Input
@@ -546,7 +547,7 @@ export function PackageContentFields({ value, onChange }: Props) {
           {(optional.additionalActivities ?? []).map((act, idx) => (
             <div key={act.id} className="flex gap-3 p-3 bg-white/5 rounded-xl">
               <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-white/10 shrink-0">
-                {act.image && <Image src={act.image} alt="" fill className="object-cover" />}
+                {act.image && <UploadAwareImage src={act.image} alt="" fill className="object-cover" />}
               </div>
               <div className="flex-1 space-y-2">
                 <Input

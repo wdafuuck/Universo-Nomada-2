@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/carousel";
 import { gravitySpring } from "@/lib/motion-presets";
 import type { PackageGalleryImage } from "@/lib/tour-content";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 
 type Props = {
   images: PackageGalleryImage[];
@@ -77,7 +77,7 @@ export function PackageGallery({ images }: Props) {
               className="relative aspect-[4/3] rounded-xl overflow-hidden group cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-teal"
               aria-label={`Ver foto ${i + 1} en grande`}
             >
-              <Image
+              <UploadAwareImage
                 src={image.url}
                 alt={`Galería ${i + 1}`}
                 fill
@@ -127,7 +127,7 @@ export function PackageGallery({ images }: Props) {
                 {images.map((image, i) => (
                   <CarouselItem key={`${image.url}-lb-${i}`} className="pl-0 basis-full">
                     <div className="relative w-full h-[min(85vh,720px)]">
-                      <Image
+                      <UploadAwareImage
                         src={image.url}
                         alt={`Foto ${i + 1}`}
                         fill

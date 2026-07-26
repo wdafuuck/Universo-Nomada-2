@@ -1,10 +1,10 @@
 "use client";
 
 import { Plus, Building2, Upload } from "lucide-react";
-import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 import {
   ensureAccommodationOccupancy,
   ensureOccupancyTiers,
@@ -374,7 +374,7 @@ export function PackagePricingFields({ config, onChange }: Props) {
                     </div>
                     {acc.image && (
                       <div className="relative h-20 w-28 mt-2 rounded-lg overflow-hidden border border-white/10">
-                        <Image src={acc.image} alt="" fill className="object-cover" />
+                        <UploadAwareImage src={acc.image} alt="" fill className="object-cover" />
                       </div>
                     )}
                   </div>
