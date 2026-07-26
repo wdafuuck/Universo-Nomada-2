@@ -24,6 +24,7 @@ import { WaveSeparator } from "@/components/WaveDivider";
 import { WAVE_COLORS } from "@/components/WildlifeBackground";
 import { TourCard } from "@/components/TourCard";
 import { PriceOffer } from "@/components/PriceOffer";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { ContextualWhatsApp } from "@/components/ContextualWhatsApp";
 import { MobileStickyBar } from "@/components/MobileStickyBar";
 import { ReferralCapture, getReferralCode } from "@/components/ReferralCapture";
@@ -800,7 +801,7 @@ export default function LandingPage({
                       solo ? "h-56 sm:h-72 lg:h-full lg:min-h-[340px]" : "h-48"
                     }`}
                   >
-                    <Image src={promo.image} alt={promo.title} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" sizes={solo ? "100vw" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"} />
+                    <UploadAwareImage src={promo.image} alt={promo.title} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" sizes={solo ? "100vw" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     
                     {/* Badge de descuento */}

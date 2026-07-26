@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Plus, Save, Trash2, Pencil, Upload, Images } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 
 type Slide = {
   id: number;
@@ -122,7 +122,7 @@ export function PromoSliderAdmin() {
 
             <div className="relative h-48 rounded-xl overflow-hidden bg-white/5 border border-white/10">
               {editing.imageUrl ? (
-                <Image src={editing.imageUrl} alt="Vista previa" fill className="object-contain" />
+                <UploadAwareImage src={editing.imageUrl} alt="Vista previa" fill className="object-contain" />
               ) : (
                 <div className="flex items-center justify-center h-full text-white/30 text-sm">Sin imagen</div>
               )}
@@ -186,7 +186,7 @@ export function PromoSliderAdmin() {
         {slides.map((slide) => (
           <Card key={slide.id} className="bg-navy-light border-white/5 rounded-2xl overflow-hidden">
             <div className="relative h-44">
-              <Image src={slide.imageUrl || "/images/atacama-new.png"} alt={slide.caption} fill className="object-cover" />
+              <UploadAwareImage src={slide.imageUrl || "/images/atacama-new.png"} alt={slide.caption} fill className="object-cover" />
               {!slide.active && (
                 <span className="absolute top-2 left-2 bg-red-500/80 text-white text-xs px-2 py-1 rounded-full">Oculta</span>
               )}

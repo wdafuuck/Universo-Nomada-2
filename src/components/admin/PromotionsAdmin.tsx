@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Plus, Save, Trash2, Pencil, Upload, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 
 type Promo = {
   id: number;
@@ -135,7 +135,7 @@ export function PromotionsAdmin() {
         <Card className="bg-navy-light border-white/5 rounded-2xl">
           <CardContent className="p-6 space-y-4">
             <div className="relative h-32 rounded-xl overflow-hidden">
-              {editing.image && <Image src={editing.image} alt="" fill className="object-cover" />}
+              {editing.image && <UploadAwareImage src={editing.image} alt="" fill className="object-cover" />}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className="text-white/40 text-xs">Título *</label>
@@ -223,7 +223,7 @@ export function PromotionsAdmin() {
         {promos.map((p) => (
           <Card key={p.id} className={`bg-navy-light border-white/5 rounded-2xl overflow-hidden ${!p.active ? "opacity-50" : ""}`}>
             <div className="relative h-28">
-              <Image src={p.image || "/images/atacama-new.png"} alt={p.title} fill className="object-cover" />
+              <UploadAwareImage src={p.image || "/images/atacama-new.png"} alt={p.title} fill className="object-cover" />
               <span className="absolute top-2 right-2 bg-coral text-white text-xs font-bold px-2 py-0.5 rounded-full">{p.discount}</span>
               {!p.active && (
                 <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">Oculta</span>
