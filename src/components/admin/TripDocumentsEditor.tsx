@@ -20,6 +20,8 @@ type TripDocument = {
   fileName: string;
 };
 
+const EMPTY_DOCS: TripDocument[] = [];
+
 type Props = {
   leadId: number;
   customerEmail?: string;
@@ -28,14 +30,37 @@ type Props = {
   onChange?: (docs: TripDocument[]) => void;
 };
 
+function applyRetentionNote(
+  data: {
+    retention?: { tripEnded: boolean; daysRemaining: number | null; available: boolean };
+    retentionDays?: number;
+  },
+  setRetentionNote: (note: string | null) => void,
+) {
+  const { retention, retentionDays } = data;
+  if (!retention?.tripEnded) {
+    setRetentionNote(
+      `El pasajero podrá descargar estos archivos hasta ${retentionDays ?? 90} días después de la fecha de fin del viaje.`,
+    );
+  } else if (retention.available && retention.daysRemaining != null) {
+    setRetentionNote(
+      `El pasajero puede descargarlos ${retention.daysRemaining} día${retention.daysRemaining !== 1 ? "s" : ""} más; luego se eliminan automáticamente.`,
+    );
+  } else {
+    setRetentionNote("El plazo de descarga venció; los archivos se eliminaron del servidor.");
+  }
+}
+
 export function TripDocumentsEditor({
   leadId,
   customerEmail,
   customerName,
-  initialDocuments = [],
+  initialDocuments = EMPTY_DOCS,
   onChange,
 }: Props) {
-  const [documents, setDocuments] = useState<TripDocument[]>(initialDocuments);
+  const [documents, setDocuments] = useState<TripDocument[]>(
+    initialDocuments.length > 0 ? initialDocuments : EMPTY_DOCS,
+  );
   const [docType, setDocType] = useState<string>(TRIP_DOCUMENT_TYPES[0].value);
   const [customLabel, setCustomLabel] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -45,32 +70,27 @@ export function TripDocumentsEditor({
   const [notifyVariant, setNotifyVariant] = useState<TripDocumentNotifyVariant>("new_documents");
   const [sendingNotify, setSendingNotify] = useState(false);
 
-  useEffect(() => {
-    setDocuments(initialDocuments);
-  }, [initialDocuments, leadId]);
+  const sync = (docs: TripDocument[]) => {
+    setDocuments(docs);
+    onChange?.(docs);
+  };
 
+  const load = async () => {
+    const res = await fetch(`/api/admin/leads/${leadId}/documents`, { credentials: "include" });
+    if (!res.ok) return;
+    const data = await res.json();
+    sync(data.documents ?? []);
+    applyRetentionNote(data, setRetentionNote);
+  };
+
+  // Cargar desde API al cambiar de viaje (no resetear con [] en cada re-render del padre)
   useEffect(() => {
-    void fetch(`/api/admin/leads/${leadId}/documents`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!data) return;
-        const { retention, retentionDays } = data as {
-          retention?: { tripEnded: boolean; daysRemaining: number | null; available: boolean };
-          retentionDays?: number;
-        };
-        if (!retention?.tripEnded) {
-          setRetentionNote(
-            `El pasajero podrá descargar estos archivos hasta ${retentionDays ?? 90} días después de la fecha de fin del viaje.`,
-          );
-        } else if (retention.available && retention.daysRemaining != null) {
-          setRetentionNote(
-            `El pasajero puede descargarlos ${retention.daysRemaining} día${retention.daysRemaining !== 1 ? "s" : ""} más; luego se eliminan automáticamente.`,
-          );
-        } else {
-          setRetentionNote("El plazo de descarga venció; los archivos se eliminaron del servidor.");
-        }
-      });
-  }, [leadId, documents.length]);
+    if (initialDocuments.length > 0) {
+      setDocuments(initialDocuments);
+    }
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo al cambiar lead
+  }, [leadId]);
 
   useEffect(() => {
     if (!notifyOpen || !notifyPreview) return;
@@ -84,18 +104,6 @@ export function TripDocumentsEditor({
     // notifyPreview en deps provocaría loop; solo re-fetch al cambiar variante/abrir
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifyOpen, notifyVariant, leadId]);
-
-  const sync = (docs: TripDocument[]) => {
-    setDocuments(docs);
-    onChange?.(docs);
-  };
-
-  const load = async () => {
-    const res = await fetch(`/api/admin/leads/${leadId}/documents`, { credentials: "include" });
-    if (!res.ok) return;
-    const data = await res.json();
-    sync(data.documents ?? []);
-  };
 
   const openNotifyDialog = (preview: TripDocumentNotifyPreview) => {
     setNotifyPreview(preview);
