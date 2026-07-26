@@ -10,6 +10,7 @@ import {
   type EditableCartLine,
 } from "@/lib/admin-lead-edit";
 import { normalizeEmail } from "@/lib/otp-auth";
+import { reconcileLeadPaidAmount, updateLeadCartTotal } from "@/lib/lead-payments";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -53,7 +54,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   if (body.destino !== undefined) updateData.destino = String(body.destino).trim() || null;
   if (body.status !== undefined) updateData.status = body.status;
   if (body.cartTotal !== undefined) updateData.cartTotal = Number(body.cartTotal) || 0;
-  if (body.amountDue !== undefined) updateData.amountDue = Number(body.amountDue) || 0;
+  // amountDue se sincroniza vía ledger más abajo (no escribir a ciegas)
+  const requestedPaid =
+    body.amountDue !== undefined ? Math.max(0, Number(body.amountDue) || 0) : null;
   if (body.paymentMethod !== undefined) updateData.paymentMethod = body.paymentMethod || null;
   if (body.paymentPlan !== undefined) updateData.paymentPlan = body.paymentPlan || null;
 
@@ -79,7 +82,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 
   const nextCartTotal = Number(updateData.cartTotal ?? existing.cartTotal ?? 0);
-  const nextAmountPaid = Number(updateData.amountDue ?? existing.amountDue ?? 0);
+  const nextAmountPaid = requestedPaid ?? Number(existing.amountDue ?? 0);
   const nextStatus = String(updateData.status ?? existing.status);
   if (nextCartTotal > 0 && nextAmountPaid >= nextCartTotal && !["cancelado", "viajo"].includes(nextStatus)) {
     updateData.status = "reservado";
@@ -90,7 +93,18 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     data: updateData,
   });
 
-  return NextResponse.json({ lead });
+  if (body.cartTotal !== undefined) {
+    await updateLeadCartTotal(leadId, Number(body.cartTotal) || 0);
+  }
+  if (requestedPaid != null) {
+    await reconcileLeadPaidAmount(leadId, requestedPaid, {
+      method: String(body.paymentMethod || existing.paymentMethod || "admin"),
+      note: "Ajuste desde admin de leads",
+    });
+  }
+
+  const fresh = await db.lead.findUnique({ where: { id: leadId } });
+  return NextResponse.json({ lead: fresh ?? lead });
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {

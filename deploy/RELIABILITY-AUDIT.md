@@ -23,15 +23,22 @@
 | SumUp sin ledger de abono | `addLeadPayment` al confirmar |
 | Admin cookie sin revalidar rol | `requireAdmin` chequea DB |
 
-## P1 — deuda restante
+## P1 — corregidos (2026-07-26 tarde)
 
-| Hallazgo | Riesgo | Acción |
-|----------|--------|--------|
-| Schema sqlite local vs postgres prod | Drift | Schema prod dedicado o override; migrar a `migrate deploy` |
-| Naming `amountDue` ambiguo | Bugs humanos | Comentario en schema; UI usa “abonado” |
-| LeadsAdmin edita `amountDue` sin `LeadPayment` | Desync | Unificar con TripPaymentEditor |
-| MP webhook sin firma | Spoofing | Validar secret/firma MP |
-| `next build` aún escribe live antes del staging | Ventana corta | Snapshot + bak + start restore (mitigado) |
+| Hallazgo | Fix |
+|----------|-----|
+| LeadsAdmin vs ledger de abonos | TripPaymentEditor embebido; PATCH reconcilia `LeadPayment` |
+| MP webhook sin firma | `MERCADOPAGO_WEBHOOK_SECRET` + HMAC x-signature |
+| Solo `db push` | `migrate deploy` con fallback a `db push` |
+| Monitoreo ambiguo | DEPLOY.md: UptimeRobot home + health |
+
+## P1 — deuda restante / manual
+
+| Hallazgo | Acción humana |
+|----------|----------------|
+| Crear monitores UptimeRobot | 5 min en panel externo |
+| Pegar secreto MP en `.env` prod | Panel MP → Webhooks |
+| Historial prisma 100% alineado | Revisar `_prisma_migrations` en droplet |
 
 ## P2 — higiene
 

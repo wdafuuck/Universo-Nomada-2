@@ -68,8 +68,14 @@ echo "==> Dependencias"
 npm ci
 npx prisma generate
 
-echo "==> Schema DB (no destructivo)"
-npx prisma db push --skip-generate
+echo "==> Schema DB"
+# Preferir migraciones versionadas; si el historial no aplica, caer a db push no destructivo
+if npx prisma migrate deploy; then
+  echo "    migrate deploy OK"
+else
+  echo "    migrate deploy falló — fallback a db push (no destructivo)"
+  npx prisma db push --skip-generate
+fi
 
 echo "==> Estado pre-build"
 if ! standalone_is_valid .next/standalone; then

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { addLeadPayment } from "@/lib/lead-payments";
+import { verifyMercadoPagoWebhookSignature } from "@/lib/payments/mercadopago-webhook";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,22 @@ export async function POST(request: NextRequest) {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
   if (!token) {
     return NextResponse.json({ ok: false }, { status: 503 });
+  }
+
+  const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET?.trim();
+  if (webhookSecret) {
+    const { searchParams } = request.nextUrl;
+    const dataId = searchParams.get("data.id") ?? searchParams.get("id");
+    const ok = verifyMercadoPagoWebhookSignature({
+      xSignature: request.headers.get("x-signature"),
+      xRequestId: request.headers.get("x-request-id"),
+      dataId,
+      secret: webhookSecret,
+    });
+    if (!ok) {
+      console.warn("[mp/webhook] firma inválida");
+      return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
+    }
   }
 
   try {

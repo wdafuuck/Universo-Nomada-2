@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import type { EditableCartLine } from "@/lib/admin-lead-edit";
 import { TripDocumentsEditor } from "@/components/admin/TripDocumentsEditor";
+import { TripPaymentEditor } from "@/components/admin/TripPaymentEditor";
 import { isTripLeadSource } from "@/lib/trip-documents";
 import { checkOutFromCheckIn, parseTourDuration } from "@/lib/tour-duration";
 import { computeBalanceDue, balancePaymentDeadline, formatDateCL } from "@/lib/reservation-payment";
@@ -189,11 +190,14 @@ export function LeadsAdmin() {
         telefono: form.telefono,
         destino: form.destino,
         status: form.status,
-        cartTotal: Number(form.cartTotal) || 0,
-        amountDue: Number(form.amountDue) || 0,
         paymentMethod: form.paymentMethod || null,
         paymentPlan: form.paymentPlan || null,
       };
+      // Total/abonos los gestiona TripPaymentEditor (ledger). No pisarlos al guardar el formulario.
+      if (!isTripLeadSource(editing.source)) {
+        payload.cartTotal = Number(form.cartTotal) || 0;
+        payload.amountDue = Number(form.amountDue) || 0;
+      }
       if (isTripLeadSource(editing.source) && form.cartItems.length) {
         payload.cartItems = form.cartItems;
       }
@@ -411,57 +415,31 @@ export function LeadsAdmin() {
 
               {isTripLeadSource(editing.source) && (
                 <>
+                  <div className="pt-2 border-t border-white/10">
+                    <TripPaymentEditor
+                      leadId={editing.id}
+                      onUpdated={() => {
+                        void load();
+                        void fetch(`/api/admin/leads`, { credentials: "include" })
+                          .then((r) => r.json())
+                          .then((data) => {
+                            const refreshed = (data.leads ?? []).find((l: Lead) => l.id === editing.id);
+                            if (refreshed) {
+                              setEditing(refreshed);
+                              setForm((prev) => prev ? {
+                                ...prev,
+                                cartTotal: String(refreshed.cartTotal ?? 0),
+                                amountDue: String(refreshed.amountDue ?? 0),
+                                status: refreshed.status,
+                              } : prev);
+                            }
+                          })
+                          .catch(() => {});
+                      }}
+                    />
+                  </div>
+
                   <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t border-white/10">
-                    <div>
-                      <label className="text-white/40 text-xs">Total reserva (CLP)</label>
-                      <Input type="number" value={form.cartTotal}
-                        onChange={(e) => setForm({ ...form, cartTotal: e.target.value })}
-                        className="mt-1 bg-white/5 border-white/10 text-white" />
-                    </div>
-                    <div>
-                      <label className="text-white/40 text-xs">Monto pagado (CLP)</label>
-                      <Input type="number" value={form.amountDue}
-                        onChange={(e) => setForm({ ...form, amountDue: e.target.value })}
-                        className="mt-1 bg-white/5 border-white/10 text-white" />
-                    </div>
-                    {(() => {
-                      const total = Number(form.cartTotal) || 0;
-                      const paid = Number(form.amountDue) || 0;
-                      const balance = computeBalanceDue(total, paid);
-                      const deadline = balance > 0 ? balancePaymentDeadline(form.cartItems[0]?.checkIn) : null;
-                      return (
-                        <div className="sm:col-span-2 rounded-xl bg-white/5 border border-white/10 p-4 space-y-2">
-                          <div className="flex flex-wrap gap-4 text-sm">
-                            <span className="text-white/60">Saldo pendiente: <strong className="text-amber-300">${balance.toLocaleString("es-CL")}</strong></span>
-                            {deadline && (
-                              <span className="text-white/60">Fecha límite saldo: <strong className="text-white">{formatDateCL(deadline)}</strong></span>
-                            )}
-                            {balance <= 0 && total > 0 && (
-                              <span className="text-emerald-400 font-bold">Pagado al 100%</span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button type="button" size="sm" variant="outline"
-                              className="border-white/10 text-white bg-white/5 text-xs"
-                              onClick={() => setForm({ ...form, amountDue: form.cartTotal, status: "reservado" })}
-                            >
-                              Marcar pagado total
-                            </Button>
-                            {balance > 0 && (
-                              <Button type="button" size="sm" variant="outline"
-                                className="border-white/10 text-white bg-white/5 text-xs"
-                                onClick={() => setForm({ ...form, status: "cancelado" })}
-                              >
-                                Marcar cancelado
-                              </Button>
-                            )}
-                          </div>
-                          <p className="text-white/30 text-xs">
-                            Actualiza el monto pagado cuando el cliente abone depósito o saldo. Al completar el total, el estado pasa a reservado automáticamente.
-                          </p>
-                        </div>
-                      );
-                    })()}
                     <div>
                       <label className="text-white/40 text-xs">Método de pago</label>
                       <select value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
@@ -470,6 +448,8 @@ export function LeadsAdmin() {
                         <option value="transferencia">Transferencia</option>
                         <option value="tarjeta">Tarjeta</option>
                         <option value="mercadopago">Mercado Pago</option>
+                        <option value="sumup">SumUp</option>
+                        <option value="admin">Admin / manual</option>
                       </select>
                     </div>
                     <div>
@@ -487,6 +467,14 @@ export function LeadsAdmin() {
                         <option value="total">Total</option>
                         <option value="deposito">Depósito</option>
                       </select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button type="button" size="sm" variant="outline"
+                        className="border-white/10 text-white bg-white/5 text-xs"
+                        onClick={() => setForm({ ...form, status: "cancelado" })}
+                      >
+                        Marcar cancelado
+                      </Button>
                     </div>
                   </div>
 

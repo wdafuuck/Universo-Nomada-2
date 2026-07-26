@@ -159,6 +159,59 @@ export async function updateLeadCartTotal(
   return syncLeadPaidFromPayments(leadId);
 }
 
+/**
+ * Ajusta el ledger para que la suma de abonos coincida con `targetPaid`
+ * (p. ej. cuando LeadsAdmin guarda “monto pagado”).
+ */
+export async function reconcileLeadPaidAmount(
+  leadId: number,
+  targetPaid: number,
+  opts?: { method?: string; note?: string },
+): Promise<Awaited<ReturnType<typeof syncLeadPaidFromPayments>>> {
+  const target = Math.max(0, Math.round(Number(targetPaid)) || 0);
+  await ensurePaymentsSeededFromAmountDue(leadId);
+
+  const payments = await db.leadPayment.findMany({
+    where: { leadId },
+    orderBy: [{ paidAt: "asc" }, { id: "asc" }],
+  });
+  const current = payments.reduce((s, p) => s + p.amount, 0);
+
+  if (target === current) {
+    return syncLeadPaidFromPayments(leadId);
+  }
+
+  if (target > current) {
+    const delta = target - current;
+    await db.leadPayment.create({
+      data: {
+        leadId,
+        amount: delta,
+        method: opts?.method || "admin",
+        note: opts?.note || "Ajuste de monto pagado (admin)",
+      },
+    });
+    return syncLeadPaidFromPayments(leadId);
+  }
+
+  // target < current: reducir desde el último abono hacia atrás
+  let excess = current - target;
+  for (const p of [...payments].reverse()) {
+    if (excess <= 0) break;
+    if (p.amount <= excess) {
+      excess -= p.amount;
+      await db.leadPayment.delete({ where: { id: p.id } });
+    } else {
+      await db.leadPayment.update({
+        where: { id: p.id },
+        data: { amount: p.amount - excess, note: `${p.note || ""} [ajustado]`.trim() },
+      });
+      excess = 0;
+    }
+  }
+  return syncLeadPaidFromPayments(leadId);
+}
+
 export function paymentPanelSummary(input: {
   cartTotal: number;
   amountPaid: number;

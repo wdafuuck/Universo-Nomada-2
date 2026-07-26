@@ -133,9 +133,30 @@ npm run db:seed-group-trips
 
 ## Monitoreo
 
-- Health: `/api/health`
-- Logs: revisar errores 5xx en pagos y checkout
-- Uptime: configurar ping cada 5 min al health endpoint
+- Health: `https://universonomada.cl/api/health` → debe devolver `"db":"connected"`
+- Home: `https://universonomada.cl/` → HTTP 200
+- Mi cuenta: `https://universonomada.cl/mi-cuenta` → HTTP 200
+- Logs app: `journalctl -u universo-nomada -f`
+- Watchdog (cada 1 min): `/var/log/universo-nomada-watchdog.log`
+
+### Uptime externo (recomendado)
+
+En [UptimeRobot](https://uptimerobot.com) o Better Stack crear **2 monitores** (cada 5 min):
+
+1. HTTPS `https://universonomada.cl/api/health` — keyword `connected`
+2. HTTPS `https://universonomada.cl/` — status 200
+
+Así detectas caídas aunque el health interno esté OK y las páginas no.
+
+### Mercado Pago webhooks
+
+En el panel MP → Webhooks, copiar el **secreto de firma** a `.env` del server:
+
+```bash
+MERCADOPAGO_WEBHOOK_SECRET=...
+```
+
+Sin ese valor el webhook sigue funcionando pero **sin validar firma**.
 
 ## Valoración técnica post-hardening
 
