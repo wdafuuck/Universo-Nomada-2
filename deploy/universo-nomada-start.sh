@@ -11,6 +11,11 @@ if ! standalone_is_valid .next/standalone; then
   echo "[start] ERROR: standalone inválido o incompleto" >&2
   if restore_standalone_from_bak; then
     echo "[start] Restaurando standalone.bak…" >&2
+  elif [[ -f .next/standalone.prebuild/server.js ]]; then
+    echo "[start] Restaurando standalone.prebuild…" >&2
+    rm -rf .next/standalone
+    cp -a .next/standalone.prebuild .next/standalone
+    ensure_uploads_symlink .next/standalone "$(pwd)"
   else
     echo "[start] FATAL: sin standalone válido ni backup" >&2
     exit 1

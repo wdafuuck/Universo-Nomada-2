@@ -4,6 +4,8 @@ import { buildReservationItems, sendCardConfirmationEmail } from "@/lib/email/re
 import type { RoulettePrizeId } from "@/lib/roulette";
 import { parseCartJson } from "@/lib/email/cart-json";
 import { getSumUpCheckoutById, getSumUpCheckoutByReference, isSumUpCheckoutPaid } from "@/lib/payments/sumup-status";
+import { addLeadPayment } from "@/lib/lead-payments";
+import { reservationAccessToken } from "@/lib/reservation-access";
 
 function siteUrl() {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001").replace(/\/$/, "");
@@ -51,7 +53,10 @@ async function trySendCardEmail(leadId: number) {
 
 export async function GET(request: NextRequest) {
   const ref = request.nextUrl.searchParams.get("ref");
-  const redirect = `${siteUrl()}/reserva/confirmacion?reserva=${ref}&pago=ok`;
+  const access = ref && Number.isFinite(Number(ref))
+    ? reservationAccessToken(Number(ref))
+    : "";
+  const redirect = `${siteUrl()}/reserva/confirmacion?reserva=${ref}&pago=ok${access ? `&t=${access}` : ""}`;
 
   if (!ref) {
     return NextResponse.redirect(redirect);
@@ -77,10 +82,22 @@ export async function GET(request: NextRequest) {
     }
 
     if (isSumUpCheckoutPaid(checkout)) {
+      const paidAmount = Math.max(0, lead.amountDue ?? lead.cartTotal ?? 0);
       await db.lead.update({
         where: { id: leadId },
         data: { status: "reservado" },
       });
+      if (paidAmount > 0) {
+        const existing = await db.leadPayment.count({ where: { leadId } });
+        if (existing === 0) {
+          await addLeadPayment({
+            leadId,
+            amount: paidAmount,
+            method: "sumup",
+            note: "Pago SumUp confirmado",
+          }).catch((e) => console.error("[sumup/return] payment ledger", e));
+        }
+      }
       void trySendCardEmail(leadId);
     } else {
       // Pago aún no confirmado en SumUp — igual mostramos pantalla de reserva pendiente

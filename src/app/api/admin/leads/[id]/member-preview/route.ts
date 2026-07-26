@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-session";
 import { leadToMemberTrip } from "@/lib/member-trips";
-import { ensurePaymentsSeededFromAmountDue, syncLeadPaidFromPayments } from "@/lib/lead-payments";
 
 type Params = { params: Promise<{ id: string }> };
 
-/** Vista “como la ve el cliente” en Mi cuenta, para preview en admin. */
+/** Vista “como la ve el cliente” en Mi cuenta. Solo lectura — no muta pagos ni estado. */
 export async function GET(request: NextRequest, { params }: Params) {
   if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -24,14 +23,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 
   try {
-    await ensurePaymentsSeededFromAmountDue(leadId);
-    await syncLeadPaidFromPayments(leadId);
-    const fresh = await db.lead.findUnique({ where: { id: leadId } });
-    if (!fresh) {
-      return NextResponse.json({ error: "Reserva no encontrada" }, { status: 404 });
-    }
-
-    const trip = leadToMemberTrip(fresh);
+    const trip = leadToMemberTrip(lead);
     if (!trip) {
       return NextResponse.json(
         { error: "Este registro no aparece como viaje en Mi cuenta (origen o estado)." },
@@ -42,8 +34,8 @@ export async function GET(request: NextRequest, { params }: Params) {
     return NextResponse.json({
       trip,
       customer: {
-        name: fresh.nombre,
-        email: fresh.email,
+        name: lead.nombre,
+        email: lead.email,
       },
     });
   } catch (e) {

@@ -57,6 +57,9 @@ export async function syncLeadPaidFromPayments(leadId: number): Promise<{
 /**
  * Si hay amountDue histórico sin filas en LeadPayment, crea un abono de migración
  * para no perder el monto ya registrado.
+ *
+ * Importante: en checkout con transferencia, `amountDue` es el monto A TRANSFERIR
+ * (aún no pagado). No seedeamos esos leads ni estados pendientes.
  */
 export async function ensurePaymentsSeededFromAmountDue(leadId: number): Promise<void> {
   const lead = await db.lead.findUnique({ where: { id: leadId } });
@@ -64,6 +67,21 @@ export async function ensurePaymentsSeededFromAmountDue(leadId: number): Promise
 
   const count = await db.leadPayment.count({ where: { leadId } });
   if (count > 0) return;
+
+  // Nunca interpretar "pendiente" como pagado
+  if (
+    lead.status === "pendiente_transferencia"
+    || lead.status === "pendiente_pago"
+    || lead.status === "nuevo"
+    || lead.status === "cancelado"
+  ) {
+    return;
+  }
+
+  // Carrito sin reserva confirmada: amountDue suele ser el cargo pendiente
+  if (lead.source === "carrito" && lead.status !== "reservado" && lead.status !== "viajo") {
+    return;
+  }
 
   const paid = Math.max(0, lead.amountDue ?? 0);
   if (paid <= 0) return;

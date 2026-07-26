@@ -103,6 +103,7 @@ model Lead {
   paymentMethod String?
   paymentPlan   String?
   cartTotal     Int?
+  /** Monto YA PAGADO (abonos). En checkout transferencia pendiente = monto a transferir hasta confirmar. Preferir LeadPayment. */
   amountDue     Int?
   expiresAt     DateTime?
   tripEndDate   DateTime?

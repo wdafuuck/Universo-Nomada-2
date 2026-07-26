@@ -9,6 +9,7 @@ import { notifyNewLead } from "@/lib/notify";
 import { BANK_TRANSFER } from "@/lib/bank-transfer";
 import { buildReservationItems, sendTransferConfirmationEmail } from "@/lib/email/reservation-emails";
 import { leadToConfirmation } from "@/lib/reservation-confirmation";
+import { reservationAccessToken } from "@/lib/reservation-access";
 import { checkOutFromCheckIn } from "@/lib/tour-duration";
 import {
   calculateDepositAmount,
@@ -291,6 +292,7 @@ export async function POST(request: NextRequest) {
     const base = {
       ok: true,
       leadId: String(lead.id),
+      accessToken: reservationAccessToken(lead.id),
       confirmation,
       paymentItems,
       cartTotal: discountedTotal,

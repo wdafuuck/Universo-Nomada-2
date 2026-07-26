@@ -277,7 +277,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
     toast.message(c.discountRemoved ?? "Código eliminado");
   };
 
-  const goToConfirmation = (confirmation: ReservationConfirmation) => {
+  const goToConfirmation = (confirmation: ReservationConfirmation, accessToken?: string) => {
     trackPurchase({
       transactionId: String(confirmation.leadId),
       value: confirmation.amountPaid,
@@ -290,7 +290,8 @@ export function CartSheet({ open, onOpenChange }: Props) {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(confirmation));
     clearCart();
     onOpenChange(false);
-    router.push(`/reserva/confirmacion?reserva=${confirmation.leadId}`);
+    const t = accessToken ? `&t=${encodeURIComponent(accessToken)}` : "";
+    router.push(`/reserva/confirmacion?reserva=${confirmation.leadId}${t}`);
   };
 
   const handleConfirm = async () => {
@@ -339,7 +340,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
 
       if (paymentMethod === "transferencia") {
         if (checkoutData.confirmation) {
-          goToConfirmation(checkoutData.confirmation);
+          goToConfirmation(checkoutData.confirmation, checkoutData.accessToken);
         } else {
           goToConfirmation({
             leadId: checkoutData.leadId,
@@ -357,7 +358,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
             items: [],
             emailSent: checkoutData.emailSent ?? false,
             emailConfigured: true,
-          });
+          }, checkoutData.accessToken);
         }
         return;
       }

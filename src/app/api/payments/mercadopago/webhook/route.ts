@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { addLeadPayment } from "@/lib/lead-payments";
 
 export const dynamic = "force-dynamic";
 
@@ -28,14 +29,24 @@ export async function POST(request: NextRequest) {
         if (Number.isFinite(leadId) && (status === "approved" || status === "pending")) {
           const lead = await db.lead.findUnique({ where: { id: leadId } });
           if (lead) {
-            const note = `[MP ${status}] Pago #${id} — ${Number(payment.transaction_amount ?? 0).toLocaleString("es-CL")} CLP`;
+            const paidAmount = Math.round(Number(payment.transaction_amount ?? 0));
+            const note = `[MP ${status}] Pago #${id} — ${paidAmount.toLocaleString("es-CL")} CLP`;
+            const nextStatus = status === "approved" ? "reservado" : "pendiente_transferencia";
             await db.lead.update({
               where: { id: leadId },
               data: {
-                status: status === "approved" ? "pagado" : "pendiente_pago",
-                mensaje: `${note}\n\n${lead.mensaje}`,
+                status: nextStatus,
+                mensaje: `${note}\n\n${lead.mensaje ?? ""}`,
               },
             });
+            if (status === "approved" && paidAmount > 0) {
+              await addLeadPayment({
+                leadId,
+                amount: paidAmount,
+                method: "mercadopago",
+                note: `Mercado Pago #${id}`,
+              }).catch((e) => console.error("[mp/webhook] payment ledger", e));
+            }
           }
         }
       }

@@ -1,22 +1,41 @@
 #!/usr/bin/env bash
 # Build Next.js standalone de forma más segura:
-# 1) next build
-# 2) ensambla static/server/prisma en un staging
-# 3) swap atómico hacia .next/standalone
-# Así un rsync --delete a medias no deja el árbol vivo a medio borrar.
+# 1) snapshot del standalone vivo (por si next build lo pisa a medias)
+# 2) next build
+# 3) ensambla static/server/prisma en un staging
+# 4) swap atómico hacia .next/standalone
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-echo "==> next build"
-npx next build
-
-STAGE=".next/standalone-new"
 LIVE=".next/standalone"
+STAGE=".next/standalone-new"
+PREBUILD=".next/standalone.prebuild"
+
+if [[ -f "$LIVE/server.js" ]]; then
+  echo "==> Snapshot pre-build (protección mid-build)"
+  rm -rf "$PREBUILD"
+  cp -a "$LIVE" "$PREBUILD"
+fi
+
+echo "==> next build"
+if ! npx next build; then
+  echo ":: error: next build falló"
+  if [[ -f "$PREBUILD/server.js" ]]; then
+    echo "    restaurando snapshot pre-build"
+    rm -rf "$LIVE"
+    mv "$PREBUILD" "$LIVE"
+  fi
+  exit 1
+fi
 
 if [[ ! -f "$LIVE/server.js" ]]; then
   echo ":: error: next build no generó $LIVE/server.js"
+  if [[ -f "$PREBUILD/server.js" ]]; then
+    rm -rf "$LIVE"
+    mv "$PREBUILD" "$LIVE"
+  fi
   exit 1
 fi
 
@@ -58,6 +77,6 @@ echo "==> Swap atómico staging → live"
 rm -rf "${LIVE}.old"
 mv "$LIVE" "${LIVE}.old"
 mv "$STAGE" "$LIVE"
-rm -rf "${LIVE}.old"
+rm -rf "${LIVE}.old" "$PREBUILD"
 
 echo "==> Build standalone OK (ssr=$ssr_stage manifests=$manifests)"

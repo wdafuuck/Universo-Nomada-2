@@ -11,6 +11,7 @@ const STORAGE_KEY = "un-last-reservation";
 function ConfirmacionContent() {
   const searchParams = useSearchParams();
   const reservaId = searchParams.get("reserva");
+  const accessToken = searchParams.get("t");
   const [data, setData] = useState<ReservationConfirmation | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,14 +35,15 @@ function ConfirmacionContent() {
       return;
     }
 
-    fetch(`/api/reservations/${encodeURIComponent(reservaId)}`)
+    const qs = accessToken ? `?t=${encodeURIComponent(accessToken)}` : "";
+    fetch(`/api/reservations/${encodeURIComponent(reservaId)}${qs}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.confirmation) setData(d.confirmation);
         else setError(d.error ?? "Reserva no encontrada");
       })
       .catch(() => setError("Error al cargar la confirmación"));
-  }, [reservaId]);
+  }, [reservaId, accessToken]);
 
   if (error) {
     return (

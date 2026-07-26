@@ -67,6 +67,17 @@ export function getSessionFromRequest(request: Request): SessionUser | null {
 export async function requireAdmin(request?: Request): Promise<SessionUser | null> {
   const user = request ? getSessionFromRequest(request) : await getSession();
   if (!user || user.role !== "admin") return null;
+  // Revalidar rol en DB (cookie puede quedar stale tras revocación)
+  try {
+    const { db } = await import("@/lib/db");
+    const row = await db.user.findUnique({
+      where: { id: user.id },
+      select: { role: true, email: true },
+    });
+    if (!row || row.role !== "admin") return null;
+  } catch {
+    return null;
+  }
   return user;
 }
 
