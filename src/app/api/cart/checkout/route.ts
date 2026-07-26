@@ -4,7 +4,7 @@ import { getSessionFromRequest } from "@/lib/auth-session";
 import { normalizeEmail } from "@/lib/otp-auth";
 import { totalPassengers } from "@/lib/tour-pricing";
 import { guardPublicApi } from "@/lib/api-guard";
-import { taxSummary, type PaymentItem, resolveCardPaymentProvider, listConfiguredCardProviders } from "@/lib/payments";
+import { taxSummary, type PaymentItem, resolveCardPaymentProvider, allowedCardProviders, isCardProviderAllowed } from "@/lib/payments";
 import { notifyNewLead } from "@/lib/notify";
 import { BANK_TRANSFER } from "@/lib/bank-transfer";
 import { buildReservationItems, sendTransferConfirmationEmail } from "@/lib/email/reservation-emails";
@@ -164,30 +164,44 @@ export async function POST(request: NextRequest) {
       taxType: (taxByTour[item.tourId] === "afecto" ? "afecto" : "exento") as "exento" | "afecto",
     }));
 
-    const resolvedCard = resolveCardPaymentProvider(paymentItems);
-    const paymentMethod =
-      methodRaw === "transferencia"
-        ? "transferencia"
-        : methodRaw === "sumup" || methodRaw === "mercadopago"
-          ? methodRaw
-          : (resolvedCard ?? "sumup");
+    const allowed = allowedCardProviders(paymentItems);
+    const defaultCard = resolveCardPaymentProvider(paymentItems);
 
-    if (methodRaw !== "transferencia") {
-      if (!resolvedCard) {
+    let paymentMethod: "transferencia" | "sumup" | "mercadopago";
+    if (methodRaw === "transferencia") {
+      paymentMethod = "transferencia";
+    } else if (methodRaw === "sumup" || methodRaw === "mercadopago") {
+      if (!isCardProviderAllowed(methodRaw, paymentItems)) {
+        return NextResponse.json(
+          {
+            error:
+              methodRaw === "mercadopago"
+                ? "Mercado Pago solo aplica a viajes nacionales (afectos). Para internacionales usa SumUp."
+                : "Pasarela no disponible para este carrito",
+          },
+          { status: 400 },
+        );
+      }
+      paymentMethod = methodRaw;
+    } else if (methodRaw === "card") {
+      if (!defaultCard) {
         return NextResponse.json(
           { error: "No hay pasarela de tarjeta configurada (SumUp / Mercado Pago)" },
           { status: 503 },
         );
       }
-      if (
-        (methodRaw === "sumup" || methodRaw === "mercadopago")
-        && !listConfiguredCardProviders().includes(methodRaw)
-      ) {
-        return NextResponse.json(
-          { error: `Pasarela ${methodRaw} no configurada` },
-          { status: 503 },
-        );
-      }
+      // Nacional con ambas: el cliente debe haber enviado sumup|mercadopago.
+      // Si solo manda "card", usamos el default (MP si hay, sino SumUp).
+      paymentMethod = defaultCard;
+    } else {
+      return NextResponse.json({ error: "Método de pago inválido" }, { status: 400 });
+    }
+
+    if (methodRaw !== "transferencia" && allowed.length === 0) {
+      return NextResponse.json(
+        { error: "No hay pasarela de tarjeta configurada (SumUp / Mercado Pago)" },
+        { status: 503 },
+      );
     }
 
     const vatAmount = calculateVatAmount(paymentItems, amount, discountedTotal);

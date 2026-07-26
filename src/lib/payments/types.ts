@@ -26,6 +26,8 @@ export type CreatePaymentResult = {
 
 export type CardPaymentProvider = "sumup" | "mercadopago";
 
+export type CartTaxHint = "exento" | "afecto" | "mixto";
+
 function hasSumUp(): boolean {
   return Boolean(process.env.SUMUP_API_KEY?.trim() && process.env.SUMUP_MERCHANT_CODE?.trim());
 }
@@ -55,38 +57,61 @@ export function listConfiguredCardProviders(): CardPaymentProvider[] {
   return out;
 }
 
+export function cartTaxHint(items: PaymentItem[] | undefined | null): CartTaxHint {
+  const list = items ?? [];
+  const hasAfecto = list.some((i) => i.taxType === "afecto");
+  const hasExento = list.some((i) => i.taxType !== "afecto");
+  if (hasAfecto && !hasExento) return "afecto";
+  if (hasExento && !hasAfecto) return "exento";
+  if (hasAfecto && hasExento) return "mixto";
+  return "exento";
+}
+
 /**
- * SumUp → cobros exentos (internacionales).
- * Mercado Pago → cobros afectos (IVA).
- * Carrito mixto: gana el mayor monto; empate → SumUp si hay exento.
+ * Nacional (afecto): SumUp y Mercado Pago — el cliente elige.
+ * Internacional (exento) o mixto con exento: solo SumUp (cobros exentos).
+ */
+export function allowedCardProviders(
+  items: PaymentItem[] | undefined | null,
+): CardPaymentProvider[] {
+  const configured = listConfiguredCardProviders();
+  if (configured.length === 0) return [];
+
+  const hint = cartTaxHint(items);
+  if (hint === "afecto") {
+    return configured;
+  }
+
+  // Internacional / mixto: solo SumUp (exento)
+  if (configured.includes("sumup")) return ["sumup"];
+  return configured.slice(0, 1);
+}
+
+/**
+ * Default cuando el cliente no elige:
+ * nacional → Mercado Pago si está, si no SumUp;
+ * internacional → SumUp.
  */
 export function resolveCardPaymentProvider(
   items: PaymentItem[] | undefined | null,
 ): CardPaymentProvider | null {
-  const configured = listConfiguredCardProviders();
-  if (configured.length === 0) return null;
-  if (configured.length === 1) return configured[0];
+  const allowed = allowedCardProviders(items);
+  if (allowed.length === 0) return null;
+  if (allowed.length === 1) return allowed[0];
 
-  const list = items ?? [];
-  let exento = 0;
-  let afecto = 0;
-  for (const i of list) {
-    const total = Math.max(0, (i.unit_price || 0) * (i.quantity || 0));
-    if (i.taxType === "afecto") afecto += total;
-    else exento += total;
+  const hint = cartTaxHint(items);
+  if (hint === "afecto") {
+    return allowed.includes("mercadopago") ? "mercadopago" : allowed[0];
   }
+  return allowed.includes("sumup") ? "sumup" : allowed[0];
+}
 
-  if (afecto > 0 && exento <= 0) {
-    return configured.includes("mercadopago") ? "mercadopago" : configured[0];
-  }
-  if (exento > 0 && afecto <= 0) {
-    return configured.includes("sumup") ? "sumup" : configured[0];
-  }
-
-  if (afecto > exento) {
-    return configured.includes("mercadopago") ? "mercadopago" : configured[0];
-  }
-  return configured.includes("sumup") ? "sumup" : configured[0];
+export function isCardProviderAllowed(
+  provider: string | null | undefined,
+  items: PaymentItem[] | undefined | null,
+): provider is CardPaymentProvider {
+  if (provider !== "sumup" && provider !== "mercadopago") return false;
+  return allowedCardProviders(items).includes(provider);
 }
 
 export function taxSummary(items: PaymentItem[]): string {

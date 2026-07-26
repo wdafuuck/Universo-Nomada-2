@@ -48,6 +48,8 @@ type PricingInfo = {
   chargeTotal: number;
   chargeDeposit: number;
   cardProvider?: "sumup" | "mercadopago" | null;
+  cardProviders?: ("sumup" | "mercadopago")[];
+  clientChoosesGateway?: boolean;
   taxHint?: "exento" | "afecto" | "mixto";
 };
 
@@ -59,6 +61,7 @@ type Props = {
 };
 
 type PaymentMethod = "card" | "transferencia";
+type CardGateway = "sumup" | "mercadopago";
 type PaymentPlan = "total" | "deposito";
 
 function OptionCard({
@@ -105,6 +108,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
   const [loadingPricing, setLoadingPricing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [cardGateway, setCardGateway] = useState<CardGateway>("sumup");
   const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>("total");
   const [availabilityAcknowledged, setAvailabilityAcknowledged] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -205,6 +209,20 @@ export function CartSheet({ open, onOpenChange }: Props) {
       setPaymentPlan("total");
     }
   }, [pricing, paymentPlan]);
+
+  useEffect(() => {
+    if (!pricing) return;
+    const allowed: CardGateway[] = (pricing.cardProviders?.length
+      ? pricing.cardProviders
+      : pricing.cardProvider
+        ? [pricing.cardProvider]
+        : ["sumup"]).filter((p): p is CardGateway => p === "sumup" || p === "mercadopago");
+    const preferred =
+      pricing.cardProvider && allowed.includes(pricing.cardProvider)
+        ? pricing.cardProvider
+        : allowed[0] ?? "sumup";
+    setCardGateway(preferred);
+  }, [pricing]);
 
   useEffect(() => {
     if (!open) setAvailabilityAcknowledged(false);
@@ -323,7 +341,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
           discountCode: rouletteSpinId ? null : appliedDiscountCode,
           rouletteSpinId: rouletteSpinId ?? undefined,
           rouletteGiftTour: items.find((i) => i.rouletteGiftTourName)?.rouletteGiftTourName,
-          paymentMethod,
+          paymentMethod: paymentMethod === "card" ? cardGateway : paymentMethod,
           paymentPlan,
           contact: {
             nombre: payerName ?? "Reserva carrito",
@@ -375,7 +393,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
           externalReference: checkoutData.leadId,
           description: `Reserva Universo Nómada — ${items.map((i) => i.tourName).join(", ")}`.slice(0, 255),
           items: checkoutData.paymentItems,
-          provider: checkoutData.cardProvider ?? checkoutData.paymentMethod,
+          provider: checkoutData.paymentMethod ?? checkoutData.cardProvider ?? cardGateway,
         }),
       });
       const payData = await payRes.json();
@@ -567,10 +585,10 @@ export function CartSheet({ open, onOpenChange }: Props) {
                       title={c.payCard ?? "Tarjeta de débito o crédito"}
                       subtitle={
                         pricing?.taxHint === "afecto"
-                          ? "Viaje afecto a IVA · pago con Mercado Pago"
+                          ? "Viaje nacional (afecto a IVA) · elige pasarela abajo"
                           : pricing?.taxHint === "mixto"
-                            ? "Carrito mixto · pasarela según monto exento/afecto"
-                            : (c.payCardHint ?? "Viaje exento · pago con SumUp · cuotas según tu banco")
+                            ? "Incluye viaje internacional · pago con SumUp"
+                            : (c.payCardHint ?? "Viaje internacional (exento) · pago con SumUp")
                       }
                     />
                     <OptionCard
@@ -580,6 +598,28 @@ export function CartSheet({ open, onOpenChange }: Props) {
                       subtitle={c.bankTransferHint ?? "Abono ahora · saldo en cuotas con nosotros"}
                     />
                   </div>
+                  {paymentMethod === "card" && pricing?.clientChoosesGateway && (
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {(pricing.cardProviders ?? ["sumup", "mercadopago"]).map((gw) => (
+                        <OptionCard
+                          key={gw}
+                          selected={cardGateway === gw}
+                          onClick={() => setCardGateway(gw)}
+                          title={gw === "mercadopago" ? "Mercado Pago" : "SumUp"}
+                          subtitle={
+                            gw === "mercadopago"
+                              ? "Cuotas y medios locales"
+                              : "Tarjeta · cobro con boleta SumUp"
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
+                  {paymentMethod === "card" && pricing?.taxHint !== "afecto" && (
+                    <p className="mt-2 text-xs text-slate-500 leading-relaxed">
+                      Destinos internacionales se cobran solo con SumUp (exento de IVA).
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2 pt-2 px-1">

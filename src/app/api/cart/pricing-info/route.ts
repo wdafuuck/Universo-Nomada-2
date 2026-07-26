@@ -16,7 +16,8 @@ import {
   type RoulettePrizeId,
 } from "@/lib/roulette";
 import {
-  listConfiguredCardProviders,
+  allowedCardProviders,
+  cartTaxHint,
   resolveCardPaymentProvider,
   type PaymentItem,
 } from "@/lib/payments";
@@ -91,9 +92,9 @@ export async function POST(request: NextRequest) {
       unit_price: item.totalPrice,
       taxType: taxByTour[item.tourId] === "afecto" ? "afecto" : "exento",
     }));
+    const cardProviders = allowedCardProviders(paymentItems);
     const cardProvider = resolveCardPaymentProvider(paymentItems);
-    const hasAfecto = paymentItems.some((i) => i.taxType === "afecto");
-    const hasExento = paymentItems.some((i) => i.taxType !== "afecto");
+    const taxHint = cartTaxHint(paymentItems);
 
     return NextResponse.json({
       cartTotal,
@@ -107,15 +108,9 @@ export async function POST(request: NextRequest) {
       chargeTotal: chargeAmount(reservationTotal, "total", depositAmount),
       chargeDeposit: chargeAmount(reservationTotal, "deposito", depositAmount),
       cardProvider,
-      cardProviders: listConfiguredCardProviders(),
-      taxHint:
-        hasAfecto && !hasExento
-          ? "afecto"
-          : hasExento && !hasAfecto
-            ? "exento"
-            : hasAfecto && hasExento
-              ? "mixto"
-              : "exento",
+      cardProviders,
+      clientChoosesGateway: taxHint === "afecto" && cardProviders.length > 1,
+      taxHint,
     });
   } catch (e) {
     console.error("[cart/pricing-info]", e);

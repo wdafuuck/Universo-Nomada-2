@@ -96,8 +96,9 @@ export async function GET() {
     providers,
     /** Regla de negocio documentada para el frontend */
     routing: {
-      exento: "sumup",
-      afecto: "mercadopago",
+      exento: "sumup_only",
+      afecto: "client_chooses_sumup_or_mercadopago",
+      mixto: "sumup_only",
     },
     resolveExample: resolveCardPaymentProvider([
       { title: "demo", quantity: 1, unit_price: 1, taxType: "exento" },
