@@ -13,7 +13,6 @@ import { PackageContentFields, emptyPackageContent, type PackageContentState } f
 import { PackagePricingFields } from "@/components/admin/PackagePricingFields";
 import {
   getDefaultPricing,
-  getDisplayPricePerPerson,
   getListDisplayPricePerPerson,
   ensureOccupancyTiers,
   syncPricingFromAccommodations,
@@ -200,16 +199,13 @@ export function PackagesAdmin() {
   const applyDiscountPercent = (rawPercent: number) => {
     if (!editing || !pricingConfig) return;
     const percent = clampPromoDiscountPercent(rawPercent);
-    const listPrice = getListDisplayPricePerPerson(pricingConfig);
-    const salePrice = applyPromoPercent(listPrice, percent);
+    // Solo guarda el %: los precios de hoteles NO se tocan.
     const nextConfig = { ...pricingConfig, promoDiscountPercent: percent };
     setPricingConfig(nextConfig);
     setEditing({
       ...editing,
       promoDiscountPercent: percent,
-      originalPrice: percent > 0 ? listPrice : null,
-      price: salePrice,
-      tag: percent > 0 ? `${percent}% OFF` : editing.tag,
+      tag: percent > 0 ? `${percent}% OFF` : (editing.tag?.includes("% OFF") ? "" : editing.tag),
     });
   };
 
@@ -220,17 +216,9 @@ export function PackagesAdmin() {
       : config;
     const withPromo = { ...synced, promoDiscountPercent: percent };
     setPricingConfig(withPromo);
+    // El precio de lista del tour se deriva de hoteles; el de oferta se calcula al guardar.
     const listPrice = getListDisplayPricePerPerson(withPromo);
-    const salePrice = getDisplayPricePerPerson(withPromo);
-    setEditing((e) =>
-      e
-        ? {
-            ...e,
-            price: salePrice,
-            originalPrice: percent > 0 ? listPrice : e.originalPrice,
-          }
-        : e,
-    );
+    setEditing((e) => (e ? { ...e, price: listPrice } : e));
   };
 
   const savePricing = async (tourId: string, tourName: string, config: TourPricingConfig) => {
@@ -238,10 +226,9 @@ export function PackagesAdmin() {
     const synced = usesAccommodationPricing(normalized)
       ? syncPricingFromAccommodations(normalized)
       : normalized;
-    const displayPrice = getDisplayPricePerPerson({
-      ...synced,
-      promoDiscountPercent: clampPromoDiscountPercent(editing?.promoDiscountPercent),
-    });
+    const percent = clampPromoDiscountPercent(editing?.promoDiscountPercent);
+    const listPrice = getListDisplayPricePerPerson(synced);
+    const salePrice = applyPromoPercent(listPrice, percent);
     const { promoDiscountPercent: _promo, ...configToSave } = synced;
     const res = await adminFetch("/api/admin/tour-pricing", {
       method: "PUT",
@@ -249,7 +236,7 @@ export function PackagesAdmin() {
       body: JSON.stringify({
         tourId,
         tourName,
-        basePrice: getListDisplayPricePerPerson(synced),
+        basePrice: listPrice,
         config: {
           passengerPrices: configToSave.passengerPrices,
           occupancyPricing: configToSave.occupancyPricing,
@@ -262,7 +249,7 @@ export function PackagesAdmin() {
     if (!res.ok) {
       throw new Error(authErrorMessage(res, data));
     }
-    return displayPrice;
+    return { listPrice, salePrice, percent };
   };
 
   const save = async () => {
@@ -292,12 +279,23 @@ export function PackagesAdmin() {
       const url = isNew ? "/api/admin/tours" : `/api/admin/tours/${editing.tourId}`;
       const method = isNew ? "POST" : "PUT";
 
-      let payload = {
+      const percent = editing.showInOfertas
+        ? clampPromoDiscountPercent(editing.promoDiscountPercent)
+        : 0;
+      const listPrice = pricingConfig
+        ? getListDisplayPricePerPerson(pricingConfig)
+        : Number(editing.price) || 0;
+      const salePrice = applyPromoPercent(listPrice, percent);
+
+      // En DB: price = lo que ve el cliente; originalPrice = tachado si hay %.
+      // Los hoteles guardan siempre el precio real (lista).
+      const payload = {
         ...editing,
         tourId: slug,
-        promoDiscountPercent: editing.showInOfertas
-          ? clampPromoDiscountPercent(editing.promoDiscountPercent)
-          : 0,
+        promoDiscountPercent: percent,
+        price: percent > 0 ? salePrice : listPrice,
+        originalPrice: percent > 0 ? listPrice : (editing.originalPrice ?? null),
+        tag: percent > 0 ? `${percent}% OFF` : (editing.tag ?? ""),
       };
 
       const res = await adminFetch(url, {
@@ -530,37 +528,69 @@ export function PackagesAdmin() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-white/40 text-xs">
-                    Precio &quot;Desde&quot; (2 personas)
+                    Precio real &quot;Desde&quot; (2 personas) — no cambia con la oferta
                   </label>
-                  <div className="mt-1 h-10 flex items-center gap-2 px-3 rounded-md bg-white/5 border border-white/10">
-                    {clampPromoDiscountPercent(editing.promoDiscountPercent) > 0 && pricingConfig ? (
-                      <>
-                        <span className="text-white/40 line-through text-sm">
-                          {formatCLP(getListDisplayPricePerPerson(pricingConfig))}
-                        </span>
-                        <span className="text-teal font-bold">
-                          {formatCLP(getDisplayPricePerPerson(pricingConfig))}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-teal font-bold">
-                        {formatCLP(pricingConfig ? getDisplayPricePerPerson(pricingConfig) : (editing.price ?? 0))}
-                      </span>
+                  <div className="mt-1 h-10 flex items-center px-3 rounded-md bg-white/5 border border-white/10 text-teal font-bold">
+                    {formatCLP(
+                      pricingConfig
+                        ? getListDisplayPricePerPerson(pricingConfig)
+                        : (editing.price ?? 0),
                     )}
                   </div>
                   <p className="text-white/30 text-[10px] mt-1">
-                    Se calcula del alojamiento más económico para 2 personas. En cada hotel pon el precio normal (sin descuento).
+                    Sale del hotel más económico (precio que editas abajo). Las promociones no lo modifican.
                   </p>
                 </div>
-                <div>
-                  <label className="text-white/40 text-xs">Precio anterior (tachado, opcional)</label>
-                  <Input type="number" value={editing.originalPrice ?? ""}
-                    onChange={(e) => setEditing({ ...editing, originalPrice: e.target.value ? Number(e.target.value) : null })}
-                    className="mt-1 bg-white/5 border-white/10 text-white" />
-                  <p className="text-white/30 text-[10px] mt-1">
-                    Si usas % de oferta abajo, se completa solo.
-                  </p>
-                </div>
+                {!editing.showInOfertas || clampPromoDiscountPercent(editing.promoDiscountPercent) <= 0 ? (
+                  <div>
+                    <label className="text-white/40 text-xs">Precio tachado manual (opcional)</label>
+                    <Input
+                      type="number"
+                      value={editing.originalPrice ?? ""}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          originalPrice: e.target.value ? Number(e.target.value) : null,
+                        })
+                      }
+                      className="mt-1 bg-white/5 border-white/10 text-white"
+                    />
+                    <p className="text-white/30 text-[10px] mt-1">
+                      Solo si quieres un tachado sin usar % de oferta.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                    <p className="text-amber-200 text-xs font-semibold mb-2">
+                      Vista oferta ({clampPromoDiscountPercent(editing.promoDiscountPercent)}% OFF)
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-white/40 text-[10px] uppercase tracking-wide">Antes</p>
+                        <p className="text-white/50 line-through font-medium">
+                          {formatCLP(
+                            pricingConfig
+                              ? getListDisplayPricePerPerson(pricingConfig)
+                              : (editing.price ?? 0),
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-white/40 text-[10px] uppercase tracking-wide">Después</p>
+                        <p className="text-amber-300 font-bold text-lg">
+                          {formatCLP(
+                            pricingConfig
+                              ? applyPromoPercent(
+                                  getListDisplayPricePerPerson(pricingConfig),
+                                  editing.promoDiscountPercent,
+                                )
+                              : applyPromoPercent(editing.price ?? 0, editing.promoDiscountPercent),
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="pt-3 border-t border-white/10 space-y-3">
@@ -576,8 +606,7 @@ export function PackagesAdmin() {
                           showInOfertas: false,
                           promoTitle: "",
                           promoDiscountPercent: 0,
-                          originalPrice: null,
-                          tag: "",
+                          tag: editing.tag?.includes("% OFF") ? "" : editing.tag,
                         });
                         if (pricingConfig) {
                           setPricingConfig({ ...pricingConfig, promoDiscountPercent: 0 });
@@ -616,10 +645,10 @@ export function PackagesAdmin() {
                     </div>
                     <div>
                       <label className="text-white/70 text-xs font-medium">
-                        % de descuento (todos los hoteles · 1, 2, 3 o más personas)
+                        % de descuento temporal (no modifica precios de hoteles)
                       </label>
                       <p className="text-white/40 text-[10px] mt-0.5 mb-2">
-                        No rebaja los números de cada hotel: se aplica al mostrar y al cobrar. Pon en cada hotel el precio normal.
+                        Los precios que editas en cada hotel siguen siendo los reales. Solo cambia lo que ve el cliente mientras la oferta esté activa.
                       </p>
                       <div className="flex flex-wrap gap-2 items-center">
                         {[5, 10, 15, 20, 25, 30].map((p) => (
@@ -668,12 +697,31 @@ export function PackagesAdmin() {
                             applyDiscountPercent(Number(v));
                           }}
                         />
-                        {clampPromoDiscountPercent(editing.promoDiscountPercent) > 0 ? (
-                          <span className="text-amber-300 text-xs font-semibold">
-                            Activo: {clampPromoDiscountPercent(editing.promoDiscountPercent)}% OFF
-                          </span>
-                        ) : null}
                       </div>
+                      {pricingConfig && clampPromoDiscountPercent(editing.promoDiscountPercent) > 0 ? (
+                        <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl border border-amber-500/40 bg-navy/40 p-3">
+                          <div>
+                            <p className="text-white/40 text-[10px] uppercase">Antes (precio real)</p>
+                            <p className="text-white/60 line-through text-lg font-semibold">
+                              {formatCLP(getListDisplayPricePerPerson(pricingConfig))}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-amber-200/80 text-[10px] uppercase">Después (con oferta)</p>
+                            <p className="text-amber-300 text-lg font-black">
+                              {formatCLP(
+                                applyPromoPercent(
+                                  getListDisplayPricePerPerson(pricingConfig),
+                                  editing.promoDiscountPercent,
+                                ),
+                              )}
+                            </p>
+                          </div>
+                          <p className="col-span-2 text-white/35 text-[10px]">
+                            Aplica a todos los hoteles y a 1, 2, 3 o más personas. Al quitar el %, vuelven los precios reales.
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 ) : null}

@@ -10,7 +10,9 @@ import {
   ensureOccupancyTiers,
   getCheapestAccommodation2Pax,
   getAccommodationAdult2Pax,
-  getDisplayPricePerPerson,
+  getListDisplayPricePerPerson,
+  applyPromoPercent,
+  clampPromoDiscountPercent,
   pricesFromAdultPerPerson,
   syncPricingFromAccommodations,
   usesAccommodationPricing,
@@ -47,16 +49,19 @@ type Props = {
 export function OccupancyAdultInputs({
   occupancyPricing,
   onChange,
+  promoDiscountPercent = 0,
 }: {
   occupancyPricing: OccupancyPricing[];
   onChange: (next: OccupancyPricing[]) => void;
+  promoDiscountPercent?: number;
 }) {
+  const promo = clampPromoDiscountPercent(promoDiscountPercent);
   return (
     <div className="space-y-2">
       <div>
-        <p className="text-white/70 text-xs font-medium">Precio CLP por persona (según ocupación)</p>
+        <p className="text-white/70 text-xs font-medium">Precio CLP real por persona (según ocupación)</p>
         <p className="text-white/40 text-[10px] mt-0.5">
-          Lo que cobra Universo Nómada al cliente por persona, según viajen 1, 2 o 3 adultos juntos.
+          Precio de lista — no se modifica con la oferta. Si hay %, abajo verás el precio al cliente.
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -67,12 +72,14 @@ export function OccupancyAdultInputs({
             n === 1
               ? "1 adulto — precio / persona"
               : `${n} adultos — precio / persona`;
+          const list = occ.prices.adult || 0;
+          const after = promo > 0 ? applyPromoPercent(list, promo) : null;
           return (
             <div key={n}>
               <label className="text-white/60 text-xs">{label}</label>
               <Input
                 type="number"
-                value={occ.prices.adult || ""}
+                value={list || ""}
                 placeholder={n === 2 ? "Ej: 450000" : n === 1 ? "Ej: 520000" : "Ej: 420000"}
                 onChange={(e) => {
                   const adult = Number(e.target.value) || 0;
@@ -85,6 +92,11 @@ export function OccupancyAdultInputs({
                 }}
                 className="mt-1 bg-white/5 border-white/10 text-white h-9"
               />
+              {after != null && list > 0 ? (
+                <p className="text-amber-300/90 text-[10px] mt-1">
+                  Antes {formatCLP(list)} → Después {formatCLP(after)}
+                </p>
+              ) : null}
             </div>
           );
         })}
@@ -94,7 +106,9 @@ export function OccupancyAdultInputs({
 }
 
 export function PackagePricingFields({ config, onChange }: Props) {
-  const displayFromWeb = getDisplayPricePerPerson(config);
+  const listDesde = getListDisplayPricePerPerson(config);
+  const promo = clampPromoDiscountPercent(config.promoDiscountPercent);
+  const saleDesde = promo > 0 ? applyPromoPercent(listDesde, promo) : null;
   const cheapest = getCheapestAccommodation2Pax(config);
 
   const emit = (next: TourPricingConfig) => {
@@ -354,6 +368,7 @@ export function PackagePricingFields({ config, onChange }: Props) {
 
                 <OccupancyAdultInputs
                   occupancyPricing={occ}
+                  promoDiscountPercent={config.promoDiscountPercent}
                   onChange={(next) => setAccOccupancy(idx, next)}
                 />
 
@@ -439,9 +454,14 @@ export function PackagePricingFields({ config, onChange }: Props) {
       <p className="text-teal text-sm font-semibold border-t border-white/10 pt-4">
         {cheapest ? (
           <>
-            &quot;Desde&quot; en la web (2 personas): {formatCLP(displayFromWeb)} / persona
+            Precio real &quot;Desde&quot; (2 personas): {formatCLP(listDesde)} / persona
+            {saleDesde != null ? (
+              <span className="text-amber-300 font-normal text-xs block mt-1">
+                Con oferta en la web: {formatCLP(saleDesde)} / persona (−{promo}%)
+              </span>
+            ) : null}
             <span className="text-white/50 font-normal text-xs block mt-1">
-              Según {cheapest.name} — alojamiento más económico
+              Según {cheapest.name} — alojamiento más económico (precio de lista)
             </span>
           </>
         ) : (
