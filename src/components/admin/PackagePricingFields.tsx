@@ -52,32 +52,43 @@ export function OccupancyAdultInputs({
   onChange: (next: OccupancyPricing[]) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      {[1, 2, 3].map((n) => {
-        const idx = occupancyPricing.findIndex((o) => o.passengerCount === n);
-        const occ = occupancyPricing[idx] ?? { passengerCount: n, prices: pricesFromAdultPerPerson(0) };
-        return (
-          <div key={n}>
-            <label className="text-white/40 text-xs">
-              {n} {n === 1 ? "persona" : "personas"} / persona
-            </label>
-            <Input
-              type="number"
-              value={occ.prices.adult || ""}
-              onChange={(e) => {
-                const adult = Number(e.target.value) || 0;
-                const next = [...occupancyPricing];
-                const entry = { passengerCount: n, prices: pricesFromAdultPerPerson(adult) };
-                if (idx >= 0) next[idx] = entry;
-                else next.push(entry);
-                next.sort((a, b) => a.passengerCount - b.passengerCount);
-                onChange(next);
-              }}
-              className="mt-1 bg-white/5 border-white/10 text-white h-9"
-            />
-          </div>
-        );
-      })}
+    <div className="space-y-2">
+      <div>
+        <p className="text-white/70 text-xs font-medium">Precio CLP por persona (según ocupación)</p>
+        <p className="text-white/40 text-[10px] mt-0.5">
+          Lo que cobra Universo Nómada al cliente por persona, según viajen 1, 2 o 3 adultos juntos.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[1, 2, 3].map((n) => {
+          const idx = occupancyPricing.findIndex((o) => o.passengerCount === n);
+          const occ = occupancyPricing[idx] ?? { passengerCount: n, prices: pricesFromAdultPerPerson(0) };
+          const label =
+            n === 1
+              ? "1 adulto — precio / persona"
+              : `${n} adultos — precio / persona`;
+          return (
+            <div key={n}>
+              <label className="text-white/60 text-xs">{label}</label>
+              <Input
+                type="number"
+                value={occ.prices.adult || ""}
+                placeholder={n === 2 ? "Ej: 450000" : n === 1 ? "Ej: 520000" : "Ej: 420000"}
+                onChange={(e) => {
+                  const adult = Number(e.target.value) || 0;
+                  const next = [...occupancyPricing];
+                  const entry = { passengerCount: n, prices: pricesFromAdultPerPerson(adult) };
+                  if (idx >= 0) next[idx] = entry;
+                  else next.push(entry);
+                  next.sort((a, b) => a.passengerCount - b.passengerCount);
+                  onChange(next);
+                }}
+                className="mt-1 bg-white/5 border-white/10 text-white h-9"
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
