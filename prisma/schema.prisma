@@ -204,6 +204,8 @@ model Tour {
   showInOfertas        Boolean  @default(false)
   /** Título de la oferta (el nombre del programa pasa a subtítulo) */
   promoTitle           String   @default("")
+  /** % OFF de oferta: se aplica a todos los hoteles y ocupaciones (1/2/3+) */
+  promoDiscountPercent Int      @default(0)
   active               Boolean  @default(true)
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())

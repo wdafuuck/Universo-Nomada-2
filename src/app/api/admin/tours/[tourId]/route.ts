@@ -72,6 +72,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
         minDepositPerPerson: Number(body.minDepositPerPerson) || 0,
         showInOfertas: Boolean(body.showInOfertas),
         promoTitle: body.showInOfertas ? String(body.promoTitle ?? "").trim() : "",
+        promoDiscountPercent: body.showInOfertas
+          ? Math.min(90, Math.max(0, Math.round(Number(body.promoDiscountPercent) || 0)))
+          : 0,
         active: body.active !== false,
         sortOrder: body.sortOrder ?? 0,
       },

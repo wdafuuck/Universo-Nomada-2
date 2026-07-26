@@ -82,6 +82,9 @@ export async function POST(request: NextRequest) {
         minDepositPerPerson: Number(minDepositPerPerson) || 0,
         showInOfertas: Boolean(showInOfertas),
         promoTitle: showInOfertas ? String(promoTitle ?? "").trim() : "",
+        promoDiscountPercent: showInOfertas
+          ? Math.min(90, Math.max(0, Math.round(Number(body.promoDiscountPercent) || 0)))
+          : 0,
         active: active !== false,
         sortOrder: sortOrder ?? 99,
       },

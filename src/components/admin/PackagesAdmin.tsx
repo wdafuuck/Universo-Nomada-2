@@ -14,10 +14,13 @@ import { PackagePricingFields } from "@/components/admin/PackagePricingFields";
 import {
   getDefaultPricing,
   getDisplayPricePerPerson,
+  getListDisplayPricePerPerson,
   ensureOccupancyTiers,
   syncPricingFromAccommodations,
   usesAccommodationPricing,
   clonePricingForDuplicate,
+  clampPromoDiscountPercent,
+  applyPromoPercent,
   type TourPricingConfig,
 } from "@/lib/tour-pricing";
 import { TOUR_CATEGORIES, normalizeTourCategory, tourCategoryLabel } from "@/lib/tour-category";
@@ -48,6 +51,7 @@ export type TourRecord = {
   minDepositPerPerson: number;
   showInOfertas: boolean;
   promoTitle: string;
+  promoDiscountPercent: number;
   active: boolean;
   sortOrder: number;
 };
@@ -68,6 +72,7 @@ const emptyTour = (): Partial<TourRecord> & { tourId: string } => ({
   minDepositPerPerson: 0,
   showInOfertas: false,
   promoTitle: "",
+  promoDiscountPercent: 0,
   active: true,
   sortOrder: 99,
 });
@@ -115,18 +120,26 @@ export function PackagesAdmin() {
   const [uploading, setUploading] = useState(false);
   const [pricingConfig, setPricingConfig] = useState<TourPricingConfig | null>(null);
 
-  const loadPricing = async (tourId: string, tourName: string, basePrice: number) => {
+  const loadPricing = async (tourId: string, tourName: string, basePrice: number, promoPercent = 0) => {
     try {
       const res = await fetch(`/api/tours/pricing?tourId=${encodeURIComponent(tourId)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.config) {
-          setPricingConfig(ensureOccupancyTiers(data.config, basePrice));
+          setPricingConfig({
+            ...ensureOccupancyTiers(data.config, basePrice),
+            promoDiscountPercent: clampPromoDiscountPercent(
+              data.config.promoDiscountPercent ?? promoPercent,
+            ),
+          });
           return;
         }
       }
     } catch { /* defaults */ }
-    setPricingConfig(getDefaultPricing(tourId, tourName, basePrice));
+    setPricingConfig({
+      ...getDefaultPricing(tourId, tourName, basePrice),
+      promoDiscountPercent: clampPromoDiscountPercent(promoPercent),
+    });
   };
 
   useEffect(() => {
@@ -143,7 +156,12 @@ export function PackagesAdmin() {
       return;
     }
     if (editing.tourId) {
-      void loadPricing(editing.tourId, editing.name ?? "", editing.price ?? 0);
+      void loadPricing(
+        editing.tourId,
+        editing.name ?? "",
+        editing.price ?? 0,
+        editing.promoDiscountPercent ?? 0,
+      );
     }
     // Solo al abrir/cambiar paquete — no recargar si editing.price cambia al editar precios
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional: no depender de todo `editing`
@@ -179,46 +197,40 @@ export function PackagesAdmin() {
     }
   };
 
-  const applyDiscount = (percent: number) => {
+  const applyDiscountPercent = (rawPercent: number) => {
     if (!editing || !pricingConfig) return;
-    const current = getDisplayPricePerPerson(pricingConfig);
-    if (!current) return;
+    const percent = clampPromoDiscountPercent(rawPercent);
+    const listPrice = getListDisplayPricePerPerson(pricingConfig);
+    const salePrice = applyPromoPercent(listPrice, percent);
+    const nextConfig = { ...pricingConfig, promoDiscountPercent: percent };
+    setPricingConfig(nextConfig);
     setEditing({
       ...editing,
-      originalPrice: editing.originalPrice ?? current,
-    });
-    if (usesAccommodationPricing(pricingConfig)) {
-      const factor = 1 - percent / 100;
-      const accommodations = pricingConfig.accommodations.map((acc) => {
-        const occ = (acc.occupancyPricing ?? []).map((o) => ({
-          ...o,
-          prices: {
-            adult: Math.round((o.prices.adult || 0) * factor),
-            child: Math.round((o.prices.child || 0) * factor),
-            infant: o.prices.infant,
-            senior: Math.round((o.prices.senior || 0) * factor),
-          },
-        }));
-        const occ2 = occ.find((o) => o.passengerCount === 2);
-        return { ...acc, occupancyPricing: occ, prices: occ2?.prices ?? acc.prices };
-      });
-      handlePricingChange({ ...pricingConfig, accommodations });
-      return;
-    }
-    setEditing({
-      ...editing,
-      originalPrice: editing.originalPrice ?? current,
-      price: Math.round(current * (1 - percent / 100)),
+      promoDiscountPercent: percent,
+      originalPrice: percent > 0 ? listPrice : null,
+      price: salePrice,
+      tag: percent > 0 ? `${percent}% OFF` : editing.tag,
     });
   };
 
   const handlePricingChange = (config: TourPricingConfig) => {
+    const percent = clampPromoDiscountPercent(editing?.promoDiscountPercent);
     const synced = usesAccommodationPricing(config)
       ? syncPricingFromAccommodations(config)
       : config;
-    setPricingConfig(synced);
-    const displayPrice = getDisplayPricePerPerson(synced);
-    setEditing((e) => (e ? { ...e, price: displayPrice } : e));
+    const withPromo = { ...synced, promoDiscountPercent: percent };
+    setPricingConfig(withPromo);
+    const listPrice = getListDisplayPricePerPerson(withPromo);
+    const salePrice = getDisplayPricePerPerson(withPromo);
+    setEditing((e) =>
+      e
+        ? {
+            ...e,
+            price: salePrice,
+            originalPrice: percent > 0 ? listPrice : e.originalPrice,
+          }
+        : e,
+    );
   };
 
   const savePricing = async (tourId: string, tourName: string, config: TourPricingConfig) => {
@@ -226,19 +238,23 @@ export function PackagesAdmin() {
     const synced = usesAccommodationPricing(normalized)
       ? syncPricingFromAccommodations(normalized)
       : normalized;
-    const displayPrice = getDisplayPricePerPerson(synced);
+    const displayPrice = getDisplayPricePerPerson({
+      ...synced,
+      promoDiscountPercent: clampPromoDiscountPercent(editing?.promoDiscountPercent),
+    });
+    const { promoDiscountPercent: _promo, ...configToSave } = synced;
     const res = await adminFetch("/api/admin/tour-pricing", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         tourId,
         tourName,
-        basePrice: displayPrice,
+        basePrice: getListDisplayPricePerPerson(synced),
         config: {
-          passengerPrices: synced.passengerPrices,
-          occupancyPricing: synced.occupancyPricing,
-          accommodations: synced.accommodations,
-          tiers: synced.tiers,
+          passengerPrices: configToSave.passengerPrices,
+          occupancyPricing: configToSave.occupancyPricing,
+          accommodations: configToSave.accommodations,
+          tiers: configToSave.tiers,
         },
       }),
     });
@@ -276,7 +292,13 @@ export function PackagesAdmin() {
       const url = isNew ? "/api/admin/tours" : `/api/admin/tours/${editing.tourId}`;
       const method = isNew ? "POST" : "PUT";
 
-      let payload = { ...editing, tourId: slug };
+      let payload = {
+        ...editing,
+        tourId: slug,
+        promoDiscountPercent: editing.showInOfertas
+          ? clampPromoDiscountPercent(editing.promoDiscountPercent)
+          : 0,
+      };
 
       const res = await adminFetch(url, {
         method,
@@ -510,11 +532,24 @@ export function PackagesAdmin() {
                   <label className="text-white/40 text-xs">
                     Precio &quot;Desde&quot; (2 personas)
                   </label>
-                  <div className="mt-1 h-10 flex items-center px-3 rounded-md bg-white/5 border border-white/10 text-teal font-bold">
-                    {formatCLP(pricingConfig ? getDisplayPricePerPerson(pricingConfig) : (editing.price ?? 0))}
+                  <div className="mt-1 h-10 flex items-center gap-2 px-3 rounded-md bg-white/5 border border-white/10">
+                    {clampPromoDiscountPercent(editing.promoDiscountPercent) > 0 && pricingConfig ? (
+                      <>
+                        <span className="text-white/40 line-through text-sm">
+                          {formatCLP(getListDisplayPricePerPerson(pricingConfig))}
+                        </span>
+                        <span className="text-teal font-bold">
+                          {formatCLP(getDisplayPricePerPerson(pricingConfig))}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-teal font-bold">
+                        {formatCLP(pricingConfig ? getDisplayPricePerPerson(pricingConfig) : (editing.price ?? 0))}
+                      </span>
+                    )}
                   </div>
                   <p className="text-white/30 text-[10px] mt-1">
-                    Se calcula del alojamiento más económico para 2 personas. Edítalo en la sección de alojamientos.
+                    Se calcula del alojamiento más económico para 2 personas. En cada hotel pon el precio normal (sin descuento).
                   </p>
                 </div>
                 <div>
@@ -522,16 +557,10 @@ export function PackagesAdmin() {
                   <Input type="number" value={editing.originalPrice ?? ""}
                     onChange={(e) => setEditing({ ...editing, originalPrice: e.target.value ? Number(e.target.value) : null })}
                     className="mt-1 bg-white/5 border-white/10 text-white" />
+                  <p className="text-white/30 text-[10px] mt-1">
+                    Si usas % de oferta abajo, se completa solo.
+                  </p>
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-white/40 text-xs w-full">Bajar precio tachado rápido (sobre el &quot;Desde&quot; actual):</span>
-                {[5, 10, 15, 20, 25].map((p) => (
-                  <button key={p} type="button" onClick={() => applyDiscount(p)}
-                    className="px-3 py-1 rounded-lg bg-teal/20 text-teal text-xs font-bold hover:bg-teal/30">
-                    -{p}%
-                  </button>
-                ))}
               </div>
 
               <div className="pt-3 border-t border-white/10 space-y-3">
@@ -539,34 +568,113 @@ export function PackagesAdmin() {
                   <input
                     type="checkbox"
                     checked={Boolean(editing.showInOfertas)}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      if (!on) {
+                        setEditing({
+                          ...editing,
+                          showInOfertas: false,
+                          promoTitle: "",
+                          promoDiscountPercent: 0,
+                          originalPrice: null,
+                          tag: "",
+                        });
+                        if (pricingConfig) {
+                          setPricingConfig({ ...pricingConfig, promoDiscountPercent: 0 });
+                        }
+                        return;
+                      }
                       setEditing({
                         ...editing,
-                        showInOfertas: e.target.checked,
-                        promoTitle: e.target.checked ? (editing.promoTitle ?? "") : "",
-                      })
-                    }
+                        showInOfertas: true,
+                        promoTitle: editing.promoTitle ?? "",
+                        promoDiscountPercent: editing.promoDiscountPercent ?? 0,
+                      });
+                    }}
                     className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 accent-teal"
                   />
                   <span>
                     <span className="text-white font-medium text-sm">Visible en sector Ofertas</span>
                     <span className="block text-white/40 text-xs mt-0.5">
-                      Aparece en la sección Ofertas de la home. El nombre del programa pasa a ser el subtítulo.
+                      Aparece en Ofertas de la home. El nombre del programa pasa a ser el subtítulo.
                     </span>
                   </span>
                 </label>
                 {editing.showInOfertas ? (
-                  <div>
-                    <label className="text-white/40 text-xs">Título de la oferta *</label>
-                    <Input
-                      value={editing.promoTitle ?? ""}
-                      onChange={(e) => setEditing({ ...editing, promoTitle: e.target.value })}
-                      placeholder="Ej: Destino del Mes JULIO"
-                      className="mt-1 bg-white/5 border-white/10 text-white"
-                    />
-                    <p className="text-white/30 text-[10px] mt-1">
-                      Subtítulo en la web: <span className="text-white/50">{editing.name || "nombre del programa"}</span>
-                    </p>
+                  <div className="space-y-3 pl-7">
+                    <div>
+                      <label className="text-white/40 text-xs">Título de la oferta *</label>
+                      <Input
+                        value={editing.promoTitle ?? ""}
+                        onChange={(e) => setEditing({ ...editing, promoTitle: e.target.value })}
+                        placeholder="Ej: Destino del Mes JULIO"
+                        className="mt-1 bg-white/5 border-white/10 text-white"
+                      />
+                      <p className="text-white/30 text-[10px] mt-1">
+                        Subtítulo en la web: <span className="text-white/50">{editing.name || "nombre del programa"}</span>
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-white/70 text-xs font-medium">
+                        % de descuento (todos los hoteles · 1, 2, 3 o más personas)
+                      </label>
+                      <p className="text-white/40 text-[10px] mt-0.5 mb-2">
+                        No rebaja los números de cada hotel: se aplica al mostrar y al cobrar. Pon en cada hotel el precio normal.
+                      </p>
+                      <div className="flex flex-wrap gap-2 items-center">
+                        {[5, 10, 15, 20, 25, 30].map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => applyDiscountPercent(p)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                              clampPromoDiscountPercent(editing.promoDiscountPercent) === p
+                                ? "bg-amber-500 text-navy"
+                                : "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+                            }`}
+                          >
+                            -{p}%
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => applyDiscountPercent(0)}
+                          className="px-3 py-1.5 rounded-lg bg-white/10 text-white/60 text-xs font-bold hover:bg-white/15"
+                        >
+                          Sin %
+                        </button>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="text-white/50 text-xs">Otro %:</span>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={90}
+                          placeholder="Ej: 12"
+                          className="w-24 h-9 bg-white/5 border-white/10 text-white"
+                          value={
+                            [5, 10, 15, 20, 25, 30].includes(
+                              clampPromoDiscountPercent(editing.promoDiscountPercent),
+                            )
+                              ? ""
+                              : editing.promoDiscountPercent || ""
+                          }
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === "") {
+                              applyDiscountPercent(0);
+                              return;
+                            }
+                            applyDiscountPercent(Number(v));
+                          }}
+                        />
+                        {clampPromoDiscountPercent(editing.promoDiscountPercent) > 0 ? (
+                          <span className="text-amber-300 text-xs font-semibold">
+                            Activo: {clampPromoDiscountPercent(editing.promoDiscountPercent)}% OFF
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                 ) : null}
               </div>
@@ -624,7 +732,7 @@ export function PackagesAdmin() {
               )}
               {tour.showInOfertas && (
                 <span className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                  Ofertas
+                  Ofertas{tour.promoDiscountPercent > 0 ? ` −${tour.promoDiscountPercent}%` : ""}
                 </span>
               )}
             </div>

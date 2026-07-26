@@ -160,8 +160,8 @@ export function PackagePricingFields({ config, onChange }: Props) {
               <Building2 className="h-4 w-4 text-teal" /> Precios por alojamiento
             </h4>
             <p className="text-white/40 text-xs mt-1">
-              Define el precio por persona para cada hotel (1, 2 y 3 viajeros). En la web principal se muestra el más económico para 2 personas.
-              Usa las flechas para cambiar el orden en la ficha del paquete.
+              Define el precio normal por persona en cada hotel (1, 2 y 3 viajeros). Si el paquete tiene % de oferta, ese descuento se aplica solo al mostrar y cobrar — no rebajes los números aquí a mano.
+              En la web se muestra el más económico para 2 personas. Usa las flechas para cambiar el orden en la ficha.
             </p>
           </div>
           <Button

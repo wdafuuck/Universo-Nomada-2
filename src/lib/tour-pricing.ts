@@ -63,7 +63,45 @@ export type TourPricingConfig = {
   occupancyPricing: OccupancyPricing[];
   accommodations: Accommodation[];
   tiers: PricingTier[];
+  /**
+   * % OFF de oferta (desde Tour.promoDiscountPercent).
+   * Los precios guardados en hoteles son el precio normal; este % se aplica al cobrar/mostrar.
+   */
+  promoDiscountPercent?: number;
 };
+
+/** 0–90; valores inválidos → 0 */
+export function clampPromoDiscountPercent(value: unknown): number {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(90, n);
+}
+
+export function applyPromoPercent(amount: number, percent: unknown): number {
+  const p = clampPromoDiscountPercent(percent);
+  const n = Number(amount) || 0;
+  if (!p || n <= 0) return Math.round(n);
+  return Math.round(n * (1 - p / 100));
+}
+
+export function scalePassengerPrices(
+  prices: PassengerTypePrices,
+  percent: unknown,
+): PassengerTypePrices {
+  const p = clampPromoDiscountPercent(percent);
+  if (!p) return prices;
+  return {
+    adult: applyPromoPercent(prices.adult, p),
+    child: applyPromoPercent(prices.child, p),
+    infant: prices.infant,
+    senior: applyPromoPercent(prices.senior, p),
+  };
+}
+
+export function pricingWithoutPromo(config: TourPricingConfig): TourPricingConfig {
+  if (!config.promoDiscountPercent) return config;
+  return { ...config, promoDiscountPercent: 0 };
+}
 
 export function totalPassengers(p: PassengerCounts) {
   return p.adults + p.children + p.infants + p.seniors;
@@ -207,11 +245,18 @@ export function syncPricingFromAccommodations(config: TourPricingConfig): TourPr
 
 export function getDisplayPricePerPerson(config: TourPricingConfig): number {
   const cheapest = getCheapestAccommodation2Pax(config);
-  if (cheapest) return getAccommodationAdult2Pax(cheapest);
+  let list: number;
+  if (cheapest) list = getAccommodationAdult2Pax(cheapest);
+  else {
+    const occ2 = config.occupancyPricing.find((o) => o.passengerCount === 2);
+    list = occ2?.prices.adult || config.passengerPrices.adult || config.basePrice;
+  }
+  return applyPromoPercent(list, config.promoDiscountPercent);
+}
 
-  const occ2 = config.occupancyPricing.find((o) => o.passengerCount === 2);
-  if (occ2?.prices.adult) return occ2.prices.adult;
-  return config.passengerPrices.adult || config.basePrice;
+/** Precio "Desde" sin aplicar % de oferta (precio de lista de hoteles). */
+export function getListDisplayPricePerPerson(config: TourPricingConfig): number {
+  return getDisplayPricePerPerson(pricingWithoutPromo(config));
 }
 
 export function getEffectivePassengerPrices(
@@ -220,6 +265,7 @@ export function getEffectivePassengerPrices(
   accommodationId?: string
 ): PassengerTypePrices {
   const activeAccs = getActiveAccommodations(config);
+  let raw: PassengerTypePrices | null = null;
 
   if (accommodationId) {
     const acc = config.accommodations.find((a) => a.id === accommodationId && a.active);
@@ -227,21 +273,23 @@ export function getEffectivePassengerPrices(
       const count = payingPassengers(passengers);
       const bucket = occupancyBucket(count);
       const occ = acc.occupancyPricing?.find((o) => o.passengerCount === bucket);
-      if (occ?.prices?.adult) return occ.prices;
-      if (acc.prices?.adult) return acc.prices;
+      if (occ?.prices?.adult) raw = occ.prices;
+      else if (acc.prices?.adult) raw = acc.prices;
     }
   }
 
-  if (activeAccs.length > 0) {
+  if (!raw && activeAccs.length > 0) {
     return emptyPrices();
   }
 
-  const count = payingPassengers(passengers);
-  const bucket = occupancyBucket(count);
-  const occ = config.occupancyPricing.find((o) => o.passengerCount === bucket);
-  if (occ) return occ.prices;
+  if (!raw) {
+    const count = payingPassengers(passengers);
+    const bucket = occupancyBucket(count);
+    const occ = config.occupancyPricing.find((o) => o.passengerCount === bucket);
+    raw = occ ? occ.prices : config.passengerPrices;
+  }
 
-  return config.passengerPrices;
+  return scalePassengerPrices(raw, config.promoDiscountPercent);
 }
 
 export function calculateTourTotal(
@@ -263,10 +311,11 @@ export function getPriceForPassengers(config: TourPricingConfig, count: number):
   if (count <= 0) return getDisplayPricePerPerson(config);
   const bucket = occupancyBucket(count);
   const occ = config.occupancyPricing.find((o) => o.passengerCount === bucket);
-  if (occ) return occ.prices.adult;
-  const tier = config.tiers.find((t) => t.passengers === bucket)
-    ?? config.tiers.filter((t) => t.passengers <= bucket).sort((a, b) => b.passengers - a.passengers)[0];
-  return tier?.pricePerPerson ?? config.passengerPrices.adult;
+  const list = occ?.prices.adult
+    ?? config.tiers.find((t) => t.passengers === bucket)?.pricePerPerson
+    ?? config.tiers.filter((t) => t.passengers <= bucket).sort((a, b) => b.passengers - a.passengers)[0]?.pricePerPerson
+    ?? config.passengerPrices.adult;
+  return applyPromoPercent(list, config.promoDiscountPercent);
 }
 
 export function getRoomOptionsForTour(config: TourPricingConfig, count: number): RoomOption[] {
