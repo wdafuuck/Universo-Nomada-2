@@ -4,7 +4,7 @@ import { getSessionFromRequest } from "@/lib/auth-session";
 import { normalizeEmail } from "@/lib/otp-auth";
 import { totalPassengers } from "@/lib/tour-pricing";
 import { guardPublicApi } from "@/lib/api-guard";
-import { taxSummary, type PaymentItem } from "@/lib/payments";
+import { taxSummary, type PaymentItem, resolveCardPaymentProvider, listConfiguredCardProviders } from "@/lib/payments";
 import { notifyNewLead } from "@/lib/notify";
 import { BANK_TRANSFER } from "@/lib/bank-transfer";
 import { buildReservationItems, sendTransferConfirmationEmail } from "@/lib/email/reservation-emails";
@@ -37,7 +37,7 @@ type CheckoutBody = {
   discountCode?: string;
   rouletteSpinId?: number;
   rouletteGiftTour?: string;
-  paymentMethod?: "sumup" | "transferencia";
+  paymentMethod?: "card" | "sumup" | "mercadopago" | "transferencia";
   paymentPlan?: "total" | "deposito";
 };
 
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       discountCode: rawDiscountCode,
       rouletteSpinId: rawRouletteSpinId,
       rouletteGiftTour,
-      paymentMethod = "sumup",
+      paymentMethod: paymentMethodInput = "card",
       paymentPlan = "total",
     } = body;
 
@@ -64,7 +64,13 @@ export async function POST(request: NextRequest) {
 
     const items = normalizeCartItems(rawItems);
 
-    if (paymentMethod !== "sumup" && paymentMethod !== "transferencia") {
+    const methodRaw = String(paymentMethodInput || "card");
+    if (
+      methodRaw !== "sumup"
+      && methodRaw !== "mercadopago"
+      && methodRaw !== "card"
+      && methodRaw !== "transferencia"
+    ) {
       return NextResponse.json({ error: "Método de pago inválido" }, { status: 400 });
     }
 
@@ -158,6 +164,32 @@ export async function POST(request: NextRequest) {
       taxType: (taxByTour[item.tourId] === "afecto" ? "afecto" : "exento") as "exento" | "afecto",
     }));
 
+    const resolvedCard = resolveCardPaymentProvider(paymentItems);
+    const paymentMethod =
+      methodRaw === "transferencia"
+        ? "transferencia"
+        : methodRaw === "sumup" || methodRaw === "mercadopago"
+          ? methodRaw
+          : (resolvedCard ?? "sumup");
+
+    if (methodRaw !== "transferencia") {
+      if (!resolvedCard) {
+        return NextResponse.json(
+          { error: "No hay pasarela de tarjeta configurada (SumUp / Mercado Pago)" },
+          { status: 503 },
+        );
+      }
+      if (
+        (methodRaw === "sumup" || methodRaw === "mercadopago")
+        && !listConfiguredCardProviders().includes(methodRaw)
+      ) {
+        return NextResponse.json(
+          { error: `Pasarela ${methodRaw} no configurada` },
+          { status: 503 },
+        );
+      }
+    }
+
     const vatAmount = calculateVatAmount(paymentItems, amount, discountedTotal);
     const taxLine = taxSummary(paymentItems);
     const planLabel = paymentPlan === "deposito"
@@ -196,6 +228,13 @@ export async function POST(request: NextRequest) {
       userId = existingUser?.id;
     }
 
+    const gatewayNote =
+      paymentMethod === "sumup"
+        ? `[SUMUP IVA] $${vatAmount.toLocaleString("es-CL")} CLP (boleta automática SII · exento/afecto según ítems)`
+        : paymentMethod === "mercadopago"
+          ? `[MERCADOPAGO] Cobro afecto / pasarela MP`
+          : "";
+
     const lead = await db.lead.create({
       data: {
         userId: userId ?? null,
@@ -208,7 +247,7 @@ export async function POST(request: NextRequest) {
           summary,
           "",
           `[TRIBUTARIO] ${taxLine}`,
-          paymentMethod === "sumup" ? `[SUMUP IVA] $${vatAmount.toLocaleString("es-CL")} CLP (boleta automática SII)` : "",
+          gatewayNote,
           planLabel,
           appliedDiscountCode
             ? `[DESCUENTO] Código ${appliedDiscountCode}: -$${discountAmount.toLocaleString("es-CL")} (total reserva: $${discountedTotal.toLocaleString("es-CL")})`
@@ -304,6 +343,7 @@ export async function POST(request: NextRequest) {
       paymentMethod,
       paymentPlan,
       taxLine,
+      cardProvider: paymentMethod === "transferencia" ? null : paymentMethod,
       emailSent,
     };
 

@@ -6,7 +6,7 @@ export type ReservationConfirmation = {
   leadId: string;
   customerName: string;
   customerEmail: string;
-  paymentMethod: "transferencia" | "sumup";
+  paymentMethod: "transferencia" | "sumup" | "mercadopago";
   paymentPlan: "total" | "deposito";
   amountPaid: number;
   cartTotal: number;
@@ -56,12 +56,18 @@ export function leadToConfirmation(
   const amountPaid = lead.amountDue ?? 0;
   const paymentPlan = lead.paymentPlan === "deposito" ? "deposito" : "total";
   const expiresAt = lead.expiresAt?.toISOString() ?? null;
+  const paymentMethod =
+    lead.paymentMethod === "transferencia"
+      ? "transferencia"
+      : lead.paymentMethod === "mercadopago"
+        ? "mercadopago"
+        : "sumup";
 
   return {
     leadId: String(lead.id),
     customerName: lead.nombre,
     customerEmail: lead.email,
-    paymentMethod: lead.paymentMethod === "transferencia" ? "transferencia" : "sumup",
+    paymentMethod,
     paymentPlan,
     amountPaid,
     cartTotal,

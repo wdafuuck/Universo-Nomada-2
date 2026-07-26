@@ -1,14 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPayment, getPaymentProvider } from "@/lib/payments";
+import {
+  createPayment,
+  getPaymentProvider,
+  listConfiguredCardProviders,
+  resolveCardPaymentProvider,
+  type PaymentItem,
+} from "@/lib/payments";
 import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const provider = getPaymentProvider();
-  if (!provider) {
+  const available = listConfiguredCardProviders();
+  if (available.length === 0 && !getPaymentProvider()) {
     return NextResponse.json(
-      { error: "Pasarela no configurada. Define PAYMENT_PROVIDER y credenciales en .env" },
+      { error: "Pasarela no configurada. Define credenciales SumUp y/o Mercado Pago en .env" },
       { status: 503 },
     );
   }
@@ -44,21 +50,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email no coincide con la reserva" }, { status: 400 });
     }
 
+    const items = Array.isArray(body.items) ? (body.items as PaymentItem[]) : undefined;
+    const requested =
+      body.provider === "sumup" || body.provider === "mercadopago" || body.provider === "transbank"
+        ? body.provider
+        : lead.paymentMethod === "sumup" || lead.paymentMethod === "mercadopago"
+          ? lead.paymentMethod
+          : undefined;
+
     const result = await createPayment({
       amount,
       email: email || lead.email,
       externalReference: String(leadId),
       description: body.description,
-      items: body.items,
+      items,
       vatAmount: body.vatAmount != null ? Math.round(Number(body.vatAmount)) : undefined,
+      provider: requested,
     });
 
-    if (provider === "sumup" && result.paymentId) {
-      await db.lead.update({
-        where: { id: leadId },
-        data: { sumupCheckoutId: result.paymentId },
-      }).catch(() => {});
-    }
+    await db.lead.update({
+      where: { id: leadId },
+      data: {
+        paymentMethod: result.provider,
+        ...(result.provider === "sumup" && result.paymentId
+          ? { sumupCheckoutId: result.paymentId }
+          : {}),
+      },
+    }).catch(() => {});
 
     return NextResponse.json(result);
   } catch (e) {
@@ -71,6 +89,18 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const provider = getPaymentProvider();
-  return NextResponse.json({ provider });
+  const providers = listConfiguredCardProviders();
+  const defaultProvider = getPaymentProvider();
+  return NextResponse.json({
+    provider: defaultProvider,
+    providers,
+    /** Regla de negocio documentada para el frontend */
+    routing: {
+      exento: "sumup",
+      afecto: "mercadopago",
+    },
+    resolveExample: resolveCardPaymentProvider([
+      { title: "demo", quantity: 1, unit_price: 1, taxType: "exento" },
+    ]),
+  });
 }

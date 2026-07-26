@@ -47,6 +47,8 @@ type PricingInfo = {
   canUseDeposit: boolean;
   chargeTotal: number;
   chargeDeposit: number;
+  cardProvider?: "sumup" | "mercadopago" | null;
+  taxHint?: "exento" | "afecto" | "mixto";
 };
 
 type TransferResult = never;
@@ -56,7 +58,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
-type PaymentMethod = "sumup" | "transferencia";
+type PaymentMethod = "card" | "transferencia";
 type PaymentPlan = "total" | "deposito";
 
 function OptionCard({
@@ -102,7 +104,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
 
   const [pricing, setPricing] = useState<PricingInfo | null>(null);
   const [loadingPricing, setLoadingPricing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("sumup");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>("total");
   const [availabilityAcknowledged, setAvailabilityAcknowledged] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -373,6 +375,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
           externalReference: checkoutData.leadId,
           description: `Reserva Universo Nómada — ${items.map((i) => i.tourName).join(", ")}`.slice(0, 255),
           items: checkoutData.paymentItems,
+          provider: checkoutData.cardProvider ?? checkoutData.paymentMethod,
         }),
       });
       const payData = await payRes.json();
@@ -559,10 +562,16 @@ export function CartSheet({ open, onOpenChange }: Props) {
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <OptionCard
-                      selected={paymentMethod === "sumup"}
-                      onClick={() => setPaymentMethod("sumup")}
+                      selected={paymentMethod === "card"}
+                      onClick={() => setPaymentMethod("card")}
                       title={c.payCard ?? "Tarjeta de débito o crédito"}
-                      subtitle={c.payCardHint ?? "Incluye cuotas según tu banco · pago seguro"}
+                      subtitle={
+                        pricing?.taxHint === "afecto"
+                          ? "Viaje afecto a IVA · pago con Mercado Pago"
+                          : pricing?.taxHint === "mixto"
+                            ? "Carrito mixto · pasarela según monto exento/afecto"
+                            : (c.payCardHint ?? "Viaje exento · pago con SumUp · cuotas según tu banco")
+                      }
                     />
                     <OptionCard
                       selected={paymentMethod === "transferencia"}

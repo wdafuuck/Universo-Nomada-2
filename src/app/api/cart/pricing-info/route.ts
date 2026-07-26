@@ -15,6 +15,11 @@ import {
   isRouletteDiscountPrize,
   type RoulettePrizeId,
 } from "@/lib/roulette";
+import {
+  listConfiguredCardProviders,
+  resolveCardPaymentProvider,
+  type PaymentItem,
+} from "@/lib/payments";
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +36,7 @@ export async function POST(request: NextRequest) {
     const tourIds = [...new Set(cartItems.map((i) => i.tourId))];
     const tours = await db.tour.findMany({
       where: { tourId: { in: tourIds } },
-      select: { tourId: true, minDepositPerPerson: true },
+      select: { tourId: true, minDepositPerPerson: true, taxType: true },
     });
 
     const cartTotal = cartItems.reduce((s, i) => s + i.totalPrice, 0);
@@ -79,6 +84,17 @@ export async function POST(request: NextRequest) {
     const canUseDeposit =
       canUseDepositForCart(cartItems) && depositAmount > 0 && depositAmount < reservationTotal;
 
+    const taxByTour = Object.fromEntries(tours.map((t) => [t.tourId, t.taxType ?? "exento"]));
+    const paymentItems: PaymentItem[] = cartItems.map((item) => ({
+      title: item.tourName,
+      quantity: 1,
+      unit_price: item.totalPrice,
+      taxType: taxByTour[item.tourId] === "afecto" ? "afecto" : "exento",
+    }));
+    const cardProvider = resolveCardPaymentProvider(paymentItems);
+    const hasAfecto = paymentItems.some((i) => i.taxType === "afecto");
+    const hasExento = paymentItems.some((i) => i.taxType !== "afecto");
+
     return NextResponse.json({
       cartTotal,
       discountedTotal,
@@ -90,6 +106,16 @@ export async function POST(request: NextRequest) {
       canUseDeposit,
       chargeTotal: chargeAmount(reservationTotal, "total", depositAmount),
       chargeDeposit: chargeAmount(reservationTotal, "deposito", depositAmount),
+      cardProvider,
+      cardProviders: listConfiguredCardProviders(),
+      taxHint:
+        hasAfecto && !hasExento
+          ? "afecto"
+          : hasExento && !hasAfecto
+            ? "exento"
+            : hasAfecto && hasExento
+              ? "mixto"
+              : "exento",
     });
   } catch (e) {
     console.error("[cart/pricing-info]", e);
