@@ -162,11 +162,20 @@ export const translations = {
       availabilityManual: 'Sujeto a confirmación final con el proveedor',
       availabilityError: 'Error al verificar disponibilidad',
       stepPassengers: 'Pasajeros',
-      stepFlights: 'Vuelo',
+      stepFlights: 'Vuelos',
       stepAccommodation: 'Alojamiento',
       stepIncludedTours: 'Tours',
       stepExtras: 'Extras',
       stepCheckout: 'Comprar',
+      flightContactNotice:
+        'Dentro de las próximas 24 horas, el equipo de Universo Nómada te contactará para entregarte las opciones de aerolíneas y horarios disponibles en la fecha indicada.',
+      flightContactAccept:
+        'Acepto que el equipo me contacte dentro de 24 horas con las opciones de aerolínea y horarios para esta fecha.',
+      flightContactAcceptRequired: 'Debes aceptar el contacto de vuelos para continuar',
+      flightContactDateLabel: 'Fecha de ida seleccionada',
+      flightContactReturnLabel: 'Regreso',
+      flightContactCartLabel:
+        'El equipo enviará opciones de aerolínea y horarios dentro de 24 horas',
       pickToursHint: 'Elige {count} tour(s) incluidos en tu paquete',
       bundledToursTitle: 'Tours incluidos:',
       pickToursRequired: 'Debes elegir {count} tour(s) incluidos',
@@ -614,11 +623,20 @@ export const translations = {
       availabilityManual: 'Subject to final confirmation with the supplier',
       availabilityError: 'Error checking availability',
       stepPassengers: 'Passengers',
-      stepFlights: 'Flight',
+      stepFlights: 'Flights',
       stepAccommodation: 'Accommodation',
       stepIncludedTours: 'Tours',
       stepExtras: 'Extras',
       stepCheckout: 'Checkout',
+      flightContactNotice:
+        'Within the next 24 hours, the Universo Nómada team will contact you with airline and schedule options for your selected date.',
+      flightContactAccept:
+        'I accept that the team will contact me within 24 hours with airline and schedule options for this date.',
+      flightContactAcceptRequired: 'You must accept the flight contact notice to continue',
+      flightContactDateLabel: 'Selected departure date',
+      flightContactReturnLabel: 'Return',
+      flightContactCartLabel:
+        'The team will send airline and schedule options within 24 hours',
       continue: 'Continue',
       back: 'Back',
       pickToursHint: 'Choose {count} included tour(s) for your package',

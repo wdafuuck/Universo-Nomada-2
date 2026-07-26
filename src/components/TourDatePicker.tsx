@@ -37,6 +37,8 @@ type Props = {
   placeholder?: string;
   allowedDatesHint?: string;
   active?: boolean;
+  /** Si false, no filtra fechas por tope de vuelo Travelpayouts (todas las futuras habilitadas). */
+  filterByFlightBudget?: boolean;
 };
 
 export function TourDatePicker({
@@ -49,6 +51,7 @@ export function TourDatePicker({
   placeholder = "Selecciona fecha de ida",
   allowedDatesHint,
   active = true,
+  filterByFlightBudget = true,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => {
@@ -74,6 +77,13 @@ export function TourDatePicker({
 
   useEffect(() => {
     if (!active || !tourId) return;
+    if (!filterByFlightBudget) {
+      setAllowedDates([]);
+      setHasBudget(false);
+      setFetchMessage("");
+      setLoadingMonth(false);
+      return;
+    }
     let cancelled = false;
     setLoadingMonth(true);
     fetch(
@@ -97,7 +107,7 @@ export function TourDatePicker({
         if (!cancelled) setLoadingMonth(false);
       });
     return () => { cancelled = true; };
-  }, [tourId, monthKey, adults, active]);
+  }, [tourId, monthKey, adults, active, filterByFlightBudget]);
 
   const today = useMemo(() => {
     const t = new Date();

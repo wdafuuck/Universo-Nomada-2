@@ -43,7 +43,6 @@ import { TourDatePicker, formatTourDateEs } from "@/components/TourDatePicker";
 import { SteppedDatePicker } from "@/components/SteppedDatePicker";
 import { PhoneInput, formatFullPhone, DEFAULT_PHONE_COUNTRY } from "@/components/PhoneInput";
 import { getPhoneCountry } from "@/lib/phone-countries";
-import type { FlightOption } from "@/lib/flight-search";
 import {
   findOptionalTourById,
   visibleTourAddons,
@@ -103,12 +102,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
   const checkOut = checkIn ? checkOutFromCheckIn(checkIn, durationRaw) : "";
 
   const [validatingDate, setValidatingDate] = useState(false);
-
-  const [flights, setFlights] = useState<FlightOption[]>([]);
-  const [flightReferenceAmount, setFlightReferenceAmount] = useState<number | null>(null);
-  const [loadingFlights, setLoadingFlights] = useState(false);
-  const [flightChoice, setFlightChoice] = useState("");
-  const [flightMessage, setFlightMessage] = useState("");
+  const [flightContactAccepted, setFlightContactAccepted] = useState(false);
 
   const [accommodationId, setAccommodationId] = useState("");
   const [roomTypeId, setRoomTypeId] = useState("");
@@ -161,12 +155,14 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
   const hasExtrasStep = extrasCatalog.length > 0;
 
   const flowSteps = useMemo<CartFlowStep[]>(() => {
-    const keys: CartFlowStep[] = ["passengers", "flights", "accommodation"];
+    const keys: CartFlowStep[] = ["passengers"];
+    if (showDates) keys.push("flights");
+    keys.push("accommodation");
     if (hasIncludedToursStep) keys.push("includedTours");
     if (hasExtrasStep) keys.push("extras");
     keys.push("checkout");
     return keys;
-  }, [hasIncludedToursStep, hasExtrasStep]);
+  }, [hasIncludedToursStep, hasExtrasStep, showDates]);
 
   const currentStep = flowSteps[stepIndex] ?? "passengers";
 
@@ -178,7 +174,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
           key === "passengers"
             ? (c.stepPassengers ?? "Pasajeros")
             : key === "flights"
-              ? (c.stepFlights ?? "Vuelo")
+              ? (c.stepFlights ?? "Vuelos")
               : key === "accommodation"
                 ? (c.stepAccommodation ?? "Alojamiento")
                 : key === "includedTours"
@@ -281,69 +277,12 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
     }
   }, [checkIn, checkOut, activeAccommodations, passengers, c.availabilityError]);
 
-  const loadFlights = useCallback(async () => {
-    if (!tour) return;
-    setLoadingFlights(true);
-    try {
-      const res = await fetch("/api/flights/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tourId: tour.tourId,
-          departDate: checkIn || new Date().toISOString().slice(0, 10),
-          returnDate: checkOut || undefined,
-          adults: total,
-        }),
-      });
-      const data = await res.json();
-      let options: FlightOption[] = data.options ?? [];
-      // Sin presupuesto / sin horarios: siempre permitir continuar con "Sin vuelo"
-      if (options.length === 0) {
-        options = [
-          {
-            id: "no-flight",
-            airline: c.noFlightLabel ?? "Sin vuelo",
-            outbound: "—",
-            inbound: "—",
-            price: 0,
-            stops: 0,
-          },
-        ];
-      }
-      setFlights(options);
-      setFlightChoice(options[0]?.id ?? "no-flight");
-      setFlightReferenceAmount(data.flightReferenceAmount ?? null);
-      setFlightMessage(data.message ?? "");
-    } catch {
-      const fallback: FlightOption[] = [
-        {
-          id: "no-flight",
-          airline: c.noFlightLabel ?? "Sin vuelo",
-          outbound: "—",
-          inbound: "—",
-          price: 0,
-          stops: 0,
-        },
-      ];
-      setFlights(fallback);
-      setFlightChoice("no-flight");
-      setFlightReferenceAmount(null);
-      setFlightMessage("");
-    } finally {
-      setLoadingFlights(false);
-    }
-  }, [tour, checkIn, checkOut, total, c.noFlightLabel]);
-
   useEffect(() => {
     if (checkIn && checkOut && checkOut > checkIn) {
       const timer = setTimeout(checkAvailability, 400);
       return () => clearTimeout(timer);
     }
   }, [checkIn, checkOut, passengers.adults, passengers.children, checkAvailability]);
-
-  useEffect(() => {
-    if (currentStep === "flights" && open) void loadFlights();
-  }, [currentStep, open, loadFlights]);
 
   useEffect(() => {
     if (!open || !tour) return;
@@ -420,10 +359,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
         : { adults: 2, children: 0, infants: 0, seniors: 0 });
       setCheckIn("");
       setAccommodationId("");
-      setFlightChoice("");
-      setFlights([]);
-      setFlightReferenceAmount(null);
-      setFlightMessage("");
+      setFlightContactAccepted(false);
       setAvailability({});
       setAvailSource(null);
       setTravelers([]);
@@ -472,28 +408,8 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
   };
 
   const validateDate = async (date: string) => {
-    if (!date || !tour) { setCheckIn(date); return; }
-    setValidatingDate(true);
-    try {
-      const res = await fetch("/api/flights/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tourId: tour.tourId, departDate: date, adults: total }),
-      });
-      const data = await res.json();
-      if (data.hasBudget && !(data.options?.length)) {
-        toast.error(c.dateNotAllowed ?? "Esta fecha no está disponible");
-        setCheckIn("");
-        return;
-      }
-      setFlightReferenceAmount(data.flightReferenceAmount ?? null);
-      setFlightMessage(data.message ?? "");
-      setCheckIn(date);
-    } catch {
-      setCheckIn(date);
-    } finally {
-      setValidatingDate(false);
-    }
+    setCheckIn(date);
+    setValidatingDate(false);
   };
 
   const toggleIncludedTour = (id: string) => {
@@ -609,7 +525,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
   };
 
   const canContinuePassengers = total > 0 && (!showDates || !!checkIn);
-  const canContinueFlights = flights.some((f) => f.id === flightChoice);
+  const canContinueFlights = flightContactAccepted;
   const canContinueAccommodation =
     !hasAccommodations || !!accommodationId || roomOptions.length > 0;
   const canContinueIncludedTours =
@@ -622,7 +538,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
       return;
     }
     if (currentStep === "flights" && !canContinueFlights) {
-      toast.error(c.selectFlight ?? "Selecciona una opción de vuelo");
+      toast.error(c.flightContactAcceptRequired ?? "Debes aceptar para continuar");
       return;
     }
     if (currentStep === "accommodation" && !canContinueAccommodation) {
@@ -679,9 +595,8 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
 
     const acc = activeAccommodations.find((a) => a.id === accommodationId);
     const room = roomOptions.find((r) => r.id === roomTypeId) ?? roomOptions[0];
-    const flight = flights.find((f) => f.id === flightChoice);
-    if (!flight) {
-      toast.error(c.selectFlight ?? "Selecciona una opción de vuelo");
+    if (showDates && !flightContactAccepted) {
+      toast.error(c.flightContactAcceptRequired ?? "Debes aceptar el contacto de vuelos para continuar");
       return;
     }
 
@@ -737,8 +652,10 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
       roomTypeId: room?.id ?? "default",
       roomLabel: acc?.name ?? (room ? getRoomLabel(room, language) : ""),
       totalPrice,
-      flightId: flight.id,
-      flightLabel: `${flight.airline} · ${flight.outbound}`,
+      flightId: "pending-contact",
+      flightLabel:
+        c.flightContactCartLabel ??
+        "El equipo enviará opciones de aerolínea y horarios dentro de 24 horas",
       travelers,
       contact: {
         email,
@@ -874,7 +791,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
                       validating={validatingDate}
                       label={c.checkIn}
                       placeholder={c.selectDates ?? "Selecciona la fecha de ida"}
-                      allowedDatesHint={c.allowedDatesHint ?? "Fechas disponibles según presupuesto de vuelo"}
+                      filterByFlightBudget={false}
                     />
                     {checkIn && (
                       <p className="text-sm text-slate-600 mt-2 bg-slate-50 rounded-lg px-3 py-2">
@@ -918,46 +835,46 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
             )}
 
             {currentStep === "flights" && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
                   <Plane className="h-4 w-4 text-teal" />
-                  <span className="font-semibold text-slate-900">{c.stepFlights ?? "Horario de vuelo"}</span>
+                  <span className="font-semibold text-slate-900">{c.stepFlights ?? "Vuelos"}</span>
                 </div>
-                <div className="mb-3">
-                  <AvailabilityDisclaimer variant="compact" />
+                <div className="rounded-xl border border-teal/30 bg-teal/5 p-4 space-y-3">
+                  <p className="text-sm text-slate-800 leading-relaxed">
+                    {(c.flightContactNotice ??
+                      "Dentro de las próximas 24 horas, el equipo de Universo Nómada te contactará para entregarte las opciones de aerolíneas y horarios disponibles en la fecha indicada.")
+                      .replace(
+                        "{date}",
+                        checkIn ? formatTourDateEs(checkIn) : (c.selectDates ?? "la fecha elegida"),
+                      )}
+                  </p>
+                  {checkIn ? (
+                    <p className="text-xs text-slate-600 bg-white/70 rounded-lg px-3 py-2 border border-slate-200">
+                      {(c.flightContactDateLabel ?? "Fecha de ida seleccionada")}:{" "}
+                      <span className="font-semibold text-slate-900">{formatTourDateEs(checkIn)}</span>
+                      {checkOut ? (
+                        <>
+                          {" · "}
+                          {(c.flightContactReturnLabel ?? "Regreso")}:{" "}
+                          <span className="font-semibold text-slate-900">{formatTourDateEs(checkOut)}</span>
+                        </>
+                      ) : null}
+                    </p>
+                  ) : null}
+                  <label className="flex items-start gap-3 cursor-pointer rounded-lg border border-slate-200 bg-white p-3">
+                    <input
+                      type="checkbox"
+                      checked={flightContactAccepted}
+                      onChange={(e) => setFlightContactAccepted(e.target.checked)}
+                      className="mt-1 rounded border-slate-300 text-teal focus:ring-teal"
+                    />
+                    <span className="text-sm text-slate-800 font-medium leading-snug">
+                      {c.flightContactAccept ??
+                        "Acepto que el equipo me contacte dentro de 24 horas con las opciones de aerolínea y horarios para esta fecha."}
+                    </span>
+                  </label>
                 </div>
-                {flightMessage && flights.length > 0 && (
-                  <p className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 mb-3">
-                    {flightMessage}
-                  </p>
-                )}
-                {loadingFlights ? (
-                  <p className="text-sm text-slate-400 flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" /> {c.loadingFlights ?? "Buscando horarios..."}
-                  </p>
-                ) : flights.length === 0 ? (
-                  <p className="text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3">
-                    {c.dateNotAllowed ?? "No hay vuelos disponibles para esta fecha."}
-                  </p>
-                ) : (
-                  <RadioGroup value={flightChoice} onValueChange={setFlightChoice} className="space-y-2">
-                    {flights.map((f) => (
-                      <div key={f.id}
-                        className={`flex items-center space-x-3 rounded-xl border p-3 ${flightChoice === f.id ? "border-teal bg-teal/5" : "border-slate-200 hover:bg-slate-50"}`}>
-                        <RadioGroupItem value={f.id} id={f.id} />
-                        <Label htmlFor={f.id} className="flex-1 cursor-pointer">
-                          <span className="font-medium text-sm block">{f.airline}</span>
-                          <span className="text-xs text-slate-500 block">
-                            {c.flightOutbound ?? "Ida"}: {f.outbound}
-                          </span>
-                          <span className="text-xs text-slate-500 block">
-                            {c.flightReturn ?? "Regreso"}: {f.inbound}
-                          </span>
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                )}
               </div>
             )}
 
