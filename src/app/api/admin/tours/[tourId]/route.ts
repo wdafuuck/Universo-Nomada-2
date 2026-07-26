@@ -70,6 +70,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
           : null,
         taxType: body.taxType ?? "exento",
         minDepositPerPerson: Number(body.minDepositPerPerson) || 0,
+        showInOfertas: Boolean(body.showInOfertas),
+        promoTitle: body.showInOfertas ? String(body.promoTitle ?? "").trim() : "",
         active: body.active !== false,
         sortOrder: body.sortOrder ?? 0,
       },

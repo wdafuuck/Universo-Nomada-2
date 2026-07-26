@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     const { tourId, name, subtitle, description, image, tag, category, price, originalPrice, duration,
       includesText, excludesText, highlightsText, pdfUrl, galleryJson, faqJson, optionalToursJson,
       flightOrigin, flightDestination, flightBudgetMax, taxType, minDepositPerPerson,
+      showInOfertas, promoTitle,
       active, sortOrder } = body;
 
     if (!tourId || !name) {
@@ -79,6 +80,8 @@ export async function POST(request: NextRequest) {
         flightBudgetMax: flightBudgetMax ? Number(flightBudgetMax) : null,
         taxType: taxType ?? "exento",
         minDepositPerPerson: Number(minDepositPerPerson) || 0,
+        showInOfertas: Boolean(showInOfertas),
+        promoTitle: showInOfertas ? String(promoTitle ?? "").trim() : "",
         active: active !== false,
         sortOrder: sortOrder ?? 99,
       },

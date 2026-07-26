@@ -19,10 +19,6 @@ const TourPricingAdmin = dynamic(
   () => import("@/components/admin/TourPricingAdmin").then((m) => ({ default: m.TourPricingAdmin })),
   { loading: () => <div className="text-white/40 py-12 text-center">Cargando precios...</div> }
 );
-const PromotionsAdmin = dynamic(
-  () => import("@/components/admin/PromotionsAdmin").then((m) => ({ default: m.PromotionsAdmin })),
-  { loading: () => <div className="text-white/40 py-12 text-center">Cargando promociones...</div> }
-);
 const DiscountCodesAdmin = dynamic(
   () => import("@/components/admin/DiscountCodesAdmin").then((m) => ({ default: m.DiscountCodesAdmin })),
   { loading: () => <div className="text-white/40 py-12 text-center">Cargando códigos...</div> }
@@ -178,7 +174,6 @@ export function LandingAdminPanel({ onClose }: { onClose: () => void }) {
       {activeTab === "paquetes" && <PackagesAdmin />}
       {activeTab === "grupales" && <GroupTripsAdmin />}
       {activeTab === "precios" && <TourPricingAdmin />}
-      {activeTab === "promos" && <PromotionsAdmin />}
       {activeTab === "codigos" && <DiscountCodesAdmin />}
       {activeTab === "contenido" && <SiteContentAdmin />}
       {activeTab === "blog" && <BlogAdmin />}

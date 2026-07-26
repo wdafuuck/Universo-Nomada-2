@@ -588,16 +588,17 @@ export default function LandingPage({
   const tourList = liveTours;
   const promoList = promotionsLoaded ? livePromos : [];
 
-  const promoTourId = (destination: string, index: number) => {
+  const resolvePromoTourId = (promo: (typeof promoList)[number], index: number) => {
+    if (promo.tourId) return promo.tourId;
     const map: Record<string, string> = {
       Mendoza: "mendoza", Florianopolis: "florianopolis", "Rapa Nui": "rapa-nui",
       Atacama: "san-pedro-uyuni", Ballenas: "ballenas-elqui", Patagonia: "catedrales-marmol",
     };
-    const byDest = map[destination];
+    const byDest = map[promo.destination];
     if (byDest) return byDest;
     const match = tourList.find((t) =>
-      t.name.toLowerCase().includes(destination.toLowerCase()) ||
-      destination.toLowerCase().includes(t.name.toLowerCase().split(" ")[0])
+      t.name.toLowerCase().includes(promo.destination.toLowerCase()) ||
+      promo.destination.toLowerCase().includes(t.name.toLowerCase().split(" ")[0])
     );
     return match?.id ?? promoTourIds[index] ?? tourList[0]?.id ?? "rapa-nui";
   };
@@ -853,25 +854,27 @@ export default function LandingPage({
                     </div>
                     
                     {/* Fecha y botón */}
+                    {promo.validUntil ? (
                     <div className="flex items-center justify-between">
                       <span className="text-gray-500 text-xs flex items-center gap-1">
                         <Clock className="h-3 w-3" />{t("discounts").hasta} {promo.validUntil}
                       </span>
                     </div>
-                    <PromoUrgency validUntil={promo.validUntil} spotsLeft={i === 0 ? 5 : undefined} />
+                    ) : null}
+                    {promo.validUntil ? <PromoUrgency validUntil={promo.validUntil} spotsLeft={i === 0 ? 5 : undefined} /> : null}
                     <div className={`flex flex-col gap-2 mt-3 ${solo ? "sm:flex-row" : ""}`} onClick={(e) => e.stopPropagation()}>
-                      <Link href={`/detalle-paquete/${promoTourId(promo.destination, i)}`} className="block flex-1">
+                      <Link href={`/detalle-paquete/${resolvePromoTourId(promo, i)}`} className="block flex-1">
                         <button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl px-4 py-3 text-sm transition-all w-full min-h-[44px] shadow-md shadow-emerald-500/20">
                           {t("discounts").verDetalles}
                         </button>
                       </Link>
                       <div className="flex-1">
                         <AddToCartButton
-                          tourId={promoTourId(promo.destination, i)}
+                          tourId={resolvePromoTourId(promo, i)}
                           tourName={promo.subtitle}
                           image={promo.image}
                           basePrice={promo.discountPrice}
-                          duration={tourList.find((t) => t.id === promoTourId(promo.destination, i))?.duration}
+                          duration={tourList.find((t) => t.id === resolvePromoTourId(promo, i))?.duration}
                           className="rounded-xl min-h-[44px]"
                         />
                       </div>

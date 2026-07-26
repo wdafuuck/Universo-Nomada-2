@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Plus, Save, Trash2, Pencil, Upload, Eye, EyeOff, Percent, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 
 import { PackageContentFields, emptyPackageContent, type PackageContentState } from "@/components/admin/PackageContentFields";
 import { PackagePricingFields } from "@/components/admin/PackagePricingFields";
@@ -46,6 +46,8 @@ export type TourRecord = {
   flightBudgetMax: number | null;
   taxType: string;
   minDepositPerPerson: number;
+  showInOfertas: boolean;
+  promoTitle: string;
   active: boolean;
   sortOrder: number;
 };
@@ -64,6 +66,8 @@ const emptyTour = (): Partial<TourRecord> & { tourId: string } => ({
   ...emptyPackageContent(),
   taxType: "exento",
   minDepositPerPerson: 0,
+  showInOfertas: false,
+  promoTitle: "",
   active: true,
   sortOrder: 99,
 });
@@ -251,6 +255,11 @@ export function PackagesAdmin() {
       return;
     }
 
+    if (editing.showInOfertas && !editing.promoTitle?.trim()) {
+      toast.error("Si el paquete es visible en Ofertas, el título de la oferta es obligatorio");
+      return;
+    }
+
     const slug = editing.tourId.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     if (!slug) {
       toast.error("El ID del paquete solo puede usar letras, números y guiones");
@@ -389,7 +398,7 @@ export function PackagesAdmin() {
             <div className="flex flex-col sm:flex-row gap-6">
               <div className="relative h-40 w-full sm:w-56 rounded-xl overflow-hidden bg-white/5 shrink-0">
                 {editing.image && (
-                  <Image src={editing.image} alt="" fill className="object-cover" />
+                  <UploadAwareImage src={editing.image} alt="" fill className="object-cover" />
                 )}
               </div>
               <div className="flex-1 space-y-3">
@@ -524,6 +533,43 @@ export function PackagesAdmin() {
                   </button>
                 ))}
               </div>
+
+              <div className="pt-3 border-t border-white/10 space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editing.showInOfertas)}
+                    onChange={(e) =>
+                      setEditing({
+                        ...editing,
+                        showInOfertas: e.target.checked,
+                        promoTitle: e.target.checked ? (editing.promoTitle ?? "") : "",
+                      })
+                    }
+                    className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 accent-teal"
+                  />
+                  <span>
+                    <span className="text-white font-medium text-sm">Visible en sector Ofertas</span>
+                    <span className="block text-white/40 text-xs mt-0.5">
+                      Aparece en la sección Ofertas de la home. El nombre del programa pasa a ser el subtítulo.
+                    </span>
+                  </span>
+                </label>
+                {editing.showInOfertas ? (
+                  <div>
+                    <label className="text-white/40 text-xs">Título de la oferta *</label>
+                    <Input
+                      value={editing.promoTitle ?? ""}
+                      onChange={(e) => setEditing({ ...editing, promoTitle: e.target.value })}
+                      placeholder="Ej: Destino del Mes JULIO"
+                      className="mt-1 bg-white/5 border-white/10 text-white"
+                    />
+                    <p className="text-white/30 text-[10px] mt-1">
+                      Subtítulo en la web: <span className="text-white/50">{editing.name || "nombre del programa"}</span>
+                    </p>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             {pricingConfig && (
@@ -572,13 +618,21 @@ export function PackagesAdmin() {
         {tours.map((tour) => (
           <Card key={tour.tourId} className={`bg-navy-light border-white/5 rounded-2xl overflow-hidden ${!tour.active ? "opacity-50" : ""}`}>
             <div className="relative h-36">
-              <Image src={tour.image} alt={tour.name} fill className="object-cover" />
+              <UploadAwareImage src={tour.image} alt={tour.name} fill className="object-cover" />
               {!tour.active && (
                 <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">Oculto</span>
+              )}
+              {tour.showInOfertas && (
+                <span className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                  Ofertas
+                </span>
               )}
             </div>
             <CardContent className="p-4">
               <h4 className="text-white font-bold">{tour.name}</h4>
+              {tour.showInOfertas && tour.promoTitle ? (
+                <p className="text-amber-300/90 text-xs mt-0.5">Oferta: {tour.promoTitle}</p>
+              ) : null}
               <p className="text-white/40 text-xs">{tour.tourId} · {tourCategoryLabel(tour.category, tour.tourId)}</p>
               <div className="flex items-baseline gap-2 mt-2">
                 {tour.originalPrice && (

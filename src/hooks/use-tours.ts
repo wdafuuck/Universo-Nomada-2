@@ -5,6 +5,8 @@ import type { TourCardData } from "@/components/TourCard";
 
 export type PromoCard = {
   id: number;
+  /** ID del paquete (detalle / carrito) */
+  tourId?: string;
   title: string;
   subtitle: string;
   discount: string;

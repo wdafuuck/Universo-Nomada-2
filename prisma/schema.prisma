@@ -200,6 +200,10 @@ model Tour {
   flightBudgetMax   Int?
   taxType              String   @default("exento")
   minDepositPerPerson  Int      @default(0)
+  /** Visible en la sección Ofertas de la home */
+  showInOfertas        Boolean  @default(false)
+  /** Título de la oferta (el nombre del programa pasa a subtítulo) */
+  promoTitle           String   @default("")
   active               Boolean  @default(true)
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())

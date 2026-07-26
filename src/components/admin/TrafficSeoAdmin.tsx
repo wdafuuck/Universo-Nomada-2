@@ -205,7 +205,7 @@ export function TrafficSeoAdmin() {
               muted={muted}
               label="Catálogo activo"
               value={`${overview.activeTours} tours`}
-              hint={`${overview.activeBlogPosts} blog · ${overview.activePromos} promos`}
+              hint={`${overview.activeBlogPosts} blog · ${overview.activePromos} en ofertas`}
               icon={<Sparkles className="h-4 w-4 text-violet-400" />}
             />
           </div>

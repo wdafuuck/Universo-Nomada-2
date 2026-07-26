@@ -56,7 +56,7 @@ export async function getTrafficOverview(days = 28): Promise<TrafficOverview> {
     }),
     db.tour.count({ where: { active: true } }),
     db.blogArticle.count({ where: { active: true } }),
-    db.promotion.count({ where: { active: true } }),
+    db.tour.count({ where: { active: true, showInOfertas: true } }),
   ]);
 
   const destMap = new Map<string, number>();
