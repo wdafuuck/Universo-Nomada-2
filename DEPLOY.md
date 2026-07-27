@@ -72,6 +72,25 @@ Sube el código actual por SSH, build en el servidor y reinicia. **No** toca `.e
 | `MERCADOPAGO_ACCESS_TOKEN` | Pagos Chile |
 | `SUMUP_API_KEY` | Pagos internacional |
 | `TRANSBANK_*` | Webpay Plus |
+| `NEXT_PUBLIC_GA_ID` / `NEXT_PUBLIC_GTM_ID` | Analytics en el sitio |
+| `GA4_PROPERTY_ID` + `GA4_SERVICE_ACCOUNT_JSON` | Usuarios en vivo en Admin → Tráfico & SEO |
+| `GEMINI_API_KEY` | Asistente SEO del admin |
+
+### GA4 en el panel admin (opcional)
+
+Para ver **usuarios activos** dentro de Admin → Tráfico & SEO:
+
+1. Google Cloud → crear Service Account → clave JSON  
+2. Activar **Google Analytics Data API**  
+3. En GA4 → Admin → Gestión de acceso a la propiedad → añadir el email de la SA como **Visualizador**  
+4. En `.env` prod:
+
+```bash
+GA4_PROPERTY_ID=123456789
+GA4_SERVICE_ACCOUNT_JSON='{"type":"service_account","client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",...}'
+```
+
+Sin esas vars el panel sigue mostrando leads/cotizaciones en vivo (DB); solo faltará el bloque GA4.
 
 ## Confiabilidad (anti-caídas)
 
