@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Clock, Instagram } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getBlogField, type BlogPost } from "@/lib/blog-posts";
 import { BlogNewsletter } from "@/components/BlogNewsletter";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 
 type Props = { posts: BlogPost[] };
@@ -54,7 +54,7 @@ export function BlogListClient({ posts }: Props) {
             <Link key={post.slug} href={`/blog/${post.slug}`} className="block group">
               <article className="flex flex-col sm:flex-row gap-5 bg-white rounded-2xl overflow-hidden border border-slate-100 hover:shadow-md transition-all p-4 sm:p-0">
                 <div className="relative w-full sm:w-48 h-36 sm:h-auto shrink-0 rounded-xl sm:rounded-none overflow-hidden">
-                  <Image
+                  <UploadAwareImage
                     src={post.image}
                     alt={getBlogField(post, language, "title")}
                     fill

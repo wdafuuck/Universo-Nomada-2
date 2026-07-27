@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Plus, Save, Trash2, Pencil, Upload, BookOpen, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { adminRowToForm, estimateReadTime, slugifyTitle, type BlogArticleRow } from "@/lib/blog-utils";
 
 type ArticleForm = {
@@ -214,7 +214,7 @@ export function BlogAdmin() {
               <div className="mt-2 flex flex-wrap items-start gap-4">
                 {editing.image && (
                   <div className="relative h-28 w-44 rounded-xl overflow-hidden border border-white/10">
-                    <Image src={editing.image} alt="" fill className="object-cover" />
+                    <UploadAwareImage src={editing.image} alt="" fill className="object-cover" />
                   </div>
                 )}
                 <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm hover:bg-white/10">
@@ -294,7 +294,7 @@ export function BlogAdmin() {
                       <div className="flex items-center gap-3">
                         {article.image && (
                           <div className="relative h-12 w-16 rounded-lg overflow-hidden shrink-0 border border-white/10">
-                            <Image src={article.image} alt="" fill className="object-cover" />
+                            <UploadAwareImage src={article.image} alt="" fill className="object-cover" />
                           </div>
                         )}
                         <div>

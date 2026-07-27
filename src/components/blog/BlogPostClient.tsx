@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Clock, Instagram } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getBlogField, type BlogPost } from "@/lib/blog-posts";
 import { getBlogCta } from "@/lib/blog-cta";
 import { BlogNewsletter } from "@/components/BlogNewsletter";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 
 type Props = { post: BlogPost };
@@ -46,7 +46,7 @@ export function BlogPostClient({ post }: Props) {
         </div>
 
         <div className="relative w-full h-64 sm:h-80 rounded-2xl overflow-hidden my-8">
-          <Image src={post.image} alt={title} fill className="object-cover" priority sizes="800px" />
+          <UploadAwareImage src={post.image} alt={title} fill className="object-cover" priority sizes="800px" />
         </div>
 
         <div className="prose prose-slate max-w-none">
