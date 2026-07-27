@@ -51,6 +51,38 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
         ],
       },
+      /**
+       * HTML de páginas: NO usar el SWR de ~1 año que pone ISR (rompe CSS/JS
+       * hasheados tras un deploy → página en blanco / “Saltar al contenido” visible).
+       */
+      {
+        source: "/",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-cache, no-store, must-revalidate, max-age=0",
+          },
+        ],
+      },
+      {
+        source: "/recuperar",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-cache, no-store, must-revalidate, max-age=0",
+          },
+          { key: "Clear-Site-Data", value: '"cache", "storage"' },
+        ],
+      },
+      {
+        source: "/((?!_next/static|_next/image|api|uploads|images|.*\\..*).*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-cache, must-revalidate, max-age=0",
+          },
+        ],
+      },
     ];
   },
   reactStrictMode: false,

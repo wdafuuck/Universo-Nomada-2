@@ -31,8 +31,9 @@ export default function RecuperarPage() {
       } catch {
         setStatus("Listo. Redirigiendo…");
       }
+      // Cache-bust duro por si el HTML viejo apunta a CSS/JS borrados tras deploy
       window.setTimeout(() => {
-        window.location.replace("/?ok=1");
+        window.location.replace(`/?ok=1&t=${Date.now()}`);
       }, 600);
     })();
   }, []);
@@ -54,6 +55,9 @@ export default function RecuperarPage() {
         <p style={{ fontSize: 18, fontWeight: 700 }}>{status}</p>
         <p style={{ opacity: 0.7, marginTop: 8, fontSize: 14 }}>
           Universo Nómada — recuperación de caché
+        </p>
+        <p style={{ opacity: 0.5, marginTop: 16, fontSize: 13 }}>
+          Si sigue en blanco: Ctrl+Shift+R (o Cmd+Shift+R en Mac)
         </p>
       </div>
     </main>
