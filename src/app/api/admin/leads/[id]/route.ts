@@ -25,7 +25,8 @@ const VALID_STATUS = [
 ] as const;
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  if (!(await requireAdmin(request))) {
+  const admin = await requireAdmin(request);
+  if (!admin) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
@@ -59,6 +60,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     body.amountDue !== undefined ? Math.max(0, Number(body.amountDue) || 0) : null;
   if (body.paymentMethod !== undefined) updateData.paymentMethod = body.paymentMethod || null;
   if (body.paymentPlan !== undefined) updateData.paymentPlan = body.paymentPlan || null;
+  if (body.assignedToUserId !== undefined) {
+    updateData.assignedToUserId = body.assignedToUserId ? String(body.assignedToUserId) : null;
+  }
 
   if (body.tripEndDate !== undefined) {
     updateData.tripEndDate = body.tripEndDate ? new Date(String(body.tripEndDate)) : null;
@@ -93,6 +97,33 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     data: updateData,
   });
 
+  if (body.status !== undefined && body.status !== existing.status) {
+    await db.leadEvent.create({
+      data: {
+        leadId,
+        type: "status_change",
+        message: `${existing.status} → ${body.status}`,
+        metaJson: JSON.stringify({ by: admin.id, from: existing.status, to: body.status }),
+      },
+    });
+  }
+
+  if (
+    body.assignedToUserId !== undefined &&
+    String(body.assignedToUserId || "") !== String(existing.assignedToUserId || "")
+  ) {
+    await db.leadEvent.create({
+      data: {
+        leadId,
+        type: "assignment",
+        message: body.assignedToUserId
+          ? `Asignado a ${body.assignedToUserId}`
+          : "Sin asignar",
+        metaJson: JSON.stringify({ by: admin.id, assignedToUserId: body.assignedToUserId ?? null }),
+      },
+    });
+  }
+
   if (body.cartTotal !== undefined) {
     await updateLeadCartTotal(leadId, Number(body.cartTotal) || 0);
   }
@@ -103,7 +134,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     });
   }
 
-  const fresh = await db.lead.findUnique({ where: { id: leadId } });
+  const fresh = await db.lead.findUnique({
+    where: { id: leadId },
+    include: {
+      assignedTo: { select: { id: true, name: true, email: true } },
+      notes: { orderBy: { createdAt: "desc" }, take: 50 },
+      events: { orderBy: { createdAt: "desc" }, take: 50 },
+    },
+  });
   return NextResponse.json({ lead: fresh ?? lead });
 }
 
@@ -133,7 +171,18 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const lead = await db.lead.findUnique({ where: { id: Number(id) } });
+  const lead = await db.lead.findUnique({
+    where: { id: Number(id) },
+    include: {
+      assignedTo: { select: { id: true, name: true, email: true } },
+      notes: {
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        include: { author: { select: { id: true, name: true, email: true } } },
+      },
+      events: { orderBy: { createdAt: "desc" }, take: 50 },
+    },
+  });
   if (!lead) {
     return NextResponse.json({ error: "No encontrado" }, { status: 404 });
   }

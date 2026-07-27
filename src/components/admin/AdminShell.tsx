@@ -1,12 +1,35 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { LayoutDashboard, MapPin, DollarSign, Users, X, Sparkles, ImageIcon, CalendarDays, FileText, Sun, Moon, Gift, Stamp, UserCircle, BookOpen, Mail, Ticket, LineChart } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import {
+  LayoutDashboard,
+  MapPin,
+  DollarSign,
+  Users,
+  X,
+  Sparkles,
+  ImageIcon,
+  CalendarDays,
+  FileText,
+  Sun,
+  Moon,
+  Gift,
+  Stamp,
+  UserCircle,
+  BookOpen,
+  Mail,
+  Ticket,
+  LineChart,
+  ShoppingCart,
+  Server,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminThemeProvider, useAdminTheme } from "@/contexts/AdminThemeContext";
 import { cn } from "@/lib/utils";
+import { canAccessTab, type AdminTabId } from "@/lib/admin-rbac";
 
-export type AdminTab = "dashboard" | "trafico" | "portada" | "paquetes" | "precios" | "codigos" | "grupales" | "contenido" | "blog" | "anuncios" | "clientes" | "leads" | "beneficios" | "pasaporte";
+export type AdminTab = AdminTabId;
 
 const TABS: { id: AdminTab; label: string; desc: string; icon: typeof MapPin }[] = [
   { id: "dashboard", label: "Inicio", desc: "Resumen general", icon: LayoutDashboard },
@@ -23,6 +46,8 @@ const TABS: { id: AdminTab; label: string; desc: string; icon: typeof MapPin }[]
   { id: "pasaporte", label: "Pasaporte", desc: "Insignias de destinos", icon: Stamp },
   { id: "clientes", label: "Clientes", desc: "Cuentas y viajes", icon: UserCircle },
   { id: "leads", label: "Leads", desc: "Cotizaciones y reservas", icon: Users },
+  { id: "abandonos", label: "Abandonos", desc: "Carritos sin convertir", icon: ShoppingCart },
+  { id: "plataforma", label: "Plataforma", desc: "Tenant y flags", icon: Server },
 ];
 
 function AdminShellInner({
@@ -30,14 +55,23 @@ function AdminShellInner({
   onTabChange,
   onClose,
   children,
+  role,
 }: {
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
   onClose: () => void;
   children: ReactNode;
+  role: string;
 }) {
   const { theme, isLight, toggleTheme } = useAdminTheme();
-  const current = TABS.find((t) => t.id === activeTab);
+  const visibleTabs = useMemo(() => TABS.filter((t) => canAccessTab(role, t.id)), [role]);
+  const current = visibleTabs.find((t) => t.id === activeTab) ?? visibleTabs[0];
+
+  useEffect(() => {
+    if (!canAccessTab(role, activeTab) && visibleTabs[0]) {
+      onTabChange(visibleTabs[0].id);
+    }
+  }, [role, activeTab, visibleTabs, onTabChange]);
 
   return (
     <div
@@ -62,13 +96,13 @@ function AdminShellInner({
               <p className={cn("font-black text-lg leading-tight", isLight ? "text-slate-900" : "text-white")}>
                 Universo Nómada
               </p>
-              <p className="text-teal/80 text-xs font-medium">Panel de control</p>
+              <p className="text-teal/80 text-xs font-medium">Panel de control · {role}</p>
             </div>
           </div>
         </div>
 
         <nav className="flex md:flex-col gap-1 p-3 overflow-x-auto md:overflow-y-auto md:overflow-x-hidden flex-1 min-h-0">
-          {TABS.map(({ id, label, desc, icon: Icon }) => (
+          {visibleTabs.map(({ id, label, desc, icon: Icon }) => (
             <button
               key={id}
               type="button"
@@ -164,15 +198,22 @@ export function AdminShell({
   onTabChange,
   onClose,
   children,
+  role = "admin",
 }: {
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
   onClose: () => void;
   children: ReactNode;
+  role?: string;
 }) {
   return (
     <AdminThemeProvider>
-      <AdminShellInner activeTab={activeTab} onTabChange={onTabChange} onClose={onClose}>
+      <AdminShellInner
+        activeTab={activeTab}
+        onTabChange={onTabChange}
+        onClose={onClose}
+        role={role}
+      >
         {children}
       </AdminShellInner>
     </AdminThemeProvider>

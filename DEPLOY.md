@@ -177,6 +177,25 @@ MERCADOPAGO_WEBHOOK_SECRET=...
 
 Sin ese valor el webhook sigue funcionando pero **sin validar firma**.
 
+## Plataforma (tenant / RBAC / Sentry)
+
+Tras este deploy, en el servidor:
+
+```bash
+cd /var/www/universo-nomada
+npx prisma migrate deploy
+# o, si usáis push: npx prisma db push
+```
+
+Documentación de handoff: `PLATFORM.md` y `docs/platform-capabilities.md`.
+
+Opcional en `.env`:
+
+```bash
+SENTRY_DSN=
+TENANT_ID=universo-nomada
+```
+
 ## Valoración técnica post-hardening
 
 Con este checklist completado, la plataforma califica para el rango **USD 45k–80k** como activo productivo (vs. ~USD 30k–40k en estado dev).

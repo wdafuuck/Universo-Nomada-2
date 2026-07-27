@@ -59,8 +59,17 @@ const TrafficSeoAdmin = dynamic(
   () => import("@/components/admin/TrafficSeoAdmin").then((m) => ({ default: m.TrafficSeoAdmin })),
   { loading: () => <div className="text-white/40 py-12 text-center">Cargando tráfico & SEO...</div> }
 );
+const AbandonedCartsAdmin = dynamic(
+  () =>
+    import("@/components/admin/AbandonedCartsAdmin").then((m) => ({ default: m.AbandonedCartsAdmin })),
+  { loading: () => <div className="text-white/40 py-12 text-center">Cargando abandonos...</div> }
+);
+const PlatformAdmin = dynamic(
+  () => import("@/components/admin/PlatformAdmin").then((m) => ({ default: m.PlatformAdmin })),
+  { loading: () => <div className="text-white/40 py-12 text-center">Cargando plataforma...</div> }
+);
 
-export function LandingAdminPanel({ onClose }: { onClose: () => void }) {
+export function LandingAdminPanel({ onClose, role = "admin" }: { onClose: () => void; role?: string }) {
   const [activeTab, setActiveTab] = useState<AdminTab>("paquetes");
   const [leads, setLeads] = useState<unknown[]>([]);
   const [statsData, setStatsData] = useState<{
@@ -89,7 +98,7 @@ export function LandingAdminPanel({ onClose }: { onClose: () => void }) {
   }, []);
 
   return (
-    <AdminShell activeTab={activeTab} onTabChange={setActiveTab} onClose={onClose}>
+    <AdminShell activeTab={activeTab} onTabChange={setActiveTab} onClose={onClose} role={role}>
       {activeTab === "dashboard" && statsData && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -180,6 +189,8 @@ export function LandingAdminPanel({ onClose }: { onClose: () => void }) {
       {activeTab === "anuncios" && <CampaignsAdmin />}
       {activeTab === "beneficios" && <NomadBenefitsAdmin />}
       {activeTab === "pasaporte" && <PassportBadgesAdmin />}
+      {activeTab === "abandonos" && <AbandonedCartsAdmin />}
+      {activeTab === "plataforma" && <PlatformAdmin />}
     </AdminShell>
   );
 }

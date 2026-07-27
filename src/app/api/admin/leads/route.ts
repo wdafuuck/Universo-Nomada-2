@@ -9,15 +9,21 @@ import {
 } from "@/lib/admin-lead-edit";
 import { checkOutFromCheckIn } from "@/lib/tour-duration";
 import { normalizeEmail } from "@/lib/otp-auth";
-import { TRIP_SOURCES } from "@/lib/trip-documents";
+import { getRequestTenantId } from "@/lib/tenant";
 
-export async function GET() {
-  const admin = await requireAdmin();
+export async function GET(request: NextRequest) {
+  const admin = await requireAdmin(request);
   if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   try {
+    const tenantId = getRequestTenantId(request);
     const leads = await db.lead.findMany({
+      where: { tenantId },
       orderBy: { createdAt: "desc" },
+      include: {
+        assignedTo: { select: { id: true, name: true, email: true } },
+        _count: { select: { notes: true, events: true } },
+      },
     });
 
     const docCountByLead = new Map<number, number>();
@@ -38,7 +44,11 @@ export async function GET() {
     return NextResponse.json({
       leads: leads.map((lead) => ({
         ...lead,
-        _count: { documents: docCountByLead.get(lead.id) ?? 0 },
+        _count: {
+          documents: docCountByLead.get(lead.id) ?? 0,
+          notes: lead._count.notes,
+          events: lead._count.events,
+        },
       })),
     });
   } catch (e) {
@@ -102,7 +112,9 @@ export async function POST(request: NextRequest) {
 
     const lead = await db.lead.create({
       data: {
+        tenantId: getRequestTenantId(request),
         userId: linkedUserId,
+        assignedToUserId: admin.id,
         nombre,
         email,
         telefono,
@@ -116,6 +128,15 @@ export async function POST(request: NextRequest) {
         paymentPlan: body.paymentPlan || "total",
         tripEndDate: autoTripEnd,
         mensaje: body.notes ? String(body.notes) : "Viaje registrado manualmente por admin",
+      },
+    });
+
+    await db.leadEvent.create({
+      data: {
+        leadId: lead.id,
+        type: "created",
+        message: `Viaje creado por ${admin.email}`,
+        metaJson: JSON.stringify({ by: admin.id }),
       },
     });
 

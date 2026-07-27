@@ -70,6 +70,12 @@ export function LeadsAdmin() {
   const [form, setForm] = useState<EditForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [timeline, setTimeline] = useState<{
+    notes: Array<{ id: number; body: string; createdAt: string; author?: { email: string } | null }>;
+    events: Array<{ id: number; type: string; message: string; createdAt: string }>;
+  }>({ notes: [], events: [] });
+  const [savingNote, setSavingNote] = useState(false);
 
   const load = async () => {
     try {
@@ -104,11 +110,13 @@ export function LeadsAdmin() {
 
   const openEdit = async (lead: Lead) => {
     setEditing(lead);
+    setNoteDraft("");
+    setTimeline({ notes: [], events: [] });
     let cartItems: EditableCartLine[] = [];
-    if (isTripLeadSource(lead.source)) {
-      const res = await fetch(`/api/admin/leads/${lead.id}`, { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json();
+    const detailRes = await fetch(`/api/admin/leads/${lead.id}`, { credentials: "include" });
+    if (detailRes.ok) {
+      const data = await detailRes.json();
+      if (isTripLeadSource(lead.source)) {
         cartItems = data.cartItems ?? [];
         for (const item of cartItems) {
           if (item.tourId && !item.duration) {
@@ -123,6 +131,10 @@ export function LeadsAdmin() {
           }
         }
       }
+      setTimeline({
+        notes: data.lead?.notes ?? [],
+        events: data.lead?.events ?? [],
+      });
     }
     setForm({
       nombre: lead.nombre,
@@ -141,6 +153,33 @@ export function LeadsAdmin() {
   const closeEdit = () => {
     setEditing(null);
     setForm(null);
+    setNoteDraft("");
+    setTimeline({ notes: [], events: [] });
+  };
+
+  const saveNote = async () => {
+    if (!editing || !noteDraft.trim()) return;
+    setSavingNote(true);
+    try {
+      const res = await fetch(`/api/admin/leads/${editing.id}/notes`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: noteDraft.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error");
+      setNoteDraft("");
+      setTimeline((prev) => ({
+        notes: [data.note, ...prev.notes],
+        events: prev.events,
+      }));
+      toast.success("Nota guardada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar la nota");
+    } finally {
+      setSavingNote(false);
+    }
   };
 
   const updateStatus = async (id: number, status: string) => {
@@ -239,6 +278,15 @@ export function LeadsAdmin() {
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h3 className="text-white font-bold">Leads y reservas ({filtered.length})</h3>
             <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  window.open("/api/admin/leads/export", "_blank");
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/10 text-white/80 hover:bg-white/15"
+              >
+                Export CSV
+              </button>
               <button
                 type="button"
                 onClick={() => setFilter("pendiente")}
@@ -534,6 +582,40 @@ export function LeadsAdmin() {
                   <Textarea value={editing.mensaje} readOnly className="mt-1 bg-white/5 border-white/10 text-white/60 min-h-[80px]" />
                 </div>
               )}
+
+              <div className="pt-2 border-t border-white/10 space-y-3">
+                <label className="text-white/40 text-xs">Notas / timeline</label>
+                <Textarea
+                  value={noteDraft}
+                  onChange={(e) => setNoteDraft(e.target.value)}
+                  placeholder="Agregar nota interna…"
+                  className="bg-white/5 border-white/10 text-white min-h-[70px]"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={savingNote || !noteDraft.trim()}
+                  onClick={() => void saveNote()}
+                  className="bg-white/10 text-white hover:bg-white/15"
+                >
+                  {savingNote ? "Guardando…" : "Agregar nota"}
+                </Button>
+                <div className="max-h-40 overflow-y-auto space-y-2 text-xs">
+                  {timeline.notes.map((n) => (
+                    <div key={`n-${n.id}`} className="rounded-lg bg-white/5 border border-white/10 p-2 text-white/70">
+                      <p>{n.body}</p>
+                      <p className="text-white/35 mt-1">
+                        {n.author?.email ?? "staff"} · {new Date(n.createdAt).toLocaleString("es-CL")}
+                      </p>
+                    </div>
+                  ))}
+                  {timeline.events.map((ev) => (
+                    <div key={`e-${ev.id}`} className="text-white/45">
+                      [{ev.type}] {ev.message} · {new Date(ev.createdAt).toLocaleString("es-CL")}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button onClick={() => void saveEdit()} disabled={saving}

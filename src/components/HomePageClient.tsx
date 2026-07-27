@@ -28,6 +28,7 @@ import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { ContextualWhatsApp } from "@/components/ContextualWhatsApp";
 import { MobileStickyBar } from "@/components/MobileStickyBar";
 import { ReferralCapture, getReferralCode } from "@/components/ReferralCapture";
+import { isStaffRole } from "@/lib/admin-rbac";
 import { normalizeTourCategory } from "@/lib/tour-category";
 import { tourMatchesSearch } from "@/lib/tour-search";
 import { groupToursByDestination } from "@/lib/tour-destination-groups";
@@ -620,8 +621,8 @@ export default function LandingPage({
 
   const dest = t("destinations");
 
-  if (showAdmin && user?.role === "admin") {
-    return <LandingAdminPanel onClose={() => { setShowAdmin(false); refetchLanding(); setContentRefresh((n) => n + 1); }} />;
+  if (showAdmin && user && isStaffRole(user.role)) {
+    return <LandingAdminPanel role={user.role} onClose={() => { setShowAdmin(false); refetchLanding(); setContentRefresh((n) => n + 1); }} />;
   }
 
   return (
@@ -1250,7 +1251,7 @@ export default function LandingPage({
               </div>
             ) : (
               <div className="flex items-center justify-center gap-2 mt-2">
-                {user.role === "admin" && (
+                {user && isStaffRole(user.role) && (
                   <Button
                     onClick={() => setShowAdmin(true)}
                     size="sm"

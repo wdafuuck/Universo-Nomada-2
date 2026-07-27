@@ -11,16 +11,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/** Agencia / marca en la plataforma. Default: universo-nomada (web pública sin cambios). */
+model Tenant {
+  id         String   @id
+  name       String
+  slug       String   @unique
+  configJson String   @default("{}")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
   name            String?
   password        String?
+  /** user | admin | ops | finance | marketing */
   role            String    @default("user")
+  tenantId        String    @default("universo-nomada")
   emailVerifiedAt DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  leads           Lead[]
+  leads           Lead[]    @relation("LeadOwner")
+  assignedLeads   Lead[]    @relation("LeadAssignee")
+  leadNotes       LeadNote[]
+
+  @@index([tenantId])
 }
 
 model EmailOtp {
@@ -36,6 +53,7 @@ model EmailOtp {
 
 model NomadBenefit {
   id              Int      @id @default(autoincrement())
+  tenantId        String   @default("universo-nomada")
   brandName       String
   title           String
   description     String   @default("")
@@ -50,10 +68,13 @@ model NomadBenefit {
   sortOrder       Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model BenefitPartnerLogo {
   id        Int      @id @default(autoincrement())
+  tenantId  String   @default("universo-nomada")
   name      String   @default("")
   imageUrl  String
   linkUrl   String   @default("")
@@ -61,10 +82,13 @@ model BenefitPartnerLogo {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model PassportBadge {
   id          Int      @id @default(autoincrement())
+  tenantId    String   @default("universo-nomada")
   slug        String   @unique
   name        String
   destination String   @default("")
@@ -76,6 +100,8 @@ model PassportBadge {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model Post {
@@ -90,8 +116,11 @@ model Post {
 
 model Lead {
   id            Int       @id @default(autoincrement())
+  tenantId      String    @default("universo-nomada")
   userId        String?
-  user          User?     @relation(fields: [userId], references: [id])
+  user          User?     @relation("LeadOwner", fields: [userId], references: [id])
+  assignedToUserId String?
+  assignedTo    User?     @relation("LeadAssignee", fields: [assignedToUserId], references: [id])
   nombre        String
   email         String
   telefono      String
@@ -119,8 +148,37 @@ model Lead {
   rouletteGiftTour      String?
   documents             TripDocument[]
   payments              LeadPayment[]
+  notes                 LeadNote[]
+  events                LeadEvent[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
+
+  @@index([tenantId])
+  @@index([assignedToUserId])
+}
+
+model LeadNote {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+}
+
+model LeadEvent {
+  id        Int      @id @default(autoincrement())
+  leadId    Int
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type      String
+  message   String   @default("")
+  metaJson  String   @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
 }
 
 /** Abonos / pagos parciales de una reserva (Lead). amountDue en Lead = suma de estos (monto ya pagado). */
@@ -132,10 +190,13 @@ model LeadPayment {
   paidAt    DateTime @default(now())
   method    String   @default("transferencia")
   note      String   @default("")
+  /** ID externo pasarela (SumUp/MP/TBK) para conciliación */
+  externalId String  @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([leadId])
+  @@index([externalId])
 }
 
 model TripDocument {
@@ -154,6 +215,7 @@ model TripDocument {
 
 model RouletteSpin {
   id        Int       @id @default(autoincrement())
+  tenantId  String    @default("universo-nomada")
   email     String    @unique
   nombre    String
   telefono  String    @default("")
@@ -162,10 +224,13 @@ model RouletteSpin {
   expiresAt DateTime
   leadId    Int?
   createdAt DateTime  @default(now())
+
+  @@index([tenantId])
 }
 
 model DiscountCode {
   id            Int       @id @default(autoincrement())
+  tenantId      String    @default("universo-nomada")
   code          String    @unique
   description   String    @default("")
   discountType  String    @default("percent")
@@ -176,10 +241,13 @@ model DiscountCode {
   validUntil    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId])
 }
 
 model Promotion {
   id            Int      @id @default(autoincrement())
+  tenantId      String   @default("universo-nomada")
   title         String
   subtitle      String
   discount      String
@@ -192,10 +260,13 @@ model Promotion {
   active        Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model Tour {
   tourId            String   @id
+  tenantId          String   @default("universo-nomada")
   name              String
   subtitle          String
   description       String   @default("")
@@ -227,10 +298,13 @@ model Tour {
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model InstagramPost {
   id        Int      @id @default(autoincrement())
+  tenantId  String   @default("universo-nomada")
   postUrl   String
   caption   String   @default("")
   imageUrl  String   @default("")
@@ -238,20 +312,26 @@ model InstagramPost {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model HeroSlide {
   id        Int      @id @default(autoincrement())
+  tenantId  String   @default("universo-nomada")
   imageUrl  String
   label     String   @default("")
   active    Boolean  @default(true)
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model BlogArticle {
   id           Int      @id @default(autoincrement())
+  tenantId     String   @default("universo-nomada")
   slug         String   @unique
   titleJson    String
   excerptJson  String
@@ -264,28 +344,37 @@ model BlogArticle {
   sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model BlogSubscriber {
   id        Int      @id @default(autoincrement())
+  tenantId  String   @default("universo-nomada")
   email     String   @unique
   source    String   @default("blog")
   marketingConsent Boolean @default(false)
   createdAt DateTime @default(now())
+
+  @@index([tenantId])
 }
 
 model TourPricing {
   id        Int      @id @default(autoincrement())
+  tenantId  String   @default("universo-nomada")
   tourId    String   @unique
   tourName  String
   basePrice Int
   tiersJson String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model GroupTrip {
   id           Int              @id @default(autoincrement())
+  tenantId     String           @default("universo-nomada")
   tourId       String           @unique
   name         String
   duration     String
@@ -299,6 +388,8 @@ model GroupTrip {
   departures   GroupDeparture[]
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+
+  @@index([tenantId])
 }
 
 model GroupDeparture {
@@ -314,12 +405,16 @@ model GroupDeparture {
 
 model SiteContent {
   key       String   @id
+  tenantId  String   @default("universo-nomada")
   json      String
   updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model CartAbandonment {
   id          Int       @id @default(autoincrement())
+  tenantId    String    @default("universo-nomada")
   email       String    @unique
   nombre      String    @default("")
   telefono    String    @default("")
@@ -331,4 +426,6 @@ model CartAbandonment {
   convertedAt     DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
 }

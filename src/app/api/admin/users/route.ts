@@ -11,6 +11,7 @@ import {
   type EditableCartLine,
 } from "@/lib/admin-lead-edit";
 import { checkOutFromCheckIn } from "@/lib/tour-duration";
+import { getRequestTenantId } from "@/lib/tenant";
 
 export async function GET() {
   const admin = await requireAdmin();
@@ -110,6 +111,7 @@ export async function POST(request: NextRequest) {
         email,
         name,
         role: "user",
+        tenantId: getRequestTenantId(request),
       },
     });
 
@@ -146,6 +148,7 @@ export async function POST(request: NextRequest) {
 
       lead = await db.lead.create({
         data: {
+          tenantId: getRequestTenantId(request),
           userId: user.id,
           nombre: name,
           email,

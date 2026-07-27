@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { getSessionSecret } from "@/lib/env";
+import { isFullAdmin, isStaffRole } from "@/lib/admin-rbac";
 
 const COOKIE_NAME = "un_session";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 días
@@ -64,20 +65,32 @@ export function getSessionFromRequest(request: Request): SessionUser | null {
   return verify(decodeURIComponent(match[1]));
 }
 
-export async function requireAdmin(request?: Request): Promise<SessionUser | null> {
-  const user = request ? getSessionFromRequest(request) : await getSession();
-  if (!user || user.role !== "admin") return null;
-  // Revalidar rol en DB (cookie puede quedar stale tras revocación)
+async function loadDbRole(userId: string): Promise<string | null> {
   try {
     const { db } = await import("@/lib/db");
     const row = await db.user.findUnique({
-      where: { id: user.id },
-      select: { role: true, email: true },
+      where: { id: userId },
+      select: { role: true },
     });
-    if (!row || row.role !== "admin") return null;
+    return row?.role ?? null;
   } catch {
     return null;
   }
+}
+
+/** Cualquier rol de staff (admin | ops | finance | marketing). */
+export async function requireAdmin(request?: Request): Promise<SessionUser | null> {
+  const user = request ? getSessionFromRequest(request) : await getSession();
+  if (!user || !isStaffRole(user.role)) return null;
+  const dbRole = await loadDbRole(user.id);
+  if (!dbRole || !isStaffRole(dbRole)) return null;
+  return { ...user, role: dbRole };
+}
+
+/** Solo rol admin completo (usuarios, tenant, plataforma). */
+export async function requireFullAdmin(request?: Request): Promise<SessionUser | null> {
+  const user = await requireAdmin(request);
+  if (!user || !isFullAdmin(user.role)) return null;
   return user;
 }
 
