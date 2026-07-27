@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { MapPin, Tag, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AdminShell, type AdminTab } from "@/components/admin/AdminShell";
+import { AdminTabErrorBoundary } from "@/components/admin/AdminTabErrorBoundary";
 
 const HeroSlidesAdmin = dynamic(
   () => import("@/components/admin/HeroSlidesAdmin").then((m) => ({ default: m.HeroSlidesAdmin })),
@@ -71,7 +72,6 @@ const PlatformAdmin = dynamic(
 
 export function LandingAdminPanel({ onClose, role = "admin" }: { onClose: () => void; role?: string }) {
   const [activeTab, setActiveTab] = useState<AdminTab>("paquetes");
-  const [leads, setLeads] = useState<unknown[]>([]);
   const [statsData, setStatsData] = useState<{
     totalLeads: number;
     totalPromotions: number;
@@ -82,13 +82,8 @@ export function LandingAdminPanel({ onClose, role = "admin" }: { onClose: () => 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [leadsRes, statsRes] = await Promise.all([
-          fetch("/api/admin/leads", { credentials: "include" }),
-          fetch("/api/admin/stats", { credentials: "include" }),
-        ]);
-        const leadsData = await leadsRes.json();
+        const statsRes = await fetch("/api/admin/stats", { credentials: "include" });
         const statsDataRes = await statsRes.json();
-        setLeads(leadsData.leads || []);
         setStatsData(statsDataRes);
       } catch {
         toast.error("Error cargando datos");
@@ -99,6 +94,7 @@ export function LandingAdminPanel({ onClose, role = "admin" }: { onClose: () => 
 
   return (
     <AdminShell activeTab={activeTab} onTabChange={setActiveTab} onClose={onClose} role={role}>
+      <AdminTabErrorBoundary key={activeTab} tabLabel={activeTab}>
       {activeTab === "dashboard" && statsData && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -191,6 +187,7 @@ export function LandingAdminPanel({ onClose, role = "admin" }: { onClose: () => 
       {activeTab === "pasaporte" && <PassportBadgesAdmin />}
       {activeTab === "abandonos" && <AbandonedCartsAdmin />}
       {activeTab === "plataforma" && <PlatformAdmin />}
+      </AdminTabErrorBoundary>
     </AdminShell>
   );
 }

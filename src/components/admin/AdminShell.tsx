@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import {
   LayoutDashboard,
   MapPin,
@@ -65,13 +65,15 @@ function AdminShellInner({
 }) {
   const { theme, isLight, toggleTheme } = useAdminTheme();
   const visibleTabs = useMemo(() => TABS.filter((t) => canAccessTab(role, t.id)), [role]);
-  const current = visibleTabs.find((t) => t.id === activeTab) ?? visibleTabs[0];
+  const resolvedTab = canAccessTab(role, activeTab)
+    ? activeTab
+    : (visibleTabs[0]?.id ?? activeTab);
+  const current = visibleTabs.find((t) => t.id === resolvedTab) ?? visibleTabs[0];
 
-  useEffect(() => {
-    if (!canAccessTab(role, activeTab) && visibleTabs[0]) {
-      onTabChange(visibleTabs[0].id);
-    }
-  }, [role, activeTab, visibleTabs, onTabChange]);
+  const selectTab = (id: AdminTab) => {
+    if (!canAccessTab(role, id)) return;
+    onTabChange(id);
+  };
 
   return (
     <div
@@ -106,10 +108,10 @@ function AdminShellInner({
             <button
               key={id}
               type="button"
-              onClick={() => onTabChange(id)}
+              onClick={() => selectTab(id)}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all shrink-0 md:shrink md:w-full",
-                activeTab === id
+                resolvedTab === id
                   ? "bg-teal text-[#070f1a] shadow-md shadow-teal/25"
                   : isLight
                     ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -122,7 +124,7 @@ function AdminShellInner({
                 <p
                   className={cn(
                     "text-[11px] truncate",
-                    activeTab === id ? "text-[#070f1a]/70" : isLight ? "text-slate-400" : "text-white/35"
+                    resolvedTab === id ? "text-[#070f1a]/70" : isLight ? "text-slate-400" : "text-white/35"
                   )}
                 >
                   {desc}

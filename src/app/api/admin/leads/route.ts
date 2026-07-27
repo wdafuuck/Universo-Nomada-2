@@ -17,14 +17,23 @@ export async function GET(request: NextRequest) {
 
   try {
     const tenantId = getRequestTenantId(request);
-    const leads = await db.lead.findMany({
-      where: { tenantId },
-      orderBy: { createdAt: "desc" },
-      include: {
-        assignedTo: { select: { id: true, name: true, email: true } },
-        _count: { select: { notes: true, events: true } },
-      },
-    });
+    let leads;
+    try {
+      leads = await db.lead.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: "desc" },
+        include: {
+          assignedTo: { select: { id: true, name: true, email: true } },
+          _count: { select: { notes: true, events: true } },
+        },
+      });
+    } catch {
+      // Fallback si notas/eventos aún no existen en DB
+      leads = await db.lead.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: "desc" },
+      });
+    }
 
     const docCountByLead = new Map<number, number>();
     if ("tripDocument" in db) {
@@ -42,14 +51,20 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      leads: leads.map((lead) => ({
-        ...lead,
-        _count: {
-          documents: docCountByLead.get(lead.id) ?? 0,
-          notes: lead._count.notes,
-          events: lead._count.events,
-        },
-      })),
+      leads: leads.map((lead) => {
+        const count =
+          "_count" in lead && lead._count && typeof lead._count === "object"
+            ? (lead._count as { notes?: number; events?: number })
+            : {};
+        return {
+          ...lead,
+          _count: {
+            documents: docCountByLead.get(lead.id) ?? 0,
+            notes: count.notes ?? 0,
+            events: count.events ?? 0,
+          },
+        };
+      }),
     });
   } catch (e) {
     console.error("[admin/leads GET]", e);
