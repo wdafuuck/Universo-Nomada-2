@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Plus, Save, Trash2, Pencil, Upload, ImageIcon, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 
 type HeroSlide = {
   id: number;
@@ -24,19 +24,19 @@ export function HeroSlidesAdmin() {
   const [uploading, setUploading] = useState(false);
 
   const load = async () => {
-    const res = await fetch("/api/admin/hero-slides");
+    const res = await fetch("/api/admin/hero-slides", { credentials: "include" });
     const data = await res.json();
     setSlides(data.slides ?? []);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); }, []);
 
   const uploadImage = async (file: File) => {
     setUploading(true);
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd, credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setEditing((e) => (e ? { ...e, imageUrl: data.url } : e));
@@ -58,11 +58,13 @@ export function HeroSlidesAdmin() {
       const res = isNew
         ? await fetch("/api/admin/hero-slides", {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(editing),
           })
         : await fetch(`/api/admin/hero-slides/${editing.id}`, {
             method: "PUT",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(editing),
           });
@@ -73,7 +75,7 @@ export function HeroSlidesAdmin() {
       toast.success(isNew ? "Foto agregada al inicio" : "Foto actualizada — cierra el panel para verla en la web");
       setEditing(null);
       setIsNew(false);
-      load();
+      void load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error al guardar");
     } finally {
@@ -84,11 +86,11 @@ export function HeroSlidesAdmin() {
   const remove = async (id: number) => {
     if (!confirm("¿Eliminar esta foto del banner principal?")) return;
     try {
-      const res = await fetch(`/api/admin/hero-slides/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/hero-slides/${id}`, { method: "DELETE", credentials: "include" });
       if (!res.ok) throw new Error();
       toast.success("Foto eliminada");
       if (editing?.id === id) setEditing(null);
-      load();
+      void load();
     } catch {
       toast.error("Error al eliminar");
     }
@@ -97,10 +99,11 @@ export function HeroSlidesAdmin() {
   const toggleActive = async (slide: HeroSlide) => {
     await fetch(`/api/admin/hero-slides/${slide.id}`, {
       method: "PUT",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...slide, active: !slide.active }),
     });
-    load();
+    void load();
   };
 
   if (editing) {
@@ -123,7 +126,7 @@ export function HeroSlidesAdmin() {
           <CardContent className="p-6 space-y-5">
             <div className="relative h-48 sm:h-64 w-full rounded-xl overflow-hidden bg-white/5">
               {editing.imageUrl && (
-                <Image src={editing.imageUrl} alt="" fill className="object-cover" />
+                <UploadAwareImage src={editing.imageUrl} alt="" fill className="object-cover" />
               )}
             </div>
 
@@ -204,7 +207,7 @@ export function HeroSlidesAdmin() {
             className={`bg-[#0f1f35] border-white/10 rounded-2xl overflow-hidden ${!slide.active ? "opacity-50" : ""}`}
           >
             <div className="relative h-36">
-              <Image src={slide.imageUrl} alt={slide.label} fill className="object-cover" />
+              <UploadAwareImage src={slide.imageUrl} alt={slide.label} fill className="object-cover" />
             </div>
             <CardContent className="p-4 flex items-center justify-between gap-2">
               <div className="min-w-0">

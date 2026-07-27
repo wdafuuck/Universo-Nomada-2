@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { FlowField } from "@/components/motion/FlowField";
 import { MagneticHover } from "@/components/motion/MagneticHover";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { staggerContainer, antiGravityRise } from "@/lib/motion-presets";
 import { WAVE_COLORS } from "@/components/WildlifeBackground";
 
@@ -86,7 +86,7 @@ export function HeroCinematic({
                   exit={{ opacity: 0 }}
                   transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <Image
+                  <UploadAwareImage
                     src={src}
                     alt={`${h.line1} — destino turístico Universo Nómada, imagen ${i + 1} de ${slides.length}`}
                     fill

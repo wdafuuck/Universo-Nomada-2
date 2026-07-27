@@ -37,9 +37,25 @@ standalone_is_valid() {
 ensure_uploads_symlink() {
   local root="${1:-$(standalone_root)}"
   local base="${2:-$(pwd)}"
-  mkdir -p "$base/public/uploads"
-  rm -rf "$root/public/uploads"
-  ln -sfn "$base/public/uploads" "$root/public/uploads"
+  local target="$base/public/uploads"
+  local link="$root/public/uploads"
+  mkdir -p "$target" "$root/public"
+  # Si ya apunta bien, no tocar (evita Permission denied al arrancar como universo-nomada)
+  if [[ -L "$link" ]]; then
+    local current
+    current="$(readlink "$link" 2>/dev/null || true)"
+    if [[ "$current" == "$target" ]]; then
+      return 0
+    fi
+  fi
+  if [[ -e "$link" || -L "$link" ]]; then
+    if ! rm -rf "$link" 2>/dev/null; then
+      echo "    aviso: no se pudo recrear $link (permisos); se continúa" >&2
+      [[ -L "$link" || -d "$link" ]] && return 0
+      return 1
+    fi
+  fi
+  ln -sfn "$target" "$link"
 }
 
 # Copia atómica a .bak solo si la fuente es válida. Nunca borra el bak viejo hasta terminar.
