@@ -5,18 +5,35 @@ import { motion } from "framer-motion";
 import { User, Lock, Users } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { WAVE_COLORS } from "@/components/WildlifeBackground";
-import { FlowField } from "@/components/motion/FlowField";
-import { gravitySpring, staggerContainer, antiGravityRise } from "@/lib/motion-presets";
+import { gravitySpring, staggerContainer } from "@/lib/motion-presets";
 
 const icons = [User, Lock, Users];
 const TOUR_TYPES_BG = "/images/tour-types-caribbean.png";
 
+const FALLBACK_ITEMS = [
+  { title: "Personalizado", desc: "Itinerario a tu medida, ritmo y gustos." },
+  { title: "Privado", desc: "Solo tu grupo. Guía exclusivo, cero multitudes." },
+  { title: "Grupal", desc: "Fechas fijas. Conoce viajeros como tú." },
+] as const;
+
+/** Sin filter/blur: clip-path + filter deja las tarjetas invisibles en Safari/Chrome. */
+const cardRise = {
+  hidden: { opacity: 0, y: 28 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: gravitySpring,
+  },
+};
+
 export function TourTypesSection() {
   const { t } = useLanguage();
   const tt = t("tourTypes");
+  const items =
+    Array.isArray(tt.items) && tt.items.length > 0 ? tt.items : [...FALLBACK_ITEMS];
 
   const cardClass =
-    "flex flex-col items-center text-center gap-3 p-6 rounded-2xl border border-white/80 bg-white/95 backdrop-blur-md shadow-lg shadow-sky-950/10 hover:bg-white hover:border-teal/40 hover:shadow-xl transition-colors group min-h-[180px] premium-card-lift";
+    "flex flex-col items-center text-center gap-3 p-6 rounded-2xl border border-slate-200/90 bg-white shadow-xl shadow-sky-950/20 hover:border-teal/50 hover:shadow-2xl transition-colors group min-h-[180px]";
 
   return (
     <section
@@ -55,21 +72,21 @@ export function TourTypesSection() {
             quality={85}
             priority={false}
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-600/45 via-teal-700/40 to-emerald-900/55 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-700/55 via-teal-800/50 to-emerald-950/60 pointer-events-none" />
+          <div className="absolute inset-0 bg-slate-900/25 pointer-events-none" />
         </div>
-        <FlowField variant="cool" className="opacity-30" intensity="subtle" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-5 sm:px-8">
           <motion.div
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: "-10% 0px", amount: 0.25 }}
+            viewport={{ once: true, amount: 0.15 }}
             className="text-center mb-12"
           >
             <motion.div
-              variants={antiGravityRise}
-              className="inline-block rounded-2xl bg-white/90 backdrop-blur-md px-6 py-5 sm:px-8 shadow-lg shadow-sky-950/10 border border-white/70 max-w-2xl mx-auto"
+              variants={cardRise}
+              className="inline-block rounded-2xl bg-white px-6 py-5 sm:px-8 shadow-lg shadow-sky-950/15 border border-white max-w-2xl mx-auto"
             >
               <p className="text-teal-700 text-xs font-bold uppercase tracking-[0.2em] mb-3">{tt.badge}</p>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">{tt.title}</h2>
@@ -81,53 +98,41 @@ export function TourTypesSection() {
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: "-40px", amount: 0.2 }}
+            viewport={{ once: true, amount: 0.1 }}
             className="grid grid-cols-1 sm:grid-cols-3 gap-4"
           >
-            {tt.items.map((item: { title: string; desc: string }, i: number) => {
+            {items.map((item, i) => {
               const Icon = icons[i] ?? User;
-              const isGrupal = i === 2;
+              const href = i === 2 ? "#viajes-grupales" : "#destinos";
 
-              const content = (
-                <>
-                  <div className="h-12 w-12 rounded-full border border-teal/20 bg-teal/5 flex items-center justify-center shrink-0 group-hover:border-teal group-hover:bg-teal/10 transition-colors">
-                    <Icon className="h-5 w-5 text-teal/80 group-hover:text-teal transition-colors" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-slate-900 text-base">{item.title}</h3>
-                    <p className="text-slate-600 text-sm mt-1 leading-snug">{item.desc}</p>
-                  </div>
-                  <span className="text-teal/60 group-hover:text-teal text-lg transition-colors">→</span>
-                </>
-              );
-
-              const card = (
+              return (
                 <motion.div
-                  key={item.title}
-                  variants={antiGravityRise}
+                  key={`${item.title}-${i}`}
+                  variants={cardRise}
                   whileHover={{ y: -6, transition: gravitySpring }}
                 >
-                  {isGrupal ? (
-                    <a href="#viajes-grupales" className={cardClass}>
-                      {content}
-                    </a>
-                  ) : (
-                    <a href="#destinos" className={cardClass}>
-                      {content}
-                    </a>
-                  )}
+                  <a href={href} className={cardClass}>
+                    <div className="h-12 w-12 rounded-full border border-teal/25 bg-teal/10 flex items-center justify-center shrink-0 group-hover:border-teal group-hover:bg-teal/15 transition-colors">
+                      <Icon className="h-5 w-5 text-teal group-hover:text-teal-dark transition-colors" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-slate-900 text-base">{item.title}</h3>
+                      <p className="text-slate-600 text-sm mt-1 leading-snug">{item.desc}</p>
+                    </div>
+                    <span className="text-teal/70 group-hover:text-teal text-lg transition-colors" aria-hidden>
+                      →
+                    </span>
+                  </a>
                 </motion.div>
               );
-
-              return card;
             })}
           </motion.div>
 
           <motion.div
-            variants={antiGravityRise}
+            variants={cardRise}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: "-10% 0px", amount: 0.25 }}
+            viewport={{ once: true, amount: 0.2 }}
             className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
           >
             <a
@@ -138,7 +143,7 @@ export function TourTypesSection() {
             </a>
             <a
               href="#contacto"
-              className="w-full sm:w-auto min-h-[52px] px-8 py-4 rounded-full border-2 border-white/90 bg-white/90 text-slate-900 hover:bg-white font-semibold transition-colors flex items-center justify-center shadow-md"
+              className="w-full sm:w-auto min-h-[52px] px-8 py-4 rounded-full border-2 border-white bg-white text-slate-900 hover:bg-slate-50 font-semibold transition-colors flex items-center justify-center shadow-md"
             >
               {tt.ctaForm}
             </a>
