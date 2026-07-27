@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-session";
 import { inputToDbData, type BlogArticleInput } from "@/lib/blog-store";
 import { db } from "@/lib/db";
+import { notifyBlogSearchEngines } from "@/lib/indexnow";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -56,7 +57,18 @@ export async function PUT(request: NextRequest, { params }: Params) {
       data: inputToDbData(input, existing),
     });
 
-    return NextResponse.json({ article });
+    if (input.active) {
+      void notifyBlogSearchEngines({ slug });
+      // Si cambió el slug, avisar también la URL vieja (para que Bing actualice)
+      if (existing.slug !== slug) {
+        void notifyBlogSearchEngines({ slug: existing.slug, includeHub: false });
+      }
+    } else if (existing.active) {
+      // Pasó a borrador: refrescar listado/sitemap
+      void notifyBlogSearchEngines({ slug: null });
+    }
+
+    return NextResponse.json({ article, indexingQueued: input.active });
   } catch (e) {
     console.error("[admin/blog/id] PUT error:", e);
     return NextResponse.json({ error: "Error al actualizar artículo" }, { status: 500 });
@@ -75,7 +87,13 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   try {
+    const existing = await db.blogArticle.findUnique({ where: { id: articleId } });
     await db.blogArticle.delete({ where: { id: articleId } });
+    if (existing?.active) {
+      void notifyBlogSearchEngines({ slug: existing.slug });
+    } else {
+      void notifyBlogSearchEngines({ slug: null });
+    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[admin/blog/id] DELETE error:", e);

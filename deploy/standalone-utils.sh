@@ -58,6 +58,28 @@ ensure_uploads_symlink() {
   ln -sfn "$target" "$link"
 }
 
+# Persiste el archivo {INDEXNOW_KEY}.txt para verificación de IndexNow tras deploys.
+ensure_indexnow_key_file() {
+  local base="${1:-$(pwd)}"
+  local key="${INDEXNOW_KEY:-}"
+  if [[ -z "$key" && -f "$base/.env" ]]; then
+    # shellcheck disable=SC1091
+    key="$(grep -E '^INDEXNOW_KEY=' "$base/.env" | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" || true)"
+  fi
+  [[ -n "$key" ]] || return 0
+  mkdir -p "$base/public" "$base/.next/standalone/public" 2>/dev/null || true
+  # No tumbar el servicio si public/ es de root: best-effort
+  if printf '%s' "$key" > "$base/public/${key}.txt" 2>/dev/null; then
+    chmod a+r "$base/public/${key}.txt" 2>/dev/null || true
+  fi
+  if printf '%s' "$key" > "$base/.next/standalone/public/${key}.txt" 2>/dev/null; then
+    chmod a+r "$base/.next/standalone/public/${key}.txt" 2>/dev/null || true
+  elif [[ -f "$base/public/${key}.txt" ]]; then
+    cp -f "$base/public/${key}.txt" "$base/.next/standalone/public/${key}.txt" 2>/dev/null || true
+  fi
+  return 0
+}
+
 # Copia atómica a .bak solo si la fuente es válida. Nunca borra el bak viejo hasta terminar.
 backup_standalone_atomic() {
   local src="${1:-$(standalone_root)}"

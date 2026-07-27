@@ -28,11 +28,14 @@ if ! standalone_is_valid .next/standalone; then
 fi
 
 ensure_uploads_symlink .next/standalone "$(pwd)"
+ensure_indexnow_key_file "$(pwd)"
 
 set -a
 # shellcheck disable=SC1091
 source ./.env
 set +a
+# Rehacer key file con env ya cargado
+ensure_indexnow_key_file "$(pwd)"
 # Forzar bind público: el shell ya trae HOSTNAME=nombre-de-máquina (rompe 0.0.0.0)
 # Solo localhost: Caddy hace de proxy público (80/443)
 export HOSTNAME=127.0.0.1

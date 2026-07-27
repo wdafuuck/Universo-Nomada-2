@@ -117,7 +117,15 @@ export function BlogAdmin() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al guardar");
-      toast.success(isNew ? "Artículo creado" : "Artículo actualizado");
+      toast.success(
+        isNew
+          ? data.indexingQueued
+            ? "Artículo creado — indexación enviada a buscadores"
+            : "Artículo creado"
+          : data.indexingQueued
+            ? "Artículo actualizado — indexación enviada"
+            : "Artículo actualizado",
+      );
       setEditing(null);
       setIsNew(false);
       void load();

@@ -7,8 +7,7 @@ import {
   type BlogArticleInput,
 } from "@/lib/blog-store";
 import { db } from "@/lib/db";
-import { notifyIndexNow } from "@/lib/indexnow";
-import { absoluteUrl } from "@/lib/site-url";
+import { notifyBlogSearchEngines } from "@/lib/indexnow";
 
 export async function GET(request: NextRequest) {
   if (!(await requireAdmin(request))) {
@@ -65,15 +64,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Auto-index: Bing/Yandex (IndexNow) + aviso sitemap para Google/Bing
     if (input.active) {
-      void notifyIndexNow([
-        absoluteUrl(`/blog/${slug}`),
-        absoluteUrl("/blog"),
-        absoluteUrl("/sitemap.xml"),
-      ]);
+      void notifyBlogSearchEngines({ slug });
     }
 
-    return NextResponse.json({ article }, { status: 201 });
+    return NextResponse.json({ article, indexingQueued: input.active }, { status: 201 });
   } catch (e) {
     console.error("[admin/blog] POST error:", e);
     const message =

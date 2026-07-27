@@ -121,6 +121,7 @@ echo "    SSR chunks OK ($ssr_standalone)"
 
 echo "==> Symlink uploads persistente"
 ensure_uploads_symlink .next/standalone "$(pwd)"
+ensure_indexnow_key_file "$(pwd)"
 chmod a+rx /var/www/universo-nomada /var/www/universo-nomada/public 2>/dev/null || true
 chmod -R a+rX public/uploads 2>/dev/null || true
 

@@ -27,8 +27,7 @@ export async function POST(request: NextRequest) {
       urls: urls.length,
       indexNow,
       sitemapPing,
-      tip:
-        "Google indexa sobre todo vía Search Console → Sitemaps. IndexNow acelera Bing/Yandex.",
+      tip: "Google indexa vía Search Console (sitemap). IndexNow acelera Bing/Yandex. Al publicar un artículo nuevo ya se dispara solo.",
     });
   } catch (e) {
     console.error("[admin/blog/index-all]", e);
