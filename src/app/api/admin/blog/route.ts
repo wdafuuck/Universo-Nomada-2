@@ -55,10 +55,13 @@ export async function POST(request: NextRequest) {
       active: body.active !== false,
     };
 
+    const maxSort = await db.blogArticle.aggregate({ _max: { sortOrder: true } });
+    const sortOrder = (maxSort._max.sortOrder ?? 0) + 1;
+
     const article = await db.blogArticle.create({
       data: {
         ...inputToDbData(input),
-        sortOrder: Date.now(),
+        sortOrder,
       },
     });
 
@@ -73,6 +76,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ article }, { status: 201 });
   } catch (e) {
     console.error("[admin/blog] POST error:", e);
-    return NextResponse.json({ error: "Error al crear artículo" }, { status: 500 });
+    const message =
+      e instanceof Error && /slug|unique|Unique/i.test(e.message)
+        ? "Ya existe un artículo con ese slug"
+        : "Error al crear artículo";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
