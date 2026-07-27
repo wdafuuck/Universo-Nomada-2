@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Save, Trash2, Pencil, Upload, BookOpen, ExternalLink } from "lucide-react";
+import { Plus, Save, Trash2, Pencil, Upload, BookOpen, ExternalLink, Radar } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,7 @@ export function BlogAdmin() {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [indexing, setIndexing] = useState(false);
 
   const load = async () => {
     try {
@@ -141,6 +142,30 @@ export function BlogAdmin() {
       void load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error al eliminar");
+    }
+  };
+
+  const indexAll = async () => {
+    setIndexing(true);
+    try {
+      const res = await fetch("/api/admin/blog/index-all", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "No se pudo indexar");
+      const skipped = data.indexNow?.skipped;
+      if (skipped) {
+        toast.message(`Sitemap avisado. IndexNow: ${data.indexNow?.reason ?? "sin clave"}`);
+      } else if (data.indexNow?.ok) {
+        toast.success(`Enviados ${data.articles} artículos a indexación`);
+      } else {
+        toast.message(`Enviado (${data.articles} URLs). Revisa Search Console para Google.`);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al indexar");
+    } finally {
+      setIndexing(false);
     }
   };
 
@@ -271,9 +296,21 @@ export function BlogAdmin() {
           </h3>
           <p className="text-white/40 text-sm mt-1">Crea, edita y elimina artículos del blog público.</p>
         </div>
-        <Button onClick={openNew} className="bg-teal text-[#070f1a] font-bold rounded-xl">
-          <Plus className="h-4 w-4 mr-1" /> Nuevo artículo
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={indexing || articles.length === 0}
+            onClick={() => void indexAll()}
+            className="bg-white/5 border-white/10 text-white rounded-xl"
+          >
+            <Radar className="h-4 w-4 mr-1" />
+            {indexing ? "Indexando…" : "Indexar todo"}
+          </Button>
+          <Button onClick={openNew} className="bg-teal text-[#070f1a] font-bold rounded-xl">
+            <Plus className="h-4 w-4 mr-1" /> Nuevo artículo
+          </Button>
+        </div>
       </div>
 
       <Card className="bg-[#0f1f35] border-white/10 rounded-2xl">

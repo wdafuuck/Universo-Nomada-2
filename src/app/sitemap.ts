@@ -5,6 +5,10 @@ import { DESTINATION_HUBS } from "@/lib/destination-hubs";
 import { SEASONAL_LANDINGS } from "@/lib/seasonal-landings";
 import { SITE_URL } from "@/lib/site-url";
 
+/** Siempre leer blogs desde DB (no congelar el sitemap en el build). */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blogPosts = await fetchBlogPosts();
   const now = new Date();

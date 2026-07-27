@@ -55,6 +55,7 @@ const SEO_ACTIONS = [
   { label: "Hub Viajes a Chile", href: "/viajes/chile" },
   { label: "Índice /viajes", href: "/viajes" },
   { label: "Blog", href: "/blog" },
+  { label: "Sitemap XML", href: "/sitemap.xml" },
   { label: "Search Console", href: "https://search.google.com/search-console", external: true },
   { label: "GA Tiempo real", href: "https://analytics.google.com/analytics/web/#/p/realtime/overview", external: true },
 ];
