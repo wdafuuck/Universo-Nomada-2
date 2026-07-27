@@ -152,6 +152,7 @@ export function TripDocumentsEditor({
     try {
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("purpose", "document");
       const up = await fetch("/api/admin/upload", { method: "POST", body: fd, credentials: "include" });
       const upData = await up.json();
       if (!up.ok) throw new Error(upData.error ?? "Error al subir");

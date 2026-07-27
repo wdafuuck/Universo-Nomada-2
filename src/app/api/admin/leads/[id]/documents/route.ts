@@ -9,6 +9,7 @@ import {
 } from "@/lib/trip-document-retention";
 import { buildTripDocumentNotifyPreview } from "@/lib/trip-document-notify";
 import { tripDocumentLabel } from "@/lib/trip-documents";
+import { publicOrSignedFileUrl } from "@/lib/signed-file-url";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -36,7 +37,10 @@ export async function GET(request: NextRequest, { params }: Params) {
   });
 
   return NextResponse.json({
-    documents,
+    documents: documents.map((d) => ({
+      ...d,
+      fileUrl: publicOrSignedFileUrl(d.fileUrl),
+    })),
     retention: await documentRetentionSummary(lead),
     retentionDays: TRIP_DOCUMENT_RETENTION_DAYS,
   });

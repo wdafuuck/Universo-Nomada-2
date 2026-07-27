@@ -13,6 +13,19 @@ export async function POST(request: NextRequest) {
   }
 
   const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET?.trim();
+  // Exigir secreto solo si lo pedís explícito (tras configurarlo en MP — ver docs/SECURITY-OPS.md)
+  const requireSecret = process.env.MERCADOPAGO_WEBHOOK_REQUIRE_SECRET === "true";
+
+  if (requireSecret && !webhookSecret) {
+    console.error(
+      "[mp/webhook] MERCADOPAGO_WEBHOOK_REQUIRE_SECRET=true pero falta MERCADOPAGO_WEBHOOK_SECRET",
+    );
+    return NextResponse.json(
+      { error: "Webhook no configurado (falta secreto de firma)" },
+      { status: 503 },
+    );
+  }
+
   if (webhookSecret) {
     const { searchParams } = request.nextUrl;
     const dataId = searchParams.get("data.id") ?? searchParams.get("id");
@@ -26,6 +39,10 @@ export async function POST(request: NextRequest) {
       console.warn("[mp/webhook] firma inválida");
       return NextResponse.json({ error: "Firma inválida" }, { status: 401 });
     }
+  } else if (process.env.NODE_ENV === "production") {
+    console.warn(
+      "[mp/webhook] sin MERCADOPAGO_WEBHOOK_SECRET — configurá firma (docs/SECURITY-OPS.md)",
+    );
   }
 
   try {

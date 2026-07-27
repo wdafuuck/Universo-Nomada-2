@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const purpose = String(formData.get("purpose") ?? "public").trim().toLowerCase();
 
     if (!file) {
       return NextResponse.json({ error: "No se envió archivo" }, { status: 400 });
@@ -51,6 +52,9 @@ export async function POST(request: NextRequest) {
     if (!isPdf && !isImage) {
       return NextResponse.json({ error: "Solo imágenes JPG, PNG, WebP, GIF o PDF" }, { status: 400 });
     }
+
+    // PDFs de viaje = siempre sensibles (no depender solo del purpose del cliente)
+    const sensitive = isPdf || purpose === "private" || purpose === "document";
 
     if (isPdf && file.size > PDF_MAX) {
       return NextResponse.json({ error: "El PDF no puede superar 15 MB" }, { status: 400 });
@@ -74,7 +78,12 @@ export async function POST(request: NextRequest) {
 
     await writeFile(path.join(uploadDir, filename), output);
 
-    return NextResponse.json({ url: `/uploads/${filename}` });
+    const url = `/uploads/${filename}`;
+    return NextResponse.json({
+      url,
+      sensitive,
+      // El cliente usará signed URL al listar; aquí devolvemos path canónico
+    });
   } catch (e) {
     console.error("[admin/upload]", e);
     return NextResponse.json({ error: "Error al subir archivo" }, { status: 500 });

@@ -5,7 +5,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=root
+User=universo-nomada
+Group=universo-nomada
 WorkingDirectory=/var/www/universo-nomada
 # start.sh restaura .next/standalone.bak si falta server.js
 ExecStart=/var/www/universo-nomada/deploy/universo-nomada-start.sh
@@ -13,6 +14,12 @@ Restart=always
 RestartSec=5
 TimeoutStopSec=30
 KillMode=mixed
+# Endurecimiento básico
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/www/universo-nomada
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=universo-nomada

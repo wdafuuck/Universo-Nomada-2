@@ -8,6 +8,7 @@ import {
   documentRetentionSummary,
   TRIP_DOCUMENT_RETENTION_DAYS,
 } from "@/lib/trip-document-retention";
+import { publicOrSignedFileUrl } from "@/lib/signed-file-url";
 
 type Params = { params: Promise<{ leadId: string }> };
 
@@ -56,7 +57,7 @@ export async function GET(_request: Request, { params }: Params) {
       id: d.id,
       docType: d.docType,
       label: tripDocumentLabel(d.docType, d.label),
-      fileUrl: d.fileUrl,
+      fileUrl: publicOrSignedFileUrl(d.fileUrl),
       fileName: d.fileName,
       createdAt: d.createdAt.toISOString(),
     })),

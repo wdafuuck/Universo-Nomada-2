@@ -43,6 +43,12 @@ export UPLOAD_DIR="${UPLOAD_DIR:-/var/www/universo-nomada/public/uploads}"
 # Caddy (user caddy) debe poder leer uploads
 chmod a+rx /var/www/universo-nomada /var/www/universo-nomada/public 2>/dev/null || true
 chmod -R a+rX "${UPLOAD_DIR}" 2>/dev/null || true
+# Si corre como universo-nomada, asegurar dueño de uploads
+if [[ "$(id -un)" == "universo-nomada" ]]; then
+  :
+elif id universo-nomada >/dev/null 2>&1; then
+  chown -R universo-nomada:universo-nomada "${UPLOAD_DIR}" 2>/dev/null || true
+fi
 # Standalone a veces no resuelve el engine tras el restart; fijar ruta explícita
 ENGINE_CANDIDATES=(
   ".next/standalone/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node"

@@ -1,5 +1,5 @@
 # Producción — Universo Nómada (DigitalOcean + Caddy)
-# Tras editar en el servidor: caddy validate && systemctl reload caddy
+# Tras editar: caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
 universonomada.cl, www.universonomada.cl {
 	encode gzip zstd
 
@@ -12,14 +12,19 @@ universonomada.cl, www.universonomada.cl {
 		Clear-Site-Data `"cache", "storage"`
 	}
 
-	# Uploads persistentes (Next standalone no sirve bien el symlink)
-	handle /uploads/* {
+	# Imágenes de marketing: públicas
+	@publicUploadImages path_regexp upload_img (?i)^/uploads/.+\.(jpe?g|png|webp|gif)$
+	handle @publicUploadImages {
 		root * /var/www/universo-nomada/public
-		# Permite exportar a canvas en el admin (ajuste de insignias)
 		header Access-Control-Allow-Origin "https://universonomada.cl"
 		header Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
 		header Vary Origin
 		file_server
+	}
+
+	# PDF y otros: a Next (middleware + /api/secure-file)
+	handle /uploads/* {
+		reverse_proxy 127.0.0.1:3001
 	}
 
 	handle {
