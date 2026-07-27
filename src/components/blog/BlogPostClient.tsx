@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Instagram } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getBlogField, type BlogPost } from "@/lib/blog-posts";
+import { getBlogCta } from "@/lib/blog-cta";
 import { BlogNewsletter } from "@/components/BlogNewsletter";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 
@@ -13,6 +14,7 @@ type Props = { post: BlogPost };
 export function BlogPostClient({ post }: Props) {
   const { language, t } = useLanguage();
   const b = t("blog");
+  const cta = getBlogCta(post.slug);
 
   const title = getBlogField(post, language, "title");
   const content = getBlogField(post, language, "content");
@@ -52,6 +54,18 @@ export function BlogPostClient({ post }: Props) {
             <p key={i} className="text-slate-600 leading-relaxed mb-4 text-base">{para}</p>
           ))}
         </div>
+
+        {cta && (
+          <aside className="mt-10 p-6 rounded-2xl border border-teal/20 bg-gradient-to-br from-teal/5 to-emerald-50">
+            <p className="text-slate-700 text-sm leading-relaxed mb-4">{cta.blurb}</p>
+            <Link
+              href={cta.href}
+              className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl bg-teal hover:bg-teal/90 text-[#070f1a] font-bold text-sm transition-colors"
+            >
+              {cta.label}
+            </Link>
+          </aside>
+        )}
 
         <div className="mt-10 p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
           <p className="text-slate-700 text-sm leading-relaxed mb-4">{b.instagramDesc}</p>

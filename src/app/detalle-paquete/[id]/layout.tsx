@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DEFAULT_TOURS } from "@/lib/default-tours";
+import { getHubForTourId } from "@/lib/destination-hubs";
 import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { RelatedToursSection } from "@/components/seo/RelatedToursSection";
@@ -34,21 +35,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function DetallePaqueteLayout({ children, params }: Props) {
   const { id } = await params;
   const tour = DEFAULT_TOURS.find((t) => t.tourId === id);
+  const hub = getHubForTourId(id);
+
+  const crumbs = [
+    { name: "Inicio", path: "/" },
+    { name: "Viajes", path: "/viajes" },
+    ...(hub
+      ? [{ name: hub.title, path: `/viajes/${hub.slug}` }]
+      : [{ name: "Destinos", path: "/#destinos" }]),
+    ...(tour ? [{ name: tour.name, path: `/detalle-paquete/${id}` }] : []),
+  ];
 
   return (
     <>
-      {tour ? (
-        <>
-          <ProductJsonLd tour={tour} />
-          <BreadcrumbJsonLd
-            items={[
-              { name: "Inicio", path: "/" },
-              { name: "Destinos", path: "/#destinos" },
-              { name: tour.name, path: `/detalle-paquete/${id}` },
-            ]}
-          />
-        </>
-      ) : null}
+      {tour ? <ProductJsonLd tour={tour} /> : null}
+      <BreadcrumbJsonLd items={crumbs} />
       {children}
       {tour ? <RelatedToursSection tourId={id} /> : null}
     </>

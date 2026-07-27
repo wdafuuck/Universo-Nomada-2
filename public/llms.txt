@@ -10,16 +10,18 @@
 
 ## Destinos principales
 
-- Rapa Nui (Isla de Pascua)
-- San Pedro de Atacama + Salar de Uyuni
-- Cusco y Machu Picchu
-- Patagonia y Catedrales de Mármol
-- Río de Janeiro, Florianópolis, Buenos Aires, Mendoza
-- Viajes grupales Atacama, Uyuni, Rapa Nui
+- Viajes (índice): https://universonomada.cl/viajes
+- Viajes a Chile: https://universonomada.cl/viajes/chile
+- Rapa Nui: https://universonomada.cl/viajes/rapa-nui
+- Atacama: https://universonomada.cl/viajes/atacama
+- Patagonia: https://universonomada.cl/viajes/patagonia
+- Cusco y Machu Picchu: https://universonomada.cl/viajes/cusco-machu-picchu
+- Mendoza, Florianópolis, Río, Buenos Aires, Valle del Elqui
 
 ## Páginas clave
 
 - Inicio: https://universonomada.cl/
+- Viajes: https://universonomada.cl/viajes
 - Blog: https://universonomada.cl/blog
 - Política de privacidad: https://universonomada.cl/politica-privacidad
 - Política de seguridad: https://universonomada.cl/politica-seguridad

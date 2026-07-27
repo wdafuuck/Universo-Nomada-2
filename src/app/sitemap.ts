@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
 import { fetchBlogPosts } from "@/lib/blog-store";
 import { DEFAULT_TOURS } from "@/lib/default-tours";
+import { DESTINATION_HUBS } from "@/lib/destination-hubs";
 import { SEASONAL_LANDINGS } from "@/lib/seasonal-landings";
-import { absoluteUrl, SITE_URL } from "@/lib/site-url";
+import { SITE_URL } from "@/lib/site-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blogPosts = await fetchBlogPosts();
@@ -20,6 +21,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: now,
     changeFrequency: "weekly" as const,
     priority: 0.9,
+  }));
+
+  const hubEntries = DESTINATION_HUBS.map((hub) => ({
+    url: `${SITE_URL}/viajes/${hub.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: hub.slug === "chile" ? 0.95 : 0.9,
   }));
 
   const seasonalEntries = SEASONAL_LANDINGS.map((l) => ({
@@ -45,7 +53,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     { url: SITE_URL, lastModified: now, changeFrequency: "daily", priority: 1 },
+    { url: `${SITE_URL}/viajes`, lastModified: now, changeFrequency: "weekly", priority: 0.95 },
     { url: `${SITE_URL}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    ...hubEntries,
     ...seasonalEntries,
     ...tourEntries,
     ...blogEntries,

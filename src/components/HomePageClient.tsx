@@ -1140,7 +1140,17 @@ export default function LandingPage({
             <div>
               <h4 className="text-white font-bold mb-5 text-sm uppercase tracking-wider">{t("footer").destinos}</h4>
               <ul className="space-y-2 text-sm">
-                {destinations.slice(0, 8).map((d) => (
+                <li>
+                  <Link href="/viajes" className="text-teal/90 hover:text-teal font-semibold transition-colors">
+                    Todos los destinos
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/viajes/chile" className="text-white/50 hover:text-teal transition-colors">
+                    Viajes a Chile
+                  </Link>
+                </li>
+                {destinations.slice(0, 6).map((d) => (
                   <li key={d.name}>
                     <Link href={`/detalle-paquete/${d.id}`} className="text-white/50 hover:text-teal transition-colors">
                       {d.name}

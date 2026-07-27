@@ -18,9 +18,14 @@ export function SeasonalLandingPage({ landing }: { landing: SeasonalLanding }) {
         <Image src={landing.image} alt={landing.title} fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-[#070f1a] via-[#070f1a]/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10 max-w-4xl mx-auto">
-          <Link href="/" className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm mb-4">
-            <ArrowLeft className="h-4 w-4" /> Volver al inicio
-          </Link>
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <Link href="/" className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm">
+              <ArrowLeft className="h-4 w-4" /> Volver al inicio
+            </Link>
+            <Link href="/viajes" className="text-white/50 hover:text-white text-sm">
+              Todos los destinos
+            </Link>
+          </div>
           <p className="text-teal text-xs font-bold uppercase tracking-widest mb-2">{landing.subtitle}</p>
           <h1 className="text-3xl sm:text-5xl font-black text-white">{landing.title}</h1>
         </div>

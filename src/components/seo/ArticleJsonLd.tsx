@@ -16,6 +16,7 @@ export function ArticleJsonLd({ post }: Props) {
     description,
     image: absoluteUrl(post.image),
     datePublished: post.date,
+    dateModified: post.date,
     author: {
       "@type": "Organization",
       name: "Universo Nómada®",
