@@ -214,6 +214,12 @@ export const zhTranslations = {
     reservation200: '定金 $200.000',
     reservationFrom: '定金从',
     whatsappMsg: '您好！我想查询团体游名额：',
+    comingSoonBadge: '即将推出',
+    comingSoonTitle: '2027 团体旅行日历',
+    comingSoonDescription: '2026 年报名已结束。我们正在筹备明年同一批目的地的新出发团。',
+    comingSoonNotify: '报名开放时通知我',
+    comingSoonWhatsappMsg: '您好！请在 2027 团体旅行报名开放时通知我。',
+    comingSoonDestinations: '阿塔卡马 · 乌尤尼 · 埃尔基观鲸 等',
   },
   nosotros: {
     label: '关于我们',

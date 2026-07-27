@@ -15,13 +15,14 @@ import {
 import { PriceOffer } from "@/components/PriceOffer";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { Button } from "@/components/ui/button";
-import { buildWhatsAppUrl } from "@/lib/translations";
+import { buildWhatsAppUrl, translations } from "@/lib/translations";
 import { gravitySpring } from "@/lib/motion-presets";
 import { WAVE_COLORS } from "@/components/WildlifeBackground";
 import { FlowField } from "@/components/motion/FlowField";
 import { GravityReveal } from "@/components/motion/GravityReveal";
 
 const formatCLP = (n: number) => "$" + n.toLocaleString("es-CL");
+const GROUP_TRIPS_ES = translations.es.groupTrips;
 
 type TourCard = {
   id: string;
@@ -37,7 +38,9 @@ type Props = {
 };
 
 function GroupTripsComingSoon({ g }: { g: Record<string, string> }) {
-  const waUrl = buildWhatsAppUrl(g.comingSoonWhatsappMsg);
+  const text = (key: keyof typeof GROUP_TRIPS_ES) =>
+    (g[key] as string | undefined) || GROUP_TRIPS_ES[key] || "";
+  const waUrl = buildWhatsAppUrl(text("comingSoonWhatsappMsg"));
 
   return (
     <GravityReveal delay={0.1} mode="drop">
@@ -53,19 +56,19 @@ function GroupTripsComingSoon({ g }: { g: Record<string, string> }) {
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-amber/15 text-amber-800 text-xs font-bold px-3 py-1.5 uppercase tracking-wider">
                 <Sparkles className="h-3.5 w-3.5" />
-                {g.comingSoonBadge}
+                {text("comingSoonBadge")}
               </span>
             </div>
 
             <div className="flex-1 min-w-0 text-center">
               <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
-                {g.comingSoonTitle}
+                {text("comingSoonTitle")}
               </h3>
               <p className="mt-2 text-slate-600 text-sm sm:text-[15px] leading-relaxed">
-                {g.comingSoonDescription}
+                {text("comingSoonDescription")}
               </p>
               <p className="mt-2 text-xs sm:text-sm font-semibold text-teal-700 tracking-wide">
-                {g.comingSoonDestinations}
+                {text("comingSoonDestinations")}
               </p>
             </div>
 
@@ -77,7 +80,7 @@ function GroupTripsComingSoon({ g }: { g: Record<string, string> }) {
                 className="inline-flex items-center justify-center gap-2 w-full min-h-[48px] px-5 rounded-full bg-[#25D366] hover:bg-[#1fb855] text-white font-bold text-sm shadow-lg shadow-emerald-900/20 transition-colors"
               >
                 <MessageCircle className="h-5 w-5 shrink-0" />
-                <span className="leading-tight text-center">{g.comingSoonNotify}</span>
+                <span className="leading-tight text-center">{text("comingSoonNotify")}</span>
               </a>
               <Link
                 href="#contacto"

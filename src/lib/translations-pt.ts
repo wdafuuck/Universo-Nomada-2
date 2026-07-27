@@ -237,6 +237,12 @@ export const ptTranslations = {
     reservation200: 'Reserva $200.000',
     reservationFrom: 'Reserva a partir de',
     whatsappMsg: 'Olá! Quero consultar vagas para a viagem em grupo a',
+    comingSoonBadge: 'Em breve',
+    comingSoonTitle: 'Calendário de viagens em grupo 2027',
+    comingSoonDescription: 'As inscrições de 2026 já encerraram. Estamos preparando novas saídas para o próximo ano com os mesmos destinos que você ama.',
+    comingSoonNotify: 'Avise-me quando abrirem as inscrições',
+    comingSoonWhatsappMsg: 'Olá! Quero ser avisado quando abrirem as inscrições das viagens em grupo 2027.',
+    comingSoonDestinations: 'Atacama · Uyuni · Baleias Elqui e mais',
   },
   nosotros: {
     label: 'Quem somos',
