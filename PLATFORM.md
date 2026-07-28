@@ -55,3 +55,8 @@ Asignar cambiando `User.role` en DB (solo full admin debe hacerlo).
 ## Garantía visual
 
 Cambios de plataforma (tenant, RBAC, flags, CRM admin) **no** alteran tipografía, colores ni layout de la landing que ve el visitante.
+
+## Réplica a otros proyectos
+
+Informe detallado para agentes Cursor: [`docs/INFORME-REPLICA-PARA-AGENTES.md`](./docs/INFORME-REPLICA-PARA-AGENTES.md)  
+(Obsidian: *Informe réplica plataforma UN 2026 — para agentes Cursor*)
