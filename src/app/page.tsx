@@ -7,11 +7,15 @@ export const revalidate = 30;
 export default async function Page() {
   const { heroImages, tours, promotions } = await getLandingInitialData();
   const firstHero = heroImages[0];
+  const preloadHref =
+    firstHero && (firstHero.startsWith("/uploads/") || firstHero.startsWith("/images/"))
+      ? `/api/img?src=${encodeURIComponent(firstHero)}&w=1080&q=68`
+      : firstHero;
 
   return (
     <>
-      {firstHero ? (
-        <link rel="preload" as="image" href={firstHero} fetchPriority="high" />
+      {preloadHref ? (
+        <link rel="preload" as="image" href={preloadHref} fetchPriority="high" type="image/webp" />
       ) : null}
       <HomePageClient
         initialHeroImages={heroImages}

@@ -72,7 +72,7 @@ export function HeroCinematic({
           WebkitClipPath: "url(#hero-bottom-wave-clip)",
         }}
       >
-        <FlowField variant="aurora" intensity="medium" />
+        <FlowField variant="aurora" intensity="subtle" className="max-md:hidden opacity-80" />
 
         <div className="absolute inset-0">
           <AnimatePresence mode="sync">
@@ -81,18 +81,20 @@ export function HeroCinematic({
                 <motion.div
                   key={`${src}-${i}`}
                   className="absolute inset-0"
-                  initial={{ opacity: 0, scale: 1.08 }}
+                  initial={i === 0 && slide === 0 ? false : { opacity: 0, scale: 1.04 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: i === 0 ? 0.01 : 1.2, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <UploadAwareImage
                     src={src}
                     alt={`${h.line1} — destino turístico Universo Nómada, imagen ${i + 1} de ${slides.length}`}
                     fill
-                    priority={i === 0}
+                    priority={i === 0 || slide === i}
+                    fetchPriority={slide === i ? "high" : "auto"}
+                    quality={68}
                     sizes="100vw"
-                    className={`object-cover object-[center_20%] ${i === slide ? "hero-ken-burns" : ""}`}
+                    className={`object-cover object-[center_20%] ${i === slide && slide > 0 ? "hero-ken-burns" : ""}`}
                   />
                 </motion.div>
               ) : null,

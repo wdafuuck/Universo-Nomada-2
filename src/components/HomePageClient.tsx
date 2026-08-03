@@ -768,7 +768,7 @@ export default function LandingPage({
       {/* ═══════ OFERTAS / PROMOCIONES ═══════ */}
       {promoList.length > 0 && (
       <section id="ofertas" className="relative py-16 sm:py-24 -mt-px bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 overflow-hidden">
-        <FlowField variant="warm" className="opacity-75" intensity="medium" />
+        <FlowField variant="warm" className="opacity-60 max-md:hidden" intensity="subtle" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <FadeIn>
             <div className="text-center mb-12">
@@ -898,7 +898,7 @@ export default function LandingPage({
 
       {/* ═══════ DESTINATIONS WITH FILTERS ═══════ */}
       <section id="destinos" className="relative py-16 sm:py-24 bg-gradient-to-b from-sky-50 to-white overflow-hidden">
-        <FlowField variant="cool" className="opacity-65" intensity="medium" />
+        <FlowField variant="cool" className="opacity-50 max-md:hidden" intensity="subtle" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <FadeIn float>
             <div className="text-center mb-12">

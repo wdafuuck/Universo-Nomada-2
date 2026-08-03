@@ -20,6 +20,8 @@
     "db:backup": "node --env-file=.env scripts/backup.mjs",
     "db:seed-group-trips": "node scripts/seed-group-trips.mjs",
     "deploy": "bash scripts/deploy-prod.sh",
+    "optimize:images": "node scripts/optimize-images.mjs",
+    "optimize:images:uploads": "node scripts/optimize-images.mjs --uploads",
     "git:sync": "bash .cursor/hooks/auto-push-github.sh"
   },
   "dependencies": {

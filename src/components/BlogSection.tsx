@@ -20,7 +20,7 @@ export function BlogSection() {
   return (
     <section id="blog" className="relative py-16 sm:py-20 overflow-hidden bg-emerald-950">
       <Image
-        src="/images/experiencia_andes.png"
+        src="/images/experiencia_andes.webp"
         alt=""
         fill
         className="object-cover object-center opacity-25"

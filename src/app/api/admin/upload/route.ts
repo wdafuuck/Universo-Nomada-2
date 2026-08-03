@@ -1,36 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import path from "path";
-import sharp from "sharp";
 import { requireAdmin } from "@/lib/auth-session";
 import { ensureUploadsDir } from "@/lib/uploads-dir";
+import { optimizeImageBuffer } from "@/lib/image-optimize";
 
 const IMAGE_MAX_INPUT = 25 * 1024 * 1024;
 const PDF_MAX = 15 * 1024 * 1024;
-
-async function optimizeImage(
-  buffer: Buffer,
-  mimeType: string,
-): Promise<{ data: Buffer; ext: string }> {
-  const meta = await sharp(buffer).metadata();
-  const preserveAlpha =
-    meta.hasAlpha === true ||
-    mimeType === "image/png" ||
-    mimeType === "image/webp" ||
-    mimeType === "image/gif";
-
-  const pipeline = sharp(buffer)
-    .rotate()
-    .resize({ width: 1920, height: 1920, fit: "inside", withoutEnlargement: true });
-
-  if (preserveAlpha) {
-    const data = await pipeline.png({ compressionLevel: 9 }).toBuffer();
-    return { data, ext: "png" };
-  }
-
-  const data = await pipeline.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
-  return { data, ext: "jpg" };
-}
 
 export async function POST(request: NextRequest) {
   if (!(await requireAdmin(request))) {
@@ -53,7 +29,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Solo imágenes JPG, PNG, WebP, GIF o PDF" }, { status: 400 });
     }
 
-    // PDFs de viaje = siempre sensibles (no depender solo del purpose del cliente)
     const sensitive = isPdf || purpose === "private" || purpose === "document";
 
     if (isPdf && file.size > PDF_MAX) {
@@ -68,21 +43,28 @@ export async function POST(request: NextRequest) {
     }
 
     const uploadDir = await ensureUploadsDir();
-
     const raw = Buffer.from(await file.arrayBuffer());
-    const optimized = isPdf ? null : await optimizeImage(raw, file.type);
-    const filename = isPdf
-      ? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`
-      : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${optimized!.ext}`;
-    const output = isPdf ? raw : optimized!.data;
 
-    await writeFile(path.join(uploadDir, filename), output);
+    if (isPdf) {
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`;
+      await writeFile(path.join(uploadDir, filename), raw);
+      return NextResponse.json({ url: `/uploads/${filename}`, sensitive });
+    }
 
-    const url = `/uploads/${filename}`;
+    // Hero/banner: un poco más de resolución; resto content
+    const isHero = purpose === "hero" || purpose === "banner" || purpose === "slide";
+    const optimized = await optimizeImageBuffer(raw, {
+      purpose: isHero ? "hero" : "content",
+      quality: isHero ? 72 : 74,
+    });
+    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${optimized.ext}`;
+    await writeFile(path.join(uploadDir, filename), optimized.data);
+
     return NextResponse.json({
-      url,
+      url: `/uploads/${filename}`,
       sensitive,
-      // El cliente usará signed URL al listar; aquí devolvemos path canónico
+      bytes: optimized.data.length,
+      contentType: optimized.contentType,
     });
   } catch (e) {
     console.error("[admin/upload]", e);

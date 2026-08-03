@@ -5,7 +5,7 @@ export const metadata = pageMetadata({
   title: "Blog de viajes | Universo Nómada",
   description:
     "Historias, guías y reflexiones sobre turismo experiencial en Chile y Sudamérica. Comunidades locales, naturaleza y viajes con propósito.",
-  image: "/images/experiencia_andes.png",
+  image: "/images/experiencia_andes.webp",
 });
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {

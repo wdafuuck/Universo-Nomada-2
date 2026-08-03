@@ -37,7 +37,7 @@ export const blogPosts: BlogPost[] = [
       zh: "在Universo Nómada，我们不卖千篇一律的行程。我们设计让你安心旅行、带着转变归来的体验。\n\n我们是谁：诞生于玻利维亚亚马逊的游牧家庭。Rocío、Ricardo和Facundo与智利和南美当地社区同行，分享连接自然、文化与人的旅程。\n\n为何存在：更多人值得安心、深入、充满惊奇地旅行。\n\n我们的不同：小团、当地向导、全程物流与人文关怀。你不是在参观地点——你在活出故事。\n\n我们创造的影响：支持当地经济，尊重祖先领土，为旅行者和社区留下印记。\n\n在Instagram @universo.nomadaa 关注我们，或订阅博客获取灵感故事。",
       pt: "No Universo Nómada não vendemos roteiros genéricos. Planejamos experiências para que você viaje sem se preocupar — e volte transformado.\n\nQuem somos: uma família nômade nascida na Amazônia boliviana. Rocío, Ricardo e Facundo percorrem o Chile e a América do Sul junto a comunidades locais.\n\nPor que existimos: mais pessoas merecem viajar com tranquilidade, profundidade e admiração.\n\nO que nos diferencia: grupos pequenos, guias locais, logística completa e abordagem humana. Você não visita lugares — vive histórias.\n\nO impacto que geramos: apoiamos economias locais e respeitamos territórios ancestrais.\n\nSiga-nos no Instagram @universo.nomadaa ou inscreva-se no blog.",
     },
-    image: "/images/experiencia_andes.png",
+    image: "/images/experiencia_andes.webp",
     category: { es: "Nuestra esencia", en: "Our essence", fr: "Notre essence", zh: "我们的本质", pt: "Nossa essência" },
     date: "2026-05-15",
     readTime: 6,

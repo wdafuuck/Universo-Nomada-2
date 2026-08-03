@@ -75,6 +75,24 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/images/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/api/img",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, s-maxage=604800",
+          },
+        ],
+      },
+      {
         source: "/((?!_next/static|_next/image|api|uploads|images|.*\\..*).*)",
         headers: [
           {
@@ -87,7 +105,11 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   images: {
-    qualities: [75, 80, 85, 90, 95],
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [64, 96, 128, 256, 384],
+    qualities: [60, 68, 72, 75, 80, 85],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       { protocol: "https", hostname: "ui-avatars.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
