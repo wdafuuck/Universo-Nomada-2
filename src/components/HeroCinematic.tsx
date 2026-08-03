@@ -1,22 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { FlowField } from "@/components/motion/FlowField";
-import { MagneticHover } from "@/components/motion/MagneticHover";
 import { UploadAwareImage } from "@/components/UploadAwareImage";
-import { staggerContainer, antiGravityRise } from "@/lib/motion-presets";
 import { WAVE_COLORS } from "@/components/WildlifeBackground";
 
 type HeroCinematicProps = {
   onPlanTrip: () => void;
   refreshKey?: number;
-  /** Imágenes reales desde SSR — evita flash de fotos default */
   initialImages?: string[];
 };
 
+/**
+ * Hero liviano: sin framer-motion en el LCP (PageSpeed móvil).
+ * Crossfade CSS + imagen WebP vía /api/img.
+ */
 export function HeroCinematic({
   onPlanTrip,
   refreshKey = 0,
@@ -28,7 +28,6 @@ export function HeroCinematic({
   const [images, setImages] = useState<string[]>(initialImages);
 
   useEffect(() => {
-    // Solo refetch tras editar en admin (refreshKey > 0)
     if (refreshKey === 0) return;
     fetch(`/api/hero-slides?t=${refreshKey}`, { cache: "no-store" })
       .then((r) => r.json())
@@ -44,11 +43,10 @@ export function HeroCinematic({
   useEffect(() => {
     if (images.length === 0) return;
     setSlide(0);
-    const id = setInterval(() => setSlide((s) => (s + 1) % images.length), 6000);
+    const id = setInterval(() => setSlide((s) => (s + 1) % images.length), 7000);
     return () => clearInterval(id);
   }, [images]);
 
-  // Sin fallback de fotos hardcodeadas: evita flash de imágenes que no están en admin
   const slides = images;
 
   return (
@@ -66,45 +64,43 @@ export function HeroCinematic({
       </svg>
 
       <div
-        className="relative min-h-[100dvh]"
+        className="relative min-h-dvh"
         style={{
           clipPath: "url(#hero-bottom-wave-clip)",
           WebkitClipPath: "url(#hero-bottom-wave-clip)",
         }}
       >
-        <FlowField variant="aurora" intensity="subtle" className="max-md:hidden opacity-80" />
+        <FlowField variant="aurora" intensity="subtle" className="max-md:hidden opacity-70" />
 
         <div className="absolute inset-0">
-          <AnimatePresence mode="sync">
-            {slides.map((src, i) =>
-              i === slide ? (
-                <motion.div
-                  key={`${src}-${i}`}
-                  className="absolute inset-0"
-                  initial={i === 0 && slide === 0 ? false : { opacity: 0, scale: 1.04 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: i === 0 ? 0.01 : 1.2, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <UploadAwareImage
-                    src={src}
-                    alt={`${h.line1} — destino turístico Universo Nómada, imagen ${i + 1} de ${slides.length}`}
-                    fill
-                    priority={i === 0 || slide === i}
-                    fetchPriority={slide === i ? "high" : "auto"}
-                    quality={68}
-                    sizes="100vw"
-                    className={`object-cover object-[center_20%] ${i === slide && slide > 0 ? "hero-ken-burns" : ""}`}
-                  />
-                </motion.div>
-              ) : null,
-            )}
-          </AnimatePresence>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/5 to-black/55" />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy/25 via-transparent to-teal/10 mix-blend-overlay" />
+          {slides.map((src, i) => (
+            <div
+              key={`${src}-${i}`}
+              className={`absolute inset-0 transition-opacity duration-700 ease-out ${
+                i === slide ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+              aria-hidden={i !== slide}
+            >
+              <UploadAwareImage
+                src={src}
+                alt={
+                  i === slide
+                    ? `${h.line1} — destino turístico Universo Nómada`
+                    : ""
+                }
+                fill
+                priority={i === 0}
+                fetchPriority={i === 0 ? "high" : "low"}
+                quality={62}
+                sizes="(max-width: 768px) 100vw, 100vw"
+                className="object-cover object-[center_20%]"
+              />
+            </div>
+          ))}
+          <div className="absolute inset-0 bg-linear-to-b from-black/25 via-black/5 to-black/55" />
+          <div className="absolute inset-0 bg-linear-to-r from-navy/25 via-transparent to-teal/10 mix-blend-overlay" />
         </div>
 
-        {/* Slide indicators */}
         <div className="absolute top-1/2 right-4 sm:right-8 z-20 flex flex-col gap-2 -translate-y-1/2">
           {slides.map((_, i) => (
             <button
@@ -119,76 +115,47 @@ export function HeroCinematic({
           ))}
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/70 via-black/35 to-transparent pt-28 sm:pt-36 pb-10 sm:pb-14">
-          <motion.div
-            className="w-full max-w-4xl mx-auto px-5 sm:px-8 text-center"
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-          >
+        <div className="absolute inset-x-0 bottom-0 z-10 bg-linear-to-t from-black/70 via-black/35 to-transparent pt-28 sm:pt-36 pb-10 sm:pb-14">
+          <div className="w-full max-w-4xl mx-auto px-5 sm:px-8 text-center">
             <h1 className="text-white leading-[1.08] tracking-tight">
-              <motion.span
-                variants={antiGravityRise}
-                className="hero-title-line block text-3xl sm:text-5xl md:text-6xl font-bold drop-shadow-2xl"
-              >
+              <span className="hero-title-line block text-3xl sm:text-5xl md:text-6xl font-bold drop-shadow-2xl">
                 {h.line1}
-              </motion.span>
+              </span>
               {h.line2 ? (
-                <motion.span
-                  variants={antiGravityRise}
-                  className="hero-title-line block text-3xl sm:text-5xl md:text-6xl font-bold text-white/95 mt-1 sm:mt-2 drop-shadow-2xl"
-                >
+                <span className="hero-title-line block text-3xl sm:text-5xl md:text-6xl font-bold text-white/95 mt-1 sm:mt-2 drop-shadow-2xl">
                   {h.line2}
-                </motion.span>
+                </span>
               ) : null}
             </h1>
 
-            <motion.p
-              variants={antiGravityRise}
-              className="mt-4 sm:mt-5 text-white/85 text-base sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto"
-            >
+            <p className="mt-4 sm:mt-5 text-white/85 text-base sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto">
               {h.subtitle}
-            </motion.p>
+            </p>
 
-            <motion.div
-              variants={antiGravityRise}
-              className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 max-w-xl sm:max-w-2xl mx-auto w-full"
-            >
-              <MagneticHover as="a" href="#destinos" strength={0.2} className="flex-1">
-                <span className="hero-cta-glow flex w-full min-h-[52px] sm:min-h-[56px] rounded-full bg-gradient-to-r from-amber to-orange-500 hover:from-amber-dark hover:to-orange-600 text-white font-bold text-base sm:text-lg px-6 sm:px-8 py-4 shadow-2xl shadow-amber/30 items-center justify-center transition-all hover:shadow-amber/50">
+            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 max-w-xl sm:max-w-2xl mx-auto w-full">
+              <a href="#destinos" className="flex-1">
+                <span className="hero-cta-glow flex w-full min-h-13 sm:min-h-14 rounded-full bg-linear-to-r from-amber to-orange-500 hover:from-amber-dark hover:to-orange-600 text-white font-bold text-base sm:text-lg px-6 sm:px-8 py-4 shadow-2xl shadow-amber/30 items-center justify-center transition-all">
                   {h.ctaWhatsapp}
                 </span>
-              </MagneticHover>
-              <MagneticHover as="button" onClick={onPlanTrip} strength={0.2} className="flex-1">
-                <span className="flex w-full min-h-[52px] sm:min-h-[56px] rounded-full bg-white text-slate-900 hover:bg-amber-50 font-bold text-base sm:text-lg px-6 sm:px-8 py-4 shadow-xl items-center justify-center transition-all border border-white/20">
+              </a>
+              <button type="button" onClick={onPlanTrip} className="flex-1">
+                <span className="flex w-full min-h-13 sm:min-h-14 rounded-full bg-white text-slate-900 hover:bg-amber-50 font-bold text-base sm:text-lg px-6 sm:px-8 py-4 shadow-xl items-center justify-center transition-all border border-white/20">
                   {h.ctaPlan}
                 </span>
-              </MagneticHover>
-            </motion.div>
+              </button>
+            </div>
 
-            <motion.p
-              variants={antiGravityRise}
-              className="mt-5 sm:mt-6 text-white/60 text-sm"
-              suppressHydrationWarning
-            >
+            <p className="mt-5 sm:mt-6 text-white/60 text-sm" suppressHydrationWarning>
               {h.trust}
-            </motion.p>
+            </p>
 
-            <motion.div
-              variants={antiGravityRise}
-              className="mt-5 sm:mt-6 text-white/40 flex flex-col items-center gap-1"
-            >
+            <div className="mt-5 sm:mt-6 text-white/40 flex flex-col items-center gap-1">
               <span className="text-[10px] tracking-[0.25em] uppercase" suppressHydrationWarning>
                 {h.scroll}
               </span>
-              <motion.div
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 2.2, repeat: Infinity, ease: [0.45, 0, 0.55, 1] }}
-              >
-                <ChevronDown className="h-4 w-4 scroll-gravity" />
-              </motion.div>
-            </motion.div>
-          </motion.div>
+              <ChevronDown className="h-4 w-4 scroll-gravity" />
+            </div>
+          </div>
         </div>
       </div>
     </section>

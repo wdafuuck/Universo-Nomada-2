@@ -9,7 +9,7 @@ import { GravityReveal } from "@/components/motion/GravityReveal";
 import { FlowField } from "@/components/motion/FlowField";
 import { gravitySpring, gravityDrop, staggerContainer } from "@/lib/motion-presets";
 import { toast } from "sonner";
-import { MapPin, Search, Calendar, Users, ChevronDown, ArrowRight, Star, Plane, Ship, Train, Bus, Car, Mountain, Waves, Trees, Building, Camera, Heart, Compass, Clock, DollarSign, Menu, X, Instagram, Facebook, Mail, Phone, ChevronLeft, ChevronRight, Plus, Minus, Check, AlertCircle, Info, Shield, Award, Globe, Zap, TrendingUp, Target, Sparkles, Flame, Navigation, LayoutDashboard, Binoculars, Palmtree, TreePine, CreditCard, LogIn, User, Lock, Eye, EyeOff, Send, Tag, LogOut, MessageCircle, ShoppingCart, type LucideIcon } from 'lucide-react';
+import { MapPin, Search, ArrowRight, Star, Plane, Mountain, Waves, Heart, Compass, Clock, Menu, X, Instagram, Facebook, Mail, Phone, Shield, Award, LayoutDashboard, Binoculars, Palmtree, TreePine, CreditCard, LogIn, User, Lock, Eye, EyeOff, Send, LogOut, MessageCircle, ShoppingCart, type LucideIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,8 +43,12 @@ import { useLandingData } from "@/hooks/use-landing-data";
 import type { PromoCard } from "@/hooks/use-tours";
 import type { TourCardData } from "@/components/TourCard";
 import { GROUP_TOUR_META } from "@/lib/group-trips";
-import { WelcomeRegisterPopup } from "@/components/WelcomeRegisterPopup";
 import { scrollToHashFromLocation } from "@/lib/scroll-to-section";
+
+const WelcomeRegisterPopup = dynamic(
+  () => import("@/components/WelcomeRegisterPopup").then((m) => ({ default: m.WelcomeRegisterPopup })),
+  { ssr: false },
+);
 
 const POPUP_DAY_KEY = "un_popup_day_v2";
 

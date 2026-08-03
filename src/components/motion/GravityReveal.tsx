@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useInView, type Variants } from "framer-motion";
 import {
   gravityDrop,
@@ -25,11 +25,11 @@ type Props = {
   delay?: number;
   mode?: Mode;
   className?: string;
-  /** Prefer true on long pages to avoid scroll feedback loops */
   once?: boolean;
   float?: boolean;
 };
 
+/** En móvil / reduced-motion: sin framer (mejor TBT PageSpeed). */
 export function GravityReveal({
   children,
   delay = 0,
@@ -38,6 +38,20 @@ export function GravityReveal({
   once = true,
   float = false,
 }: Props) {
+  const [lite, setLite] = useState(true);
+  useEffect(() => {
+    const mqMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mqMobile = window.matchMedia("(max-width: 768px)");
+    const sync = () => setLite(mqMotion.matches || mqMobile.matches);
+    sync();
+    mqMotion.addEventListener("change", sync);
+    mqMobile.addEventListener("change", sync);
+    return () => {
+      mqMotion.removeEventListener("change", sync);
+      mqMobile.removeEventListener("change", sync);
+    };
+  }, []);
+
   const ref = useRef(null);
   const inView = useInView(ref, {
     once,
@@ -45,8 +59,11 @@ export function GravityReveal({
     amount: 0.15,
   });
 
+  if (lite) {
+    return <div className={className}>{children}</div>;
+  }
+
   const enter = variantsMap[mode];
-  // If re-animating on scroll, only fade — never move Y (prevents scroll thrashing)
   const variants: Variants = once
     ? enter
     : {
