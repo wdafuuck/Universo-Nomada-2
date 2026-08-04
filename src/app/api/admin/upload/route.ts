@@ -3,10 +3,18 @@ import { writeFile } from "fs/promises";
 import path from "path";
 import { requireAdmin } from "@/lib/auth-session";
 import { ensureUploadsDir } from "@/lib/uploads-dir";
-import { optimizeImageBuffer } from "@/lib/image-optimize";
+import { optimizeImageBuffer, formatBytes, type OptimizePurpose } from "@/lib/image-optimize";
 
 const IMAGE_MAX_INPUT = 25 * 1024 * 1024;
 const PDF_MAX = 15 * 1024 * 1024;
+
+function resolveImagePurpose(purpose: string): OptimizePurpose {
+  const p = purpose.trim().toLowerCase();
+  if (p === "hero" || p === "banner" || p === "slide") return "hero";
+  if (p === "blog" || p === "article" || p === "post") return "blog";
+  if (p === "thumb" || p === "avatar") return "thumb";
+  return "content";
+}
 
 export async function POST(request: NextRequest) {
   if (!(await requireAdmin(request))) {
@@ -51,20 +59,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ url: `/uploads/${filename}`, sensitive });
     }
 
-    // Hero/banner: un poco más de resolución; resto content
-    const isHero = purpose === "hero" || purpose === "banner" || purpose === "slide";
-    const optimized = await optimizeImageBuffer(raw, {
-      purpose: isHero ? "hero" : "content",
-      quality: isHero ? 72 : 74,
-    });
+    const imagePurpose = resolveImagePurpose(purpose);
+    const optimized = await optimizeImageBuffer(raw, { purpose: imagePurpose });
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${optimized.ext}`;
     await writeFile(path.join(uploadDir, filename), optimized.data);
+
+    const originalBytes = raw.length;
+    const bytes = optimized.data.length;
+    const savedPct =
+      originalBytes > 0 ? Math.max(0, Math.round((1 - bytes / originalBytes) * 100)) : 0;
 
     return NextResponse.json({
       url: `/uploads/${filename}`,
       sensitive,
-      bytes: optimized.data.length,
+      bytes,
+      originalBytes,
+      savedPct,
+      quality: optimized.qualityUsed,
+      width: optimized.width,
+      height: optimized.height,
       contentType: optimized.contentType,
+      purpose: imagePurpose,
+      human: {
+        bytes: formatBytes(bytes),
+        originalBytes: formatBytes(originalBytes),
+      },
     });
   } catch (e) {
     console.error("[admin/upload]", e);

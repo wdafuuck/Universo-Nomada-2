@@ -73,11 +73,20 @@ export function BlogAdmin() {
     try {
       const fd = new FormData();
       fd.append("file", file);
+      fd.append("purpose", "blog");
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd, credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setEditing((e) => e ? { ...e, image: data.url } : e);
-      toast.success("Imagen subida");
+      const saved = typeof data.savedPct === "number" ? data.savedPct : null;
+      const human = data.human?.bytes as string | undefined;
+      if (saved != null && saved > 0 && human) {
+        toast.success(`Imagen optimizada: ${human} (−${saved}% vs original)`);
+      } else if (human) {
+        toast.success(`Imagen lista: ${human} (WebP)`);
+      } else {
+        toast.success("Imagen subida y optimizada");
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Error al subir");
     } finally {
