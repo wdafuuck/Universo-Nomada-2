@@ -125,6 +125,15 @@ ensure_indexnow_key_file "$(pwd)"
 chmod a+rx /var/www/universo-nomada /var/www/universo-nomada/public 2>/dev/null || true
 chmod -R a+rX public/uploads 2>/dev/null || true
 
+echo "==> Permisos app user (standalone writable)"
+# systemd corre como universo-nomada; el build suele ser root → sin esto: EACCES en .next/cache
+# y la home queda con secciones vacías / ISR roto.
+if id universo-nomada >/dev/null 2>&1; then
+  mkdir -p .next/standalone/.next/cache
+  chown -R universo-nomada:universo-nomada .next || true
+  chown -R universo-nomada:universo-nomada public/uploads 2>/dev/null || true
+fi
+
 echo "==> Permisos scripts"
 chmod +x deploy/*.sh 2>/dev/null || true
 
