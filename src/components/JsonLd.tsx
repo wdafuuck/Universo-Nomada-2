@@ -1,5 +1,6 @@
 import { FAQ_SCHEMA_ITEMS } from "@/lib/faq-schema";
 import { DEFAULT_TOURS } from "@/lib/default-tours";
+import { GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
 import { absoluteUrl, SITE_URL } from "@/lib/site-url";
 
 export function JsonLd() {
@@ -33,6 +34,12 @@ export function JsonLd() {
           latitude: -33.0246,
           longitude: -71.5518,
         },
+        openingHoursSpecification: {
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+          opens: "09:00",
+          closes: "18:00",
+        },
         areaServed: [
           { "@type": "Country", name: "Chile" },
           { "@type": "Country", name: "Peru" },
@@ -45,6 +52,7 @@ export function JsonLd() {
           "https://www.tiktok.com/@universo.nomadaa",
           "https://web.facebook.com/profile.php?id=61560104283524",
           "https://serviciosturisticos.sernatur.cl/63063-universo-nomada",
+          GOOGLE_REVIEWS_URL,
         ],
         hasOfferCatalog: {
           "@type": "OfferCatalog",

@@ -9,6 +9,8 @@ import { DestinationHubPage } from "@/components/DestinationHubPage";
 import { DestinationHubJsonLd, FaqPageJsonLd } from "@/components/seo/DestinationHubJsonLd";
 import { BreadcrumbJsonLd } from "@/components/seo/BreadcrumbJsonLd";
 import { pageMetadata } from "@/lib/seo-metadata";
+import { getRelatedBlogPostsForHub } from "@/lib/related-blog-posts";
+import { getBlogField } from "@/lib/blog-posts";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -22,10 +24,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!hub) {
     return { title: "Destino | Universo Nómada®" };
   }
+  const desc =
+    hub.description.length > 140
+      ? hub.description
+      : `${hub.description} Cotiza paquetes con Universo Nómada®.`;
   return pageMetadata({
     path: `/viajes/${hub.slug}`,
-    title: `${hub.title} | Universo Nómada®`,
-    description: hub.description,
+    title: `${hub.title}: paquetes y guías | Universo Nómada®`,
+    description: desc.slice(0, 160),
     image: hub.image,
     keywords: hub.keywords,
   });
@@ -40,6 +46,13 @@ export default async function DestinationHubRoute({ params }: Props) {
     .map((id) => DEFAULT_TOURS.find((t) => t.tourId === id))
     .filter(Boolean);
   const priceFrom = tours.length ? Math.min(...tours.map((t) => t!.price)) : undefined;
+  const relatedRaw = await getRelatedBlogPostsForHub(hub, 4);
+  const relatedBlogs = relatedRaw.map((p) => ({
+    slug: p.slug,
+    title: getBlogField(p, "es", "title"),
+    excerpt: getBlogField(p, "es", "excerpt"),
+    image: p.image,
+  }));
 
   return (
     <>
@@ -52,7 +65,7 @@ export default async function DestinationHubRoute({ params }: Props) {
           { name: hub.title, path: `/viajes/${hub.slug}` },
         ]}
       />
-      <DestinationHubPage hub={hub} />
+      <DestinationHubPage hub={hub} relatedBlogs={relatedBlogs} />
     </>
   );
 }

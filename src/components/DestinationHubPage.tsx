@@ -10,9 +10,11 @@ import { buildWhatsAppUrl } from "@/lib/translations";
 import { PriceOffer } from "@/components/PriceOffer";
 import { ReferralCapture } from "@/components/ReferralCapture";
 
-type Props = { hub: DestinationHub };
+type RelatedBlog = { slug: string; title: string; excerpt: string; image: string };
 
-export function DestinationHubPage({ hub }: Props) {
+type Props = { hub: DestinationHub; relatedBlogs?: RelatedBlog[] };
+
+export function DestinationHubPage({ hub, relatedBlogs = [] }: Props) {
   const tours = hub.tourIds
     .map((id) => DEFAULT_TOURS.find((t) => t.tourId === id))
     .filter(Boolean) as typeof DEFAULT_TOURS;
@@ -140,6 +142,39 @@ export function DestinationHubPage({ hub }: Props) {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {relatedBlogs.length > 0 && (
+          <section aria-labelledby="hub-guides">
+            <h2 id="hub-guides" className="text-xl font-bold text-slate-900 mb-3">
+              Guías y artículos relacionados
+            </h2>
+            <ul className="space-y-3 list-none p-0 m-0">
+              {relatedBlogs.map((b) => (
+                <li key={b.slug}>
+                  <Link
+                    href={`/blog/${b.slug}`}
+                    className="flex gap-3 rounded-xl border border-slate-200 overflow-hidden hover:border-teal/40 transition-colors bg-white"
+                  >
+                    <div className="relative w-24 sm:w-28 shrink-0 min-h-[72px]">
+                      <Image src={b.image} alt={b.title} fill className="object-cover" sizes="112px" />
+                    </div>
+                    <div className="py-3 pr-3 min-w-0">
+                      <p className="font-semibold text-slate-900 text-sm leading-snug hover:text-teal">
+                        {b.title}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">{b.excerpt}</p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3">
+              <Link href="/blog" className="text-sm font-semibold text-teal hover:underline">
+                Ver todo el blog →
+              </Link>
+            </p>
           </section>
         )}
 

@@ -1,48 +1,55 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Clock, Instagram } from "lucide-react";
+import { ArrowLeft, Clock, Instagram, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getBlogField, type BlogPost } from "@/lib/blog-posts";
 import { getBlogCta } from "@/lib/blog-cta";
 import { BlogNewsletter } from "@/components/BlogNewsletter";
 import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import { buildWhatsAppUrl } from "@/lib/translations";
 
-type Props = { post: BlogPost };
+type RelatedSummary = { slug: string; title: string; image: string; readTime: number };
 
-export function BlogPostClient({ post }: Props) {
+type Props = { post: BlogPost; relatedPosts?: RelatedSummary[] };
+
+export function BlogPostClient({ post, relatedPosts = [] }: Props) {
   const { language, t } = useLanguage();
   const b = t("blog");
-  const cta = getBlogCta(post.slug);
-
   const title = getBlogField(post, language, "title");
+  const titleEs = getBlogField(post, "es", "title");
   const content = getBlogField(post, language, "content");
   const category = getBlogField(post, language, "category");
+  const cta = getBlogCta(post.slug, titleEs);
+  const waUrl = buildWhatsAppUrl(
+    `Hola! Leí el artículo "${titleEs}" y me gustaría cotizar un viaje.`,
+  );
 
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-slate-100 bg-slate-50">
         <div className="max-w-3xl mx-auto px-5 py-5 flex items-center justify-between gap-4">
           <Link href="/blog" className="inline-flex items-center gap-2 text-slate-500 hover:text-teal text-sm font-medium">
-            <ArrowLeft className="h-4 w-4" /> {b.back}
+            <ArrowLeft className="h-4 w-4" aria-hidden /> {b.back}
           </Link>
           <a
             href={INSTAGRAM_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-pink-600 hover:text-pink-700"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-pink-700 hover:text-pink-800"
+            aria-label="Instagram Universo Nómada"
           >
-            <Instagram className="h-3.5 w-3.5" /> @universo.nomadaa
+            <Instagram className="h-3.5 w-3.5" aria-hidden /> @universo.nomadaa
           </a>
         </div>
       </header>
 
       <article className="max-w-3xl mx-auto px-5 py-10">
-        <span className="text-teal text-xs font-semibold uppercase tracking-wider">{category}</span>
+        <span className="text-teal-dark text-xs font-semibold uppercase tracking-wider">{category}</span>
         <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">{title}</h1>
-        <div className="mt-4 flex items-center gap-2 text-slate-400 text-sm">
-          <Clock className="h-4 w-4" /> {post.readTime} min · {post.date}
+        <div className="mt-4 flex items-center gap-2 text-slate-500 text-sm">
+          <Clock className="h-4 w-4" aria-hidden /> {post.readTime} min · {post.date}
         </div>
 
         <div className="relative w-full h-64 sm:h-80 rounded-2xl overflow-hidden my-8">
@@ -55,16 +62,53 @@ export function BlogPostClient({ post }: Props) {
           ))}
         </div>
 
-        {cta && (
-          <aside className="mt-10 p-6 rounded-2xl border border-teal/20 bg-gradient-to-br from-teal/5 to-emerald-50">
-            <p className="text-slate-700 text-sm leading-relaxed mb-4">{cta.blurb}</p>
+        <aside className="mt-10 p-6 rounded-2xl border border-teal/20 bg-gradient-to-br from-teal/5 to-emerald-50">
+          <p className="text-slate-700 text-sm leading-relaxed mb-4">{cta.blurb}</p>
+          <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href={cta.href}
               className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl bg-teal hover:bg-teal/90 text-[#070f1a] font-bold text-sm transition-colors"
             >
               {cta.label}
             </Link>
-          </aside>
+            <a
+              href={waUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl border-2 border-slate-200 text-slate-800 font-bold text-sm hover:bg-white"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden />
+              Cotizar por WhatsApp
+            </a>
+          </div>
+        </aside>
+
+        {relatedPosts.length > 0 && (
+          <section aria-labelledby="related-posts" className="mt-12">
+            <h2 id="related-posts" className="text-xl font-bold text-slate-900 mb-4">
+              También te puede interesar
+            </h2>
+            <ul className="grid gap-4 sm:grid-cols-3 list-none p-0 m-0">
+              {relatedPosts.map((r) => (
+                <li key={r.slug}>
+                  <Link
+                    href={`/blog/${r.slug}`}
+                    className="group block rounded-xl border border-slate-200 overflow-hidden hover:border-teal/40 transition-colors"
+                  >
+                    <div className="relative h-28 w-full">
+                      <UploadAwareImage src={r.image} alt={r.title} fill className="object-cover" sizes="240px" />
+                    </div>
+                    <div className="p-3">
+                      <p className="text-sm font-semibold text-slate-900 leading-snug group-hover:text-teal line-clamp-2">
+                        {r.title}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">{r.readTime} min</p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         <div className="mt-10 p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
@@ -73,9 +117,9 @@ export function BlogPostClient({ post }: Props) {
             href={INSTAGRAM_PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 font-semibold text-pink-600 hover:text-pink-700 text-sm"
+            className="inline-flex items-center gap-2 font-semibold text-pink-700 hover:text-pink-800 text-sm"
           >
-            <Instagram className="h-4 w-4" /> @universo.nomadaa — {b.instagramCta}
+            <Instagram className="h-4 w-4" aria-hidden /> @universo.nomadaa — {b.instagramCta}
           </a>
         </div>
 

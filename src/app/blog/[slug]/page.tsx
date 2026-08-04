@@ -5,6 +5,11 @@ import { getBlogField } from "@/lib/blog-posts";
 import { BlogPostClient } from "@/components/blog/BlogPostClient";
 import { ArticleJsonLd } from "@/components/seo/ArticleJsonLd";
 import { absoluteUrl } from "@/lib/site-url";
+import {
+  blogSerpDescription,
+  blogSerpTitle,
+  getRelatedBlogPosts,
+} from "@/lib/related-blog-posts";
 
 export const dynamic = "force-dynamic";
 
@@ -26,26 +31,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Artículo no encontrado | Universo Nómada" };
   }
 
-  const title = getBlogField(post, "es", "title");
-  const description = getBlogField(post, "es", "excerpt");
+  const titleEs = getBlogField(post, "es", "title");
+  const excerpt = getBlogField(post, "es", "excerpt");
+  const title = blogSerpTitle(titleEs);
+  const description = blogSerpDescription(excerpt);
   const url = absoluteUrl(`/blog/${slug}`);
 
   return {
-    title: `${title} | Universo Nómada`,
+    title,
     description,
     alternates: { canonical: url },
     openGraph: {
-      title,
+      title: titleEs,
       description,
       url,
       type: "article",
       publishedTime: post.date,
       locale: "es_CL",
-      images: [{ url: absoluteUrl(post.image), alt: title }],
+      images: [{ url: absoluteUrl(post.image), alt: titleEs }],
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: titleEs,
       description,
       images: [absoluteUrl(post.image)],
     },
@@ -57,10 +64,18 @@ export default async function BlogPostPage({ params }: Props) {
   const post = await fetchBlogPostBySlug(slug);
   if (!post) notFound();
 
+  const related = await getRelatedBlogPosts(slug, 3);
+  const relatedPosts = related.map((p) => ({
+    slug: p.slug,
+    title: getBlogField(p, "es", "title"),
+    image: p.image,
+    readTime: p.readTime,
+  }));
+
   return (
     <>
       <ArticleJsonLd post={post} />
-      <BlogPostClient post={post} />
+      <BlogPostClient post={post} relatedPosts={relatedPosts} />
     </>
   );
 }

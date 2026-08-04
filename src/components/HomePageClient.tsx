@@ -44,6 +44,7 @@ import type { PromoCard } from "@/hooks/use-tours";
 import type { TourCardData } from "@/components/TourCard";
 import { GROUP_TOUR_META } from "@/lib/group-trips";
 import { scrollToHashFromLocation } from "@/lib/scroll-to-section";
+import { GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
 
 const WelcomeRegisterPopup = dynamic(
   () => import("@/components/WelcomeRegisterPopup").then((m) => ({ default: m.WelcomeRegisterPopup })),
@@ -1184,6 +1185,15 @@ export default function LandingPage({
                   <MessageCircle className="h-5 w-5" />
                 </a>
               </div>
+              <a
+                href={GOOGLE_REVIEWS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-teal hover:text-teal-dark transition-colors"
+              >
+                <Star className="h-4 w-4" aria-hidden />
+                Reseñas en Google
+              </a>
               <div className="mt-6 space-y-2 text-sm text-white/30">
                 <Link href="/politica-privacidad" className="block hover:text-teal transition-colors">
                   {t("footer").privacidad}
