@@ -7,7 +7,17 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/mi-cuenta", "/_next/", "/uploads/", "/offline"],
+        disallow: [
+          "/api/",
+          "/mi-cuenta",
+          "/_next/",
+          "/uploads/",
+          "/offline",
+          "/cotizacion-enviada",
+          "/reserva/",
+          "/ruleta",
+          "/recuperar",
+        ],
       },
       {
         userAgent: "GPTBot",

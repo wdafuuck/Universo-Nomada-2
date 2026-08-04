@@ -41,6 +41,14 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "prisma"],
   poweredByHeader: false,
   allowedDevOrigins: ["127.0.0.1", "localhost", "192.168.0.4"],
+  async redirects() {
+    return [
+      // Bots piden estos paths clásicos; Next sirve icon.png / apple-icon.png
+      { source: "/favicon.ico", destination: "/icon.png", permanent: true },
+      { source: "/apple-touch-icon.png", destination: "/apple-icon.png", permanent: true },
+      { source: "/apple-touch-icon-precomposed.png", destination: "/apple-icon.png", permanent: true },
+    ];
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

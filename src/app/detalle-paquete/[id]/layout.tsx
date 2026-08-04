@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
 import { DEFAULT_TOURS } from "@/lib/default-tours";
 import { getHubForTourId } from "@/lib/destination-hubs";
 import { ProductJsonLd } from "@/components/seo/ProductJsonLd";
@@ -9,16 +11,28 @@ import { tourKeywords } from "@/lib/seo-config";
 
 type Props = { params: Promise<{ id: string }>; children: React.ReactNode };
 
+async function tourExists(id: string): Promise<boolean> {
+  try {
+    const row = await db.tour.findUnique({
+      where: { tourId: id },
+      select: { active: true },
+    });
+    if (row) return row.active;
+    return false;
+  } catch {
+    return DEFAULT_TOURS.some((t) => t.tourId === id);
+  }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const tour = DEFAULT_TOURS.find((t) => t.tourId === id);
 
-  if (!tour) {
-    return pageMetadata({
-      path: `/detalle-paquete/${id}`,
-      title: "Paquete turístico | Universo Nómada®",
-      description: "Paquete de viaje con Universo Nómada® — agencia boutique en Chile.",
-    });
+  if (!tour || !(await tourExists(id))) {
+    return {
+      title: "Paquete no encontrado | Universo Nómada®",
+      robots: { index: false, follow: false },
+    };
   }
 
   const desde = tour.price.toLocaleString("es-CL");
@@ -34,6 +48,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DetallePaqueteLayout({ children, params }: Props) {
   const { id } = await params;
+  if (!(await tourExists(id))) notFound();
+
   const tour = DEFAULT_TOURS.find((t) => t.tourId === id);
   const hub = getHubForTourId(id);
 
