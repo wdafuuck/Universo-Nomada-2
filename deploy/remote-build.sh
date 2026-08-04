@@ -126,12 +126,14 @@ chmod a+rx /var/www/universo-nomada /var/www/universo-nomada/public 2>/dev/null 
 chmod -R a+rX public/uploads 2>/dev/null || true
 
 echo "==> Permisos app user (standalone writable)"
-# systemd corre como universo-nomada; el build suele ser root → sin esto: EACCES en .next/cache
-# y la home queda con secciones vacías / ISR roto.
+# systemd corre como universo-nomada; rsync desde Mac deja dueño 501:staff → EACCES
+# en uploads (blog/hero) y en .next/cache (home vacía).
 if id universo-nomada >/dev/null 2>&1; then
-  mkdir -p .next/standalone/.next/cache
+  mkdir -p .next/standalone/.next/cache public/uploads
   chown -R universo-nomada:universo-nomada .next || true
-  chown -R universo-nomada:universo-nomada public/uploads 2>/dev/null || true
+  # public/ entero: si solo uploads es del app user pero public es 501, mkdir uploads falla
+  chown -R universo-nomada:universo-nomada public || true
+  chmod u+rwX public public/uploads 2>/dev/null || true
 fi
 
 echo "==> Permisos scripts"

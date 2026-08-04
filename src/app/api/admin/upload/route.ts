@@ -87,6 +87,19 @@ export async function POST(request: NextRequest) {
     });
   } catch (e) {
     console.error("[admin/upload]", e);
-    return NextResponse.json({ error: "Error al subir archivo" }, { status: 500 });
+    const detail = e instanceof Error ? e.message : "Error al subir archivo";
+    const isPerm =
+      detail.includes("EACCES") ||
+      detail.includes("permission") ||
+      detail.includes("No se puede escribir");
+    return NextResponse.json(
+      {
+        error: isPerm
+          ? "Sin permiso para guardar imágenes en el servidor. Avisa a soporte (uploads)."
+          : "Error al subir archivo",
+        detail: process.env.NODE_ENV === "development" ? detail : undefined,
+      },
+      { status: 500 },
+    );
   }
 }

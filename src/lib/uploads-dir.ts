@@ -1,5 +1,5 @@
 import path from "path";
-import { mkdir } from "fs/promises";
+import { access, constants, mkdir } from "fs/promises";
 
 /**
  * Directorio persistente de uploads.
@@ -21,7 +21,20 @@ export function getUploadsDir(): string {
 
 export async function ensureUploadsDir(): Promise<string> {
   const dir = getUploadsDir();
-  await mkdir(dir, { recursive: true });
+  try {
+    await mkdir(dir, { recursive: true });
+  } catch (err) {
+    // Carpeta ya existe pero el padre (public/) no es escribible → mkdir falla.
+    // Si igual podemos escribir dentro, seguimos.
+    try {
+      await access(dir, constants.W_OK);
+    } catch {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `No se puede escribir en uploads (${dir}). Revisar dueño/permisos: ${msg}`,
+      );
+    }
+  }
   return dir;
 }
 
