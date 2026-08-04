@@ -26,9 +26,9 @@ export const zhTranslations = {
   },
   hero: {
     badge: '',
-    line1: '不仅是旅行，',
-    line2: '更是改变人生的体验',
-    subtitle: '我们打造真实而个性化的冒险之旅，在每个目的地连接文化、自然与探索。',
+    line1: '把旅程变成',
+    line2: '一生难忘的故事',
+    subtitle: '与专业团队安全舒适地探索南美，献给想要超越普通观光的旅行者。',
     ctaWhatsapp: '查看套餐',
     ctaPlan: '免费获取报价',
     scroll: '探索目的地',

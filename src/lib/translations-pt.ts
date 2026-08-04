@@ -28,9 +28,10 @@ export const ptTranslations = {
   },
   hero: {
     badge: '',
-    line1: 'Mais que viagens,',
-    line2: 'experiências que transformam',
-    subtitle: 'Criamos aventuras autênticas e personalizadas que conectam cultura, natureza e descoberta em cada destino.',
+    line1: 'Viagens que se transformam',
+    line2: 'em histórias para a vida toda',
+    subtitle:
+      'Explore a América do Sul com especialistas, com segurança e conforto, para viajantes que buscam mais do que turismo.',
     ctaWhatsapp: 'Ver pacotes',
     ctaPlan: 'Cotação gratuita',
     scroll: 'Explorar destinos',

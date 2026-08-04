@@ -38,9 +38,10 @@ export const translations = {
     },
     hero: {
       badge: '',
-      line1: 'Más que viajes,',
-      line2: 'experiencias que transforman',
-      subtitle: 'Creamos aventuras auténticas y personalizadas que conectan cultura, naturaleza y descubrimiento en cada destino.',
+      line1: 'Viajes que convierten',
+      line2: 'en historias para toda la vida',
+      subtitle:
+        'Explora Sudamérica con expertos de forma segura y cómoda, para viajeros que buscan algo más que turismo.',
       ctaWhatsapp: 'Ver paquetes',
       ctaPlan: 'Cotizar mi viaje gratis',
       scroll: 'Explorar destinos',
@@ -548,9 +549,10 @@ export const translations = {
     },
     hero: {
       badge: '',
-      line1: 'More than trips,',
-      line2: 'experiences that transform',
-      subtitle: 'We create authentic, personalized adventures that connect culture, nature and discovery at every destination.',
+      line1: 'Trips that turn into',
+      line2: 'stories for a lifetime',
+      subtitle:
+        'Explore South America with experts — safely and comfortably — for travelers who want more than tourism.',
       ctaWhatsapp: 'View packages',
       ctaPlan: 'Get free quote',
       scroll: 'Explore destinations',
@@ -990,9 +992,10 @@ export const translations = {
     },
     hero: {
       badge: '',
-      line1: 'Plus que des voyages,',
-      line2: 'des expériences qui transforment',
-      subtitle: 'Nous créons des aventures authentiques et personnalisées qui relient culture, nature et découverte à chaque destination.',
+      line1: 'Des voyages qui deviennent',
+      line2: 'des histoires pour la vie',
+      subtitle:
+        'Explorez l’Amérique du Sud avec des experts, en toute sécurité et confort, pour les voyageurs qui cherchent plus que du tourisme.',
       ctaWhatsapp: 'Voir les forfaits',
       ctaPlan: 'Devis gratuit',
       scroll: 'Explorer les destinations',
