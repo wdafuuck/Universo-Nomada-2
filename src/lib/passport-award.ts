@@ -10,6 +10,7 @@ import {
   type EarnedBadge,
   type PassportBadgeDef,
 } from "@/lib/passport-badges";
+import { sendPassportBadgeEmail } from "@/lib/email/passport-badge-email";
 
 async function loadActiveBadgeDefs(): Promise<PassportBadgeDef[]> {
   const rows = await db.passportBadge.findMany({
@@ -21,16 +22,18 @@ async function loadActiveBadgeDefs(): Promise<PassportBadgeDef[]> {
 
 /**
  * Persiste insignias ganadas según viajes pasados del usuario.
- * Idempotente (unique userId+badgeId).
+ * Idempotente (unique userId+badgeId). Envía correo si hay nuevas.
  */
 export async function syncPassportBadgesForUser(
   userId: string,
   email: string,
+  opts?: { sendEmail?: boolean; customerName?: string },
 ): Promise<{
   earned: EarnedBadge[];
   locked: PassportBadgeDef[];
   newlyAwarded: EarnedBadge[];
   totalPastTrips: number;
+  emailSent: boolean;
 }> {
   const definitions = await loadActiveBadgeDefs();
   const trips = await fetchMemberTripsForUser(userId, email);
@@ -71,6 +74,25 @@ export async function syncPassportBadgesForUser(
     }
   }
 
+  let emailSent = false;
+  if (newlyAwarded.length > 0 && opts?.sendEmail !== false) {
+    try {
+      const user = await db.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true },
+      });
+      const name = opts?.customerName || user?.name || email.split("@")[0] || "Viajero";
+      const result = await sendPassportBadgeEmail({
+        to: email,
+        customerName: name,
+        badges: newlyAwarded,
+      });
+      emailSent = Boolean(result.ok);
+    } catch (e) {
+      console.error("[passport-award] email", e);
+    }
+  }
+
   const persisted = await db.userPassportBadge.findMany({
     where: { userId },
     include: { badge: true },
@@ -88,7 +110,7 @@ export async function syncPassportBadgesForUser(
   const earnedIds = new Set(earned.map((b) => b.id));
   const locked = definitions.filter((b) => !earnedIds.has(b.id));
 
-  return { earned, locked, newlyAwarded, totalPastTrips: eligible.length };
+  return { earned, locked, newlyAwarded, totalPastTrips: eligible.length, emailSent };
 }
 
 /**

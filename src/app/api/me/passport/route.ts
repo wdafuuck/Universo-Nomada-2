@@ -12,6 +12,7 @@ export async function GET() {
     const { earned, locked, newlyAwarded, totalPastTrips } = await syncPassportBadgesForUser(
       user.id,
       user.email,
+      { sendEmail: false }, // el correo lo envía el cron / admin al otorgar
     );
 
     return NextResponse.json({

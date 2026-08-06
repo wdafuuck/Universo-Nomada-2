@@ -58,6 +58,26 @@ function norm(s: string): string {
     .trim();
 }
 
+const STOP = new Set([
+  "del",
+  "de",
+  "la",
+  "las",
+  "el",
+  "los",
+  "y",
+  "the",
+  "and",
+  "san",
+  "santa",
+]);
+
+function significantTokens(s: string): string[] {
+  return norm(s)
+    .split(" ")
+    .filter((t) => t.length >= 4 && !STOP.has(t));
+}
+
 /** Texto del viaje + tourIds del cart (si vienen en cartJson). */
 export function collectTripText(trip: MemberTrip, cartJson?: string | null): string {
   const parts = [trip.destino ?? "", ...trip.items.map((i) => i.tourName)];
@@ -83,7 +103,9 @@ export function badgeMatchesTrip(
   cartJson?: string | null,
 ): boolean {
   const haystack = collectTripText(trip, cartJson);
-  const terms = [
+  if (!haystack) return false;
+
+  const phrases = [
     badge.slug,
     badge.destination,
     badge.name,
@@ -92,7 +114,16 @@ export function badgeMatchesTrip(
     .map(norm)
     .filter((t) => t.length >= 3);
 
-  return terms.some((term) => haystack.includes(term));
+  // Frase completa (ej. "rapa nui")
+  if (phrases.some((term) => haystack.includes(term))) return true;
+
+  // Tokens significativos (ej. insignia "Cataratas del Iguazú" ↔ viaje "Iguazú 5D/4N")
+  const badgeTokens = new Set<string>();
+  for (const p of phrases) {
+    for (const tok of significantTokens(p)) badgeTokens.add(tok);
+  }
+  const tripTokens = significantTokens(haystack);
+  return tripTokens.some((t) => badgeTokens.has(t));
 }
 
 /** Viajes que cuentan para insignias (pasados y no cancelados). */
