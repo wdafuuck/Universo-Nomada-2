@@ -464,6 +464,12 @@ export function MemberAccountView() {
         const passportData = await passportRes.json();
         setEarnedBadges(passportData.earned ?? []);
         setLockedBadges(passportData.locked ?? []);
+        const newly = (passportData.newlyAwarded ?? []) as EarnedBadge[];
+        if (newly.length === 1) {
+          toast.success(`¡Nueva insignia desbloqueada: ${newly[0].emoji} ${newly[0].name}!`);
+        } else if (newly.length > 1) {
+          toast.success(`¡Desbloqueaste ${newly.length} insignias nuevas en tu pasaporte!`);
+        }
       }
     } catch {
       toast.error("Error cargando tu cuenta");

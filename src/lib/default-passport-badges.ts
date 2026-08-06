@@ -6,7 +6,13 @@ export const DEFAULT_PASSPORT_BADGES = [
     description: "Has explorado el ombligo del mundo",
     image: "",
     emoji: "🗿",
-    matchTerms: JSON.stringify(["rapa nui", "isla de pascua", "easter island"]),
+    matchTerms: JSON.stringify([
+      "rapa nui",
+      "rapa-nui",
+      "group-rapa-nui",
+      "isla de pascua",
+      "easter island",
+    ]),
     sortOrder: 1,
   },
   {
@@ -16,7 +22,15 @@ export const DEFAULT_PASSPORT_BADGES = [
     description: "Aventura bajo las estrellas del desierto más árido",
     image: "",
     emoji: "🏜️",
-    matchTerms: JSON.stringify(["atacama", "san pedro"]),
+    matchTerms: JSON.stringify([
+      "atacama",
+      "san pedro",
+      "san-pedro-uyuni",
+      "group-atacama",
+      "group-uyuni",
+      "region-atacama",
+      "uyuni",
+    ]),
     sortOrder: 2,
   },
   {
@@ -26,7 +40,13 @@ export const DEFAULT_PASSPORT_BADGES = [
     description: "Glaciares y naturaleza extrema",
     image: "",
     emoji: "🏔️",
-    matchTerms: JSON.stringify(["patagonia", "torres del paine", "punta arenas"]),
+    matchTerms: JSON.stringify([
+      "patagonia",
+      "torres del paine",
+      "punta arenas",
+      "catedrales-marmol",
+      "catedrales",
+    ]),
     sortOrder: 3,
   },
   {
@@ -36,7 +56,14 @@ export const DEFAULT_PASSPORT_BADGES = [
     description: "La ciudadela inca te esperó",
     image: "",
     emoji: "⛰️",
-    matchTerms: JSON.stringify(["machu picchu", "cusco", "peru", "perú"]),
+    matchTerms: JSON.stringify([
+      "machu picchu",
+      "machu-picchu",
+      "cusco-machupicchu",
+      "cusco",
+      "peru",
+      "perú",
+    ]),
     sortOrder: 4,
   },
   {
@@ -46,7 +73,13 @@ export const DEFAULT_PASSPORT_BADGES = [
     description: "Cielos estrellados y pisco",
     image: "",
     emoji: "✨",
-    matchTerms: JSON.stringify(["elqui", "la serena", "coquimbo"]),
+    matchTerms: JSON.stringify([
+      "elqui",
+      "ballenas-elqui",
+      "la serena",
+      "coquimbo",
+      "vicuna",
+    ]),
     sortOrder: 5,
   },
 ];

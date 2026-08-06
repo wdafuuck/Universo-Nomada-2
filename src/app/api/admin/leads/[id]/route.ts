@@ -134,6 +134,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     });
   }
 
+  const finalStatus = String((await db.lead.findUnique({ where: { id: leadId }, select: { status: true } }))?.status ?? lead.status);
+  if (finalStatus === "viajo" || body.status === "viajo") {
+    try {
+      const { awardBadgesForLeadId } = await import("@/lib/passport-award");
+      await awardBadgesForLeadId(leadId);
+    } catch (e) {
+      console.error("[admin/leads] passport award", e);
+    }
+  }
+
   const fresh = await db.lead.findUnique({
     where: { id: leadId },
     include: {

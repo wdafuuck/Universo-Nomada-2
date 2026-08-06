@@ -1,4 +1,5 @@
 import type { MemberTrip } from "@/lib/member-trips";
+import { isCancelledStatus } from "@/lib/reservation-payment";
 
 export type PassportBadgeDef = {
   id: number;
@@ -47,39 +48,74 @@ export function badgeFromRow(row: {
   };
 }
 
-function collectTripText(trip: MemberTrip): string {
-  const parts = [trip.destino ?? "", ...trip.items.map((i) => i.tourName)];
-  return parts.join(" ").toLowerCase();
+function norm(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function badgeMatchesTrip(badge: PassportBadgeDef, trip: MemberTrip): boolean {
-  const haystack = collectTripText(trip);
+/** Texto del viaje + tourIds del cart (si vienen en cartJson). */
+export function collectTripText(trip: MemberTrip, cartJson?: string | null): string {
+  const parts = [trip.destino ?? "", ...trip.items.map((i) => i.tourName)];
+  if (cartJson) {
+    try {
+      const raw = JSON.parse(cartJson) as { tourId?: string; tourName?: string }[];
+      if (Array.isArray(raw)) {
+        for (const item of raw) {
+          if (item.tourId) parts.push(item.tourId);
+          if (item.tourName) parts.push(item.tourName);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return norm(parts.join(" "));
+}
+
+export function badgeMatchesTrip(
+  badge: PassportBadgeDef,
+  trip: MemberTrip,
+  cartJson?: string | null,
+): boolean {
+  const haystack = collectTripText(trip, cartJson);
   const terms = [
-    badge.slug.replace(/-/g, " "),
-    badge.destination.toLowerCase(),
-    badge.name.toLowerCase(),
-    ...badge.matchTerms.map((t) => t.toLowerCase()),
-  ].filter(Boolean);
+    badge.slug,
+    badge.destination,
+    badge.name,
+    ...badge.matchTerms,
+  ]
+    .map(norm)
+    .filter((t) => t.length >= 3);
 
   return terms.some((term) => haystack.includes(term));
+}
+
+/** Viajes que cuentan para insignias (pasados y no cancelados). */
+export function tripsEligibleForBadges(trips: MemberTrip[]): MemberTrip[] {
+  return trips.filter((t) => t.isPast && !isCancelledStatus(t.status));
 }
 
 export function computeEarnedBadges(
   badges: PassportBadgeDef[],
   pastTrips: MemberTrip[],
+  cartJsonByLeadId?: Record<string, string | null>,
 ): EarnedBadge[] {
   const earned: EarnedBadge[] = [];
-  const seen = new Set<string>();
+  const seenBadge = new Set<number>();
 
-  for (const trip of pastTrips) {
-    if (!trip.isPast) continue;
+  for (const trip of tripsEligibleForBadges(pastTrips)) {
     const earnedAt = trip.tripEndDate ?? trip.checkOut ?? trip.leadId;
+    const cartJson = cartJsonByLeadId?.[trip.leadId] ?? null;
 
     for (const badge of badges) {
-      const key = `${badge.slug}:${trip.leadId}`;
-      if (seen.has(key)) continue;
-      if (!badgeMatchesTrip(badge, trip)) continue;
-      seen.add(key);
+      if (seenBadge.has(badge.id)) continue;
+      if (!badgeMatchesTrip(badge, trip, cartJson)) continue;
+      seenBadge.add(badge.id);
       earned.push({
         ...badge,
         earnedAt,

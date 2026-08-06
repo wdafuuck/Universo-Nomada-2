@@ -36,6 +36,7 @@ model User {
   leads           Lead[]    @relation("LeadOwner")
   assignedLeads   Lead[]    @relation("LeadAssignee")
   leadNotes       LeadNote[]
+  passportBadges  UserPassportBadge[]
 
   @@index([tenantId])
 }
@@ -100,8 +101,25 @@ model PassportBadge {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  awards      UserPassportBadge[]
 
   @@index([tenantId])
+}
+
+/** Insignia ganada por un miembro al completar un viaje. */
+model UserPassportBadge {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   Int
+  badge     PassportBadge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  leadId    Int?
+  earnedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
 }
 
 model Post {

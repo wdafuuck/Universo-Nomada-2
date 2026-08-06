@@ -2,11 +2,12 @@
 # Ejecuta un cron de la app leyendo CRON_SECRET desde .env (no desde crontab).
 # Uso: deploy/run-cron-job.sh abandoned-cart
 #      deploy/run-cron-job.sh cleanup-trip-documents
+#      deploy/run-cron-job.sh passport-badges
 set -euo pipefail
 
 JOB="${1:-}"
 if [[ -z "$JOB" ]]; then
-  echo "uso: $0 <abandoned-cart|cleanup-trip-documents>" >&2
+  echo "uso: $0 <abandoned-cart|cleanup-trip-documents|passport-badges>" >&2
   exit 1
 fi
 
@@ -30,6 +31,9 @@ case "$JOB" in
     ;;
   cleanup-trip-documents)
     PATH_JOB=/api/cron/cleanup-trip-documents
+    ;;
+  passport-badges)
+    PATH_JOB=/api/cron/passport-badges
     ;;
   *)
     echo "job desconocido: $JOB" >&2
