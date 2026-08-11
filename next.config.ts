@@ -60,15 +60,15 @@ const nextConfig: NextConfig = {
         ],
       },
       /**
-       * HTML de páginas: NO usar el SWR de ~1 año que pone ISR (rompe CSS/JS
-       * hasheados tras un deploy → página en blanco / “Saltar al contenido” visible).
+       * HTML: s-maxage corto (no el SWR de ~1 año de ISR) para no servir
+       * HTML viejo con CSS/JS hasheados rotos tras deploy.
        */
       {
         source: "/",
         headers: [
           {
             key: "Cache-Control",
-            value: "private, no-cache, no-store, must-revalidate, max-age=0",
+            value: "public, max-age=0, s-maxage=30, stale-while-revalidate=120",
           },
         ],
       },
@@ -96,7 +96,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=86400, s-maxage=604800",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
@@ -105,7 +105,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Cache-Control",
-            value: "private, no-cache, must-revalidate, max-age=0",
+            value: "public, max-age=0, s-maxage=30, stale-while-revalidate=120",
           },
         ],
       },
@@ -116,7 +116,7 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [64, 96, 128, 256, 384],
-    qualities: [60, 68, 72, 75, 80, 85],
+    qualities: [48, 60, 62, 68, 72, 75, 80, 85],
     minimumCacheTTL: 60 * 60 * 24 * 30,
     remotePatterns: [
       { protocol: "https", hostname: "ui-avatars.com" },

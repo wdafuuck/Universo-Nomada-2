@@ -77,7 +77,7 @@ function GroupTripsComingSoon({ g }: { g: Record<string, string> }) {
                 href={waUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 w-full min-h-[48px] px-5 rounded-full bg-[#25D366] hover:bg-[#1fb855] text-white font-bold text-sm shadow-lg shadow-emerald-900/20 transition-colors"
+                className="inline-flex items-center justify-center gap-2 w-full min-h-[48px] px-5 rounded-full bg-[#0E6B5C] hover:bg-[#0a5247] text-white font-bold text-sm shadow-lg shadow-emerald-900/20 transition-colors"
               >
                 <MessageCircle className="h-5 w-5 shrink-0" />
                 <span className="leading-tight text-center">{text("comingSoonNotify")}</span>
@@ -148,11 +148,11 @@ export function GroupTripsSection({ tourList, groupTourMeta }: Props) {
               showComingSoon ? "mb-8 sm:mb-9" : "mb-10 sm:mb-12"
             }`}
           >
-            <span className="inline-block bg-teal text-white font-bold text-xs px-4 py-1.5 rounded-full uppercase tracking-wider">
+            <span className="inline-block bg-teal text-[#070f1a] font-bold text-xs px-4 py-1.5 rounded-full uppercase tracking-wider">
               {g.title}
             </span>
             <h2 className="mt-4 text-3xl sm:text-4xl font-black text-white tracking-tight">{g.subtitle}</h2>
-            <p className="mt-4 text-white/65 text-lg max-w-xl mx-auto leading-relaxed">{g.description}</p>
+            <p className="mt-4 text-white/80 text-lg max-w-xl mx-auto leading-relaxed">{g.description}</p>
           </div>
         </GravityReveal>
 

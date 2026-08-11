@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import { DEFAULT_HERO_SLIDES } from "@/lib/default-hero-slides";
 import { DEFAULT_TOURS } from "@/lib/default-tours";
@@ -47,32 +48,40 @@ async function ensureLandingSeeded() {
   }
 }
 
+async function loadLandingInitialData(): Promise<LandingInitialData> {
+  await ensureLandingSeeded();
+
+  const [slides, tours, activeGroupIds] = await Promise.all([
+    db.heroSlide.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+      select: { imageUrl: true },
+    }),
+    db.tour.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+    }),
+    getActiveGroupTourIds(),
+  ]);
+
+  const visible = filterToursByGroupVisibility(tours, activeGroupIds);
+  const ofertas = tours.filter((t) => t.showInOfertas).map(tourToPromoCard);
+
+  return {
+    heroImages: slides.map((s) => s.imageUrl).filter(Boolean),
+    tours: visible.map((t) => mapTourToCard(toPublicTour(t))),
+    promotions: ofertas,
+  };
+}
+
+const cachedLanding = unstable_cache(loadLandingInitialData, ["landing-initial-v1"], {
+  revalidate: 30,
+});
+
 /** Datos reales de DB para el primer paint (sin flash de defaults client-side). */
 export async function getLandingInitialData(): Promise<LandingInitialData> {
   try {
-    await ensureLandingSeeded();
-
-    const [slides, tours, activeGroupIds] = await Promise.all([
-      db.heroSlide.findMany({
-        where: { active: true },
-        orderBy: { sortOrder: "asc" },
-        select: { imageUrl: true },
-      }),
-      db.tour.findMany({
-        where: { active: true },
-        orderBy: { sortOrder: "asc" },
-      }),
-      getActiveGroupTourIds(),
-    ]);
-
-    const visible = filterToursByGroupVisibility(tours, activeGroupIds);
-    const ofertas = tours.filter((t) => t.showInOfertas).map(tourToPromoCard);
-
-    return {
-      heroImages: slides.map((s) => s.imageUrl).filter(Boolean),
-      tours: visible.map((t) => mapTourToCard(toPublicTour(t))),
-      promotions: ofertas,
-    };
+    return await cachedLanding();
   } catch (err) {
     console.error("[landing] getLandingInitialData failed:", err);
     return { heroImages: [], tours: [], promotions: [] };

@@ -3,13 +3,22 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-session";
 
 export async function GET(request: NextRequest) {
-  const key = request.nextUrl.searchParams.get("key");
-  if (!key) {
-    return NextResponse.json({ error: "key requerido" }, { status: 400 });
+  try {
+    const key = request.nextUrl.searchParams.get("key");
+    if (!key) {
+      return NextResponse.json({ error: "key requerido" }, { status: 400 });
+    }
+    const row = await db.siteContent.findUnique({ where: { key } });
+    if (!row) return NextResponse.json({ content: null });
+    try {
+      return NextResponse.json({ content: JSON.parse(row.json) });
+    } catch {
+      return NextResponse.json({ content: null });
+    }
+  } catch (err) {
+    console.error("[site-content GET]", err);
+    return NextResponse.json({ content: null });
   }
-  const row = await db.siteContent.findUnique({ where: { key } });
-  if (!row) return NextResponse.json({ content: null });
-  return NextResponse.json({ content: JSON.parse(row.json) });
 }
 
 export async function PUT(request: NextRequest) {

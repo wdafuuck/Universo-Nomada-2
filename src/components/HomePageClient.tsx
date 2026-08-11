@@ -680,12 +680,12 @@ export default function LandingPage({
                 whileTap={{ scale: 0.92 }}
                 transition={gravitySpring}
                 onClick={openCart}
-                className="relative p-2 text-white/80 hover:text-teal hover:bg-white/5 rounded-xl transition-all shrink-0"
+                className="relative flex min-h-11 min-w-11 items-center justify-center text-white/90 hover:text-teal hover:bg-white/5 rounded-xl transition-all shrink-0"
                 aria-label={t("cart").myCart}
               >
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-teal text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 bg-teal text-[#070f1a] text-[10px] font-bold rounded-full min-h-5 min-w-5 px-1 flex items-center justify-center">
                     {cartCount}
                   </span>
                 )}
@@ -712,7 +712,10 @@ export default function LandingPage({
                 </Button>
               )}
               <Select value={language} onValueChange={(value: "es" | "en" | "fr" | "zh" | "pt") => setLanguage(value)}>
-                <SelectTrigger className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-full px-2.5 h-9 text-xs w-auto shrink-0">
+                <SelectTrigger
+                  aria-label="Idioma"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-full px-2.5 min-h-11 h-11 text-xs w-auto shrink-0"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-600 text-white">
@@ -723,7 +726,7 @@ export default function LandingPage({
                   <SelectItem value="zh">🇨🇳 中文</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} size="sm" variant="ghost" className="lg:hidden text-white shrink-0" aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={mobileMenuOpen}>
+              <Button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} size="sm" variant="ghost" className="lg:hidden text-white shrink-0 min-h-11 min-w-11" aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={mobileMenuOpen}>
                 <Menu className="h-5 w-5" />
               </Button>
             </div>
@@ -777,7 +780,7 @@ export default function LandingPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <FadeIn>
             <div className="text-center mb-12">
-              <span className="bg-rose-500 text-white text-sm font-bold px-4 py-2 rounded-full shadow-md pulse-glow">{t('discounts').exclusive}</span>
+              <span className="bg-rose-700 text-white text-sm font-bold px-4 py-2 rounded-full shadow-md pulse-glow">{t('discounts').exclusive}</span>
               <h2 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">{t('discounts').title}</h2>
               <p className="mt-4 text-slate-600 text-lg max-w-xl mx-auto">{t('discounts').subtitle}</p>
             </div>
@@ -869,10 +872,11 @@ export default function LandingPage({
                     ) : null}
                     {promo.validUntil ? <PromoUrgency validUntil={promo.validUntil} spotsLeft={i === 0 ? 5 : undefined} /> : null}
                     <div className={`flex flex-col gap-2 mt-3 ${solo ? "sm:flex-row" : ""}`} onClick={(e) => e.stopPropagation()}>
-                      <Link href={`/detalle-paquete/${resolvePromoTourId(promo, i)}`} className="block flex-1">
-                        <button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl px-4 py-3 text-sm transition-all w-full min-h-[44px] shadow-md shadow-emerald-500/20">
-                          {t("discounts").verDetalles}
-                        </button>
+                      <Link
+                        href={`/detalle-paquete/${resolvePromoTourId(promo, i)}`}
+                        className="flex flex-1 items-center justify-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl px-4 py-3 text-sm transition-all min-h-[44px] shadow-md shadow-emerald-500/20"
+                      >
+                        {t("discounts").verDetalles}
                       </Link>
                       <div className="flex-1">
                         <AddToCartButton
@@ -930,7 +934,7 @@ export default function LandingPage({
                 <button
                   type="button"
                   onClick={() => setDestinationSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full min-h-11 min-w-11 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                   aria-label={dest.searchClear}
                 >
                   <X className="h-4 w-4" />
@@ -944,7 +948,7 @@ export default function LandingPage({
               {filterKeys.map((key) => (
                 <button key={key} onClick={() => setActiveFilter(key)}
                   className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all min-h-[44px] ${
-                    activeFilter === key ? "bg-teal text-white shadow-lg shadow-teal/30" : "bg-white text-slate-600 border border-slate-200 hover:border-teal"}`}>
+                    activeFilter === key ? "bg-teal text-[#070f1a] shadow-lg shadow-teal/30" : "bg-white text-slate-700 border border-slate-200 hover:border-teal"}`}>
                   {key === "todos" ? dest.todos :
                    key === "nacional" ? dest.nacional :
                    key === "internacional" ? dest.internacional :
@@ -963,7 +967,7 @@ export default function LandingPage({
                   <button
                     type="button"
                     onClick={() => setDestinationSearch("")}
-                    className="mt-4 text-sm font-semibold text-teal hover:underline"
+                    className="mt-4 text-sm font-semibold text-teal-ink hover:underline"
                   >
                     {dest.searchClear}
                   </button>
@@ -1013,7 +1017,7 @@ export default function LandingPage({
           >
             <motion.div variants={gravityDrop}>
               <div>
-                <span className="text-teal font-semibold text-sm uppercase tracking-[0.2em]">{t("contacto").title}</span>
+                <span className="text-teal-ink font-semibold text-sm uppercase tracking-[0.2em]">{t("contacto").title}</span>
                 <h2 className="mt-3 text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{t("contacto").subtitle}</h2>
                 <p className="mt-4 text-slate-600 text-lg leading-relaxed">{t("contacto").description}</p>
                 <div className="mt-8 space-y-4">
@@ -1118,47 +1122,47 @@ export default function LandingPage({
                   <span className="text-xs font-bold text-teal tracking-[0.2em] leading-none">NOMADA®</span>
                 </div>
               </div>
-              <p className="text-white/40 text-sm leading-relaxed max-w-xs">{t("footer").tagline}</p>
+              <p className="text-white/75 text-sm leading-relaxed max-w-xs">{t("footer").tagline}</p>
             </div>
             <div>
-              <h4 className="text-white font-bold mb-5 text-sm uppercase tracking-wider">{t("footer").contacto}</h4>
+              <p className="text-white font-bold mb-5 text-sm uppercase tracking-wider">{t("footer").contacto}</p>
               <ul className="space-y-3 text-sm">
-                <li className="flex items-center gap-2.5 text-white/50 hover:text-teal transition-colors">
-                  <Mail className="h-4 w-4 text-teal shrink-0" /><a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+                <li className="flex items-center gap-2.5 text-white/80 hover:text-teal transition-colors">
+                  <Mail className="h-4 w-4 text-teal shrink-0" aria-hidden /><a href={`mailto:${EMAIL}`}>{EMAIL}</a>
                 </li>
-                <li className="flex items-center gap-2.5 text-white/50 hover:text-teal transition-colors">
-                  <Phone className="h-4 w-4 text-teal shrink-0" /><a href="https://wa.me/56974636396" target="_blank" rel="noopener noreferrer">+56 9 7463 6396</a>
+                <li className="flex items-center gap-2.5 text-white/80 hover:text-teal transition-colors">
+                  <Phone className="h-4 w-4 text-teal shrink-0" aria-hidden /><a href="https://wa.me/56974636396" target="_blank" rel="noopener noreferrer">+56 9 7463 6396</a>
                 </li>
-                <li className="flex items-center gap-2.5 text-white/50 hover:text-teal transition-colors">
-                  <Phone className="h-4 w-4 text-teal shrink-0" /><a href="https://wa.me/56974841303" target="_blank" rel="noopener noreferrer">+56 9 7484 1303</a>
+                <li className="flex items-center gap-2.5 text-white/80 hover:text-teal transition-colors">
+                  <Phone className="h-4 w-4 text-teal shrink-0" aria-hidden /><a href="https://wa.me/56974841303" target="_blank" rel="noopener noreferrer">+56 9 7484 1303</a>
                 </li>
-                <li className="flex items-center gap-2.5 text-white/50 hover:text-blue-400 transition-colors">
+                <li className="flex items-center gap-2.5 text-white/80 hover:text-blue-400 transition-colors">
                   <svg className="h-4 w-4 text-blue-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
                   <a href="https://web.facebook.com/profile.php?id=61560104283524" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400">Facebook</a>
                 </li>
-                <li className="flex items-start gap-2.5 text-white/50">
-                  <MapPin className="h-4 w-4 text-teal shrink-0 mt-0.5" /><span>{t("location")}</span>
+                <li className="flex items-start gap-2.5 text-white/80">
+                  <MapPin className="h-4 w-4 text-teal shrink-0 mt-0.5" aria-hidden /><span>{t("location")}</span>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-bold mb-5 text-sm uppercase tracking-wider">{t("footer").destinos}</h4>
+              <p className="text-white font-bold mb-5 text-sm uppercase tracking-wider">{t("footer").destinos}</p>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link href="/viajes" className="text-teal/90 hover:text-teal font-semibold transition-colors">
+                  <Link href="/viajes" className="text-teal font-semibold transition-colors hover:underline">
                     Todos los destinos
                   </Link>
                 </li>
                 <li>
-                  <Link href="/viajes/chile" className="text-white/50 hover:text-teal transition-colors">
+                  <Link href="/viajes/chile" className="text-white/80 hover:text-teal transition-colors">
                     Viajes a Chile
                   </Link>
                 </li>
                 {destinations.slice(0, 6).map((d) => (
                   <li key={d.name}>
-                    <Link href={`/detalle-paquete/${d.id}`} className="text-white/50 hover:text-teal transition-colors">
+                    <Link href={`/detalle-paquete/${d.id}`} className="text-white/80 hover:text-teal transition-colors">
                       {d.name}
                     </Link>
                   </li>
@@ -1166,7 +1170,7 @@ export default function LandingPage({
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-bold mb-5 text-sm uppercase tracking-wider">{t("footer").siguenos}</h4>
+              <p className="text-white font-bold mb-5 text-sm uppercase tracking-wider">{t("footer").siguenos}</p>
               <div className="flex flex-wrap items-center gap-3">
                 <a href="https://www.instagram.com/universo.nomadaa/" target="_blank" rel="noopener noreferrer"
                   className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 text-white transition-all duration-300" aria-label="Instagram">
@@ -1189,12 +1193,12 @@ export default function LandingPage({
                 href={GOOGLE_REVIEWS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-teal hover:text-teal-dark transition-colors"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-teal hover:underline transition-colors"
               >
                 <Star className="h-4 w-4" aria-hidden />
                 Reseñas en Google
               </a>
-              <div className="mt-6 space-y-2 text-sm text-white/30">
+              <div className="mt-6 space-y-2 text-sm text-white/80">
                 <Link href="/politica-privacidad" className="block hover:text-teal transition-colors">
                   {t("footer").privacidad}
                 </Link>
@@ -1238,13 +1242,13 @@ export default function LandingPage({
               </div>
             </div>
           </div>
-          <div className="border-t border-white/5 mt-10 pt-8 flex flex-col items-center gap-3 text-sm text-white/25">
+          <div className="border-t border-white/5 mt-10 pt-8 flex flex-col items-center gap-3 text-sm text-white/75">
             <p>&copy; {new Date().getFullYear()} Universo Nómada®. {t("footer").copyright}</p>
             <a
               href={SERNATUR_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white/20 text-xs hover:text-emerald-400/80 transition-colors"
+              className="text-white/75 text-xs hover:text-emerald-400 transition-colors"
             >
               {t("footer").sernatur}
             </a>
@@ -1252,13 +1256,13 @@ export default function LandingPage({
               <div className="flex flex-col gap-1 mt-2">
                 <button
                   onClick={() => setIsMemberAuthOpen(true)}
-                  className="text-white/30 hover:text-teal text-xs transition-colors"
+                  className="text-white/80 hover:text-teal text-xs transition-colors min-h-11 px-2"
                 >
                   Mi cuenta Nómada
                 </button>
                 <button
                   onClick={() => setIsAuthOpen(true)}
-                  className="text-white/20 hover:text-white/40 text-xs transition-colors"
+                  className="text-white/70 hover:text-white text-xs transition-colors min-h-11 px-2"
                 >
                   {t("footer").adminLogin}
                 </button>

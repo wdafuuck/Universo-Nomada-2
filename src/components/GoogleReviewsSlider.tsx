@@ -168,12 +168,12 @@ function TravelerPhotosPanel({
           <button
             type="button"
             onClick={() => goPhoto(-1)}
-            className="h-7 w-7 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition-colors shrink-0"
+            className="min-h-11 min-w-11 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition-colors shrink-0"
             aria-label={photoPrev ?? "Foto anterior"}
           >
-            <ChevronLeft className="h-3.5 w-3.5 text-white/70" />
+            <ChevronLeft className="h-4 w-4 text-white/90" />
           </button>
-          <div className="flex gap-1.5 flex-wrap justify-center max-w-[140px]">
+          <div className="flex gap-0.5 flex-wrap justify-center max-w-[160px]">
             {photos.map((_, i) => (
               <button
                 key={i}
@@ -182,21 +182,25 @@ function TravelerPhotosPanel({
                   setPhotoDirection(i > photoIndex ? 1 : -1);
                   setPhotoIndex(i);
                 }}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === photoIndex ? "w-4 bg-teal-300" : "w-1.5 bg-white/30 hover:bg-white/50"
-                }`}
+                className="flex min-h-11 min-w-11 items-center justify-center"
                 aria-label={`Foto ${i + 1}`}
                 aria-current={i === photoIndex ? "true" : undefined}
-              />
+              >
+                <span
+                  className={`block h-2 rounded-full transition-all duration-300 ${
+                    i === photoIndex ? "w-4 bg-teal-300" : "w-2 bg-white/50"
+                  }`}
+                />
+              </button>
             ))}
           </div>
           <button
             type="button"
             onClick={() => goPhoto(1)}
-            className="h-7 w-7 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition-colors shrink-0"
+            className="min-h-11 min-w-11 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition-colors shrink-0"
             aria-label={photoNext ?? "Foto siguiente"}
           >
-            <ChevronRight className="h-3.5 w-3.5 text-white/70" />
+            <ChevronRight className="h-4 w-4 text-white/90" />
           </button>
         </div>
       )}
@@ -387,7 +391,7 @@ export function GoogleReviewsSlider() {
                     <ChevronLeft className="h-5 w-5 text-white/80" />
                   </button>
 
-                  <div className="flex gap-1.5 max-w-[60%] flex-wrap justify-center" role="tablist" aria-label="Reseñas">
+                  <div className="flex gap-0.5 max-w-[60%] flex-wrap justify-center" role="tablist" aria-label="Reseñas">
                     {reviews.map((r, i) => (
                       <button
                         key={r.id}
@@ -398,11 +402,15 @@ export function GoogleReviewsSlider() {
                           setDirection(i > current ? 1 : -1);
                           setCurrent(i);
                         }}
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          i === current ? "w-6 bg-teal-300" : "w-2 bg-white/30 hover:bg-white/50"
-                        }`}
+                        className="flex min-h-11 min-w-11 items-center justify-center"
                         aria-label={`Reseña ${i + 1}`}
-                      />
+                      >
+                        <span
+                          className={`block h-2 rounded-full transition-all duration-300 ${
+                            i === current ? "w-6 bg-teal-300" : "w-2 bg-white/50"
+                          }`}
+                        />
+                      </button>
                     ))}
                   </div>
 

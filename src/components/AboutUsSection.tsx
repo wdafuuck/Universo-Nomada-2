@@ -41,7 +41,7 @@ export function AboutUsSection() {
         >
           <ScrollParallax strength={36} direction={-1}>
             <motion.div variants={antiGravityRise}>
-              <p className="text-teal text-xs font-semibold uppercase tracking-[0.25em] mb-4">{n.label}</p>
+              <p className="text-teal-ink text-xs font-semibold uppercase tracking-[0.25em] mb-4">{n.label}</p>
               <h2 className="text-3xl sm:text-4xl md:text-[2.75rem] font-bold text-slate-900 leading-tight tracking-tight">
                 {n.title}
               </h2>

@@ -32,7 +32,7 @@ export function AddToCartButton({
 
   const variants = {
     primary: "bg-gradient-to-r from-amber to-orange-500 hover:from-amber-dark hover:to-orange-600 text-white font-bold shadow-md",
-    outline: "border-2 border-teal text-teal hover:bg-teal hover:text-white font-bold",
+    outline: "border-2 border-teal-ink text-teal-ink hover:bg-teal hover:text-[#070f1a] font-bold",
     navy: "bg-navy hover:bg-navy-light text-white font-bold",
   };
 

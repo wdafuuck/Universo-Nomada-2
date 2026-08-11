@@ -17,7 +17,7 @@ export function PurposeSection() {
     <section id="experiencias" className="py-20 sm:py-28 bg-[#0a1018] relative">
       <div className="max-w-6xl mx-auto px-5 sm:px-8">
         <div className="text-center mb-16">
-          <span className="text-teal text-xs font-semibold tracking-[0.25em] uppercase">{p.label}</span>
+          <span className="text-teal-ink text-xs font-semibold tracking-[0.25em] uppercase">{p.label}</span>
           <h2 className="mt-4 text-3xl sm:text-4xl md:text-5xl font-light text-white tracking-tight">{p.title}</h2>
         </div>
 

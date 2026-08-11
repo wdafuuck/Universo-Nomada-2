@@ -37,7 +37,7 @@ export function FaqSection() {
             <div className="text-left max-w-md lg:max-w-none mx-auto lg:mx-0">
               <div className="inline-flex items-center gap-2 rounded-full bg-teal/10 border border-teal/15 px-3 py-1.5 mb-5">
                 <HelpCircle className="h-3.5 w-3.5 text-teal" />
-                <span className="text-teal text-xs font-bold uppercase tracking-[0.2em]">{f.label}</span>
+                <span className="text-teal-ink text-xs font-bold uppercase tracking-[0.2em]">{f.label}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-[2.5rem] font-black text-slate-900 tracking-tight leading-tight">
                 {f.title}
@@ -59,7 +59,7 @@ export function FaqSection() {
                 </div>
                 <Link
                   href="#contacto"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-teal hover:text-teal-dark transition-colors group"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-teal-ink hover:underline transition-colors group"
                 >
                   {t("contacto").title}
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
@@ -96,7 +96,7 @@ export function FaqSection() {
             <div className="lg:hidden mt-8 text-center">
               <Link
                 href="#contacto"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-teal hover:text-teal-dark transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-teal-ink hover:underline transition-colors"
               >
                 {t("contacto").title} <ArrowRight className="h-4 w-4" />
               </Link>

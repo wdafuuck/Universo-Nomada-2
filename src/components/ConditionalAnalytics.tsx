@@ -31,8 +31,8 @@ function pushConsentUpdate(granted: boolean) {
 }
 
 /**
- * GTM se carga siempre (Consent Mode: denegado por defecto).
- * GA4/Meta directos solo tras «Aceptar todas».
+ * Scripts de medición solo tras «Aceptar todas» (mejor PSI + privacidad).
+ * Consent Mode default queda denied hasta el update.
  */
 export function ConditionalAnalytics() {
   const [analyticsOk, setAnalyticsOk] = useState(false);
@@ -60,31 +60,30 @@ export function ConditionalAnalytics() {
 
   return (
     <>
-      {GTM_ID ? (
-        <>
-          <Script id="gtm-consent-default" strategy="beforeInteractive">
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('consent', 'default', {
-                analytics_storage: 'denied',
-                ad_storage: 'denied',
-                ad_user_data: 'denied',
-                ad_personalization: 'denied',
-                wait_for_update: 500
-              });
-            `}
-          </Script>
-          <Script id="google-tag-manager" strategy="lazyOnload">
-            {`
-              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','${GTM_ID}');
-            `}
-          </Script>
-        </>
+      <Script id="gtm-consent-default" strategy="beforeInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('consent', 'default', {
+            analytics_storage: 'denied',
+            ad_storage: 'denied',
+            ad_user_data: 'denied',
+            ad_personalization: 'denied',
+            wait_for_update: 500
+          });
+        `}
+      </Script>
+
+      {GTM_ID && analyticsOk ? (
+        <Script id="google-tag-manager" strategy="afterInteractive">
+          {`
+            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+            })(window,document,'script','dataLayer','${GTM_ID}');
+          `}
+        </Script>
       ) : null}
 
       {loadDirectGaMeta && GA_ID ? (

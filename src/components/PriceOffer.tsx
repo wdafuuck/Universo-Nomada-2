@@ -54,7 +54,7 @@ export function PriceOffer({
       {hasDiscount ? (
         <div className={`flex flex-wrap items-center gap-2 mb-2 ${theme === "dark" ? "justify-center" : ""}`}>
           <span
-            className={`inline-flex items-center gap-1 ${s.badge} bg-gradient-to-r from-rose-500 via-red-500 to-orange-500 text-white font-black rounded-full shadow-md shadow-rose-500/25`}
+            className={`inline-flex items-center gap-1 ${s.badge} bg-gradient-to-r from-rose-700 via-red-700 to-orange-700 text-white font-black rounded-full shadow-md shadow-rose-500/25`}
           >
             <Tag className="h-3 w-3 shrink-0" aria-hidden />
             -{discount}% OFF
@@ -71,7 +71,7 @@ export function PriceOffer({
 
       <p
         className={`text-[11px] font-bold uppercase tracking-[0.14em] mb-1 ${
-          theme === "dark" ? "text-white/50" : "text-slate-400"
+          theme === "dark" ? "text-white/50" : "text-slate-600"
         }`}
       >
         {desdeLabel}

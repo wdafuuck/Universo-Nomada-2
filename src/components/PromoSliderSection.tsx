@@ -57,7 +57,7 @@ export function PromoSliderSection() {
           viewport={{ once: true }}
           className="text-center mb-8"
         >
-          <span className="text-teal font-semibold text-sm uppercase tracking-widest">{copy.badge}</span>
+          <span className="text-teal-ink font-semibold text-sm uppercase tracking-widest">{copy.badge}</span>
           <h2 className="mt-2 text-2xl sm:text-3xl font-black text-slate-900">{copy.title}</h2>
           <p className="mt-2 text-slate-600 max-w-lg mx-auto text-sm sm:text-base">{copy.subtitle}</p>
         </motion.div>

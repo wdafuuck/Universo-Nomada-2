@@ -122,7 +122,7 @@ export function HowItWorksSection() {
                   whileHover={{ y: -6, transition: gravitySpring }}
                   className="relative text-center p-8 rounded-3xl bg-white/95 backdrop-blur-md border border-white/80 shadow-xl shadow-cyan-950/15 premium-card-lift"
                 >
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-teal text-white text-xs font-black w-7 h-7 rounded-full flex items-center justify-center shadow-md">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-teal text-[#070f1a] text-xs font-black w-7 h-7 rounded-full flex items-center justify-center shadow-md">
                     {i + 1}
                   </span>
                   <div className="mx-auto h-14 w-14 rounded-2xl bg-teal/10 flex items-center justify-center mb-5">

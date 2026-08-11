@@ -42,7 +42,7 @@ export function CookieConsent() {
           </p>
           <p id="cookie-consent-desc" className="mt-1 text-slate-700 text-xs sm:text-sm leading-relaxed">
             {c.body}{" "}
-            <Link href="/politica-privacidad" className="text-teal-dark font-semibold underline underline-offset-2">
+            <Link href="/politica-privacidad" className="text-teal-ink font-semibold underline underline-offset-2">
               {c.privacy}
             </Link>
           </p>

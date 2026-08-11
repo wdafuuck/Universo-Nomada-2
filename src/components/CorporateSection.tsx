@@ -21,7 +21,7 @@ export function CorporateSection() {
     <section id="empresas" className="py-16 sm:py-20 bg-gradient-to-br from-slate-900 via-[#0f2440] to-slate-900">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="text-teal text-xs font-bold uppercase tracking-[0.2em]">{c.label}</span>
+          <span className="text-teal-ink text-xs font-bold uppercase tracking-[0.2em]">{c.label}</span>
           <h2 className="mt-3 text-3xl sm:text-4xl font-black text-white">{c.title}</h2>
           <p className="mt-4 text-white/60 max-w-2xl mx-auto">{c.subtitle}</p>
         </div>

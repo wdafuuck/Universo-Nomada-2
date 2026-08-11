@@ -17,7 +17,7 @@ export function MobileStickyBar({ onCotizar }: Props) {
         href={buildWhatsAppUrl(t("whatsappMessages").default)}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-[#25D366] text-white font-bold text-sm"
+        className="flex-1 flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-[#0E6B5C] text-white font-bold text-sm"
       >
         <MessageCircle className="h-4 w-4" />
         WhatsApp

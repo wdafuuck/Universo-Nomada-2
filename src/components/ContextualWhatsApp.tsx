@@ -49,10 +49,18 @@ export function ContextualWhatsApp() {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="WhatsApp"
+      aria-label="Abrir chat de WhatsApp con Universo Nómada"
       className="fixed bottom-6 right-6 z-50 flex h-[68px] w-[68px] items-center justify-center rounded-full transition-transform hover:scale-110 shadow-2xl shadow-black/30 max-md:bottom-20"
     >
-      <Image src="/images/whatsapp-icon.png" alt="WhatsApp" width={68} height={68} className="rounded-full" priority />
+      <Image
+        src="/images/whatsapp-icon.png"
+        alt=""
+        width={68}
+        height={68}
+        className="rounded-full"
+        loading="lazy"
+        decoding="async"
+      />
     </a>
   );
 }

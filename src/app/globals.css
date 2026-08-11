@@ -48,6 +48,8 @@
   --color-navy-glow: #1B3A6B;
   --color-teal: #00C9A7;
   --color-teal-dark: #00A88B;
+  /* Texto/links teal sobre fondo claro — WCAG AA ≥4.5:1 */
+  --color-teal-ink: #006B5C;
   --color-amber: #F59E0B;
   --color-coral: #FF6B6B;
   --color-cream: #FFF8F0;

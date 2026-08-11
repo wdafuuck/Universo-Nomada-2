@@ -9,7 +9,7 @@ export default async function Page() {
   const firstHero = heroImages[0];
   const preloadHref =
     firstHero && (firstHero.startsWith("/uploads/") || firstHero.startsWith("/images/"))
-      ? `/api/img?src=${encodeURIComponent(firstHero)}&w=828&q=62`
+      ? `/api/img?src=${encodeURIComponent(firstHero)}&w=750&q=48`
       : firstHero;
 
   return (

@@ -54,7 +54,7 @@ export function BenefitsSection() {
       >
         <ScrollParallax strength={28}>
           <motion.div variants={antiGravityRise} className="text-center max-w-3xl mx-auto">
-          <p className="text-teal text-xs font-semibold uppercase tracking-[0.25em] mb-4 flex items-center justify-center gap-2">
+          <p className="text-teal-ink text-xs font-semibold uppercase tracking-[0.25em] mb-4 flex items-center justify-center gap-2">
             <Gift className="h-4 w-4" />
             {copy.label}
           </p>

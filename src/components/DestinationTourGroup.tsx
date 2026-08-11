@@ -15,11 +15,11 @@ type Props = {
 };
 
 const categoryStyles: Record<string, { badge: string; accent: string }> = {
-  nacional: { badge: "bg-emerald-500", accent: "from-emerald-500 to-teal-600" },
-  chile: { badge: "bg-emerald-500", accent: "from-emerald-500 to-teal-600" },
-  internacional: { badge: "bg-sky-500", accent: "from-sky-500 to-blue-600" },
-  grupal: { badge: "bg-amber-500", accent: "from-amber-500 to-orange-500" },
-  experiencial: { badge: "bg-violet-500", accent: "from-violet-500 to-purple-600" },
+  nacional: { badge: "bg-emerald-700 text-white", accent: "from-emerald-500 to-teal-600" },
+  chile: { badge: "bg-emerald-700 text-white", accent: "from-emerald-500 to-teal-600" },
+  internacional: { badge: "bg-sky-700 text-white", accent: "from-sky-500 to-blue-600" },
+  grupal: { badge: "bg-amber-600 text-[#070f1a]", accent: "from-amber-500 to-orange-500" },
+  experiencial: { badge: "bg-violet-700 text-white", accent: "from-violet-500 to-purple-600" },
 };
 
 export function DestinationTourGroup({ group, onCardClick }: Props) {
@@ -45,7 +45,7 @@ export function DestinationTourGroup({ group, onCardClick }: Props) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
 
-        <span className={`absolute top-3 left-3 ${style.badge} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>
+        <span className={`absolute top-3 left-3 ${style.badge} text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>
           {lead.tag}
         </span>
 
