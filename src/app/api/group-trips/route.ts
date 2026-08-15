@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { ensureGroupTripsSeeded } from "@/lib/group-trips-seed";
 import { normalizeDepartureAvailability } from "@/lib/group-departure-availability";
+import {
+  parseAccommodationsJson,
+  parseItineraryJson,
+} from "@/lib/group-trip-content";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +27,8 @@ export async function GET() {
       reservation: t.reservation,
       price: t.price,
       includes: JSON.parse(t.includesJson) as string[],
+      itinerary: parseItineraryJson(t.itineraryJson),
+      accommodations: parseAccommodationsJson(t.accommodationsJson),
       departures: t.departures.map((d) => ({
         date: d.date,
         availabilityStatus: normalizeDepartureAvailability(

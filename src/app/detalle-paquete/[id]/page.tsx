@@ -8,8 +8,11 @@ import Link from 'next/link'
 import { AddToCartButton } from '@/components/AddToCartButton'
 import { PriceOffer } from '@/components/PriceOffer'
 import { useTourById } from '@/hooks/use-tour-by-id'
+import { useGroupTripDetail } from '@/hooks/use-group-trip-detail'
 import { PackageDetailExtras } from '@/components/package/PackageDetailExtras'
 import { PackageAccommodationsSection } from '@/components/package/PackageAccommodationsSection'
+import { GroupTripItinerarySection } from '@/components/package/GroupTripItinerarySection'
+import { GroupTripAccommodationsSection } from '@/components/package/GroupTripAccommodationsSection'
 import { PackageDetailStickyBar } from '@/components/PackageDetailStickyBar'
 import { PackageDetailHero } from '@/components/package/PackageDetailHero'
 import { GravityReveal } from '@/components/motion/GravityReveal'
@@ -323,6 +326,12 @@ export default function DetallePaquete() {
   const params = useParams()
   const packageId = params.id as string
   const { tour: liveTour, loading: tourLoading } = useTourById(packageId)
+  const { trip: groupTrip } = useGroupTripDetail(packageId)
+  const isGroupTrip = packageId.startsWith("group-")
+  const effectiveMinDeposit =
+    (liveTour?.minDepositPerPerson ?? 0) > 0
+      ? liveTour!.minDepositPerPerson!
+      : groupTrip?.reservation ?? 0
 
   const [showTourSelection, setShowTourSelection] = useState(false)
   const [selectedTours, setSelectedTours] = useState<string[]>([])
@@ -484,7 +493,25 @@ export default function DetallePaquete() {
             </GravityReveal>
 
             <GravityReveal once mode="up" delay={0.08}>
-            {hasDbContent && liveTour ? (
+            {isGroupTrip && groupTrip && (groupTrip.itinerary.length > 0 || groupTrip.accommodations.length > 0) ? (
+              <div className="space-y-8">
+                {groupTrip.includes.length > 0 && (
+                  <section>
+                    <h2 className="text-2xl font-bold text-white mb-4">¿Qué incluye?</h2>
+                    <div className="bg-gray-800 rounded-xl p-6 space-y-3">
+                      {groupTrip.includes.map((item, index) => (
+                        <div key={index} className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-300">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+                <GroupTripItinerarySection days={groupTrip.itinerary} />
+                <GroupTripAccommodationsSection items={groupTrip.accommodations} />
+              </div>
+            ) : hasDbContent && liveTour ? (
               <PackageDetailExtras
                 tour={liveTour}
                 selectedTours={selectedOptionalTours}
@@ -542,8 +569,8 @@ export default function DetallePaquete() {
                   theme="dark"
                 />
                 <p className="mt-3 text-sm text-teal font-semibold leading-snug">
-                  {(liveTour?.minDepositPerPerson ?? 0) > 0
-                    ? `Abono desde $${(liveTour!.minDepositPerPerson!).toLocaleString("es-CL")} · cuotas sin interés · transferencia`
+                  {effectiveMinDeposit > 0
+                    ? `Abono desde $${effectiveMinDeposit.toLocaleString("es-CL")} · cuotas sin interés · transferencia`
                     : "Abono mínimo · cuotas sin interés · transferencia"}
                 </p>
               </div>
@@ -560,7 +587,7 @@ export default function DetallePaquete() {
               />
 
               <div className="mt-4 space-y-3">
-                <CheckoutTrustBar minDepositPerPerson={liveTour?.minDepositPerPerson} />
+                <CheckoutTrustBar minDepositPerPerson={effectiveMinDeposit || undefined} />
                 <PaymentMethodBadges variant="dark" />
               </div>
 

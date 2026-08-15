@@ -18,6 +18,8 @@ export type GroupTrip = {
   includes: string[];
   image: string;
   gradient: string;
+  itinerary?: import("@/lib/group-trip-content").GroupItineraryDay[];
+  accommodations?: import("@/lib/group-trip-content").GroupAccommodationInfo[];
 };
 
 export const GROUP_TRIPS: GroupTrip[] = [

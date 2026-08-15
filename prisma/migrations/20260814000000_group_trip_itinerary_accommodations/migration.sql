@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "GroupTrip" ADD COLUMN IF NOT EXISTS "itineraryJson" TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE "GroupTrip" ADD COLUMN IF NOT EXISTS "accommodationsJson" TEXT NOT NULL DEFAULT '[]';

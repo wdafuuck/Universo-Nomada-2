@@ -391,21 +391,25 @@ model TourPricing {
 }
 
 model GroupTrip {
-  id           Int              @id @default(autoincrement())
-  tenantId     String           @default("universo-nomada")
-  tourId       String           @unique
-  name         String
-  duration     String
-  image        String
-  gradient     String           @default("from-teal-500 to-cyan-600")
-  reservation  Int              @default(100000)
-  price        Int
-  includesJson String           @default("[]")
-  active       Boolean          @default(true)
-  sortOrder    Int              @default(0)
-  departures   GroupDeparture[]
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id                 Int              @id @default(autoincrement())
+  tenantId           String           @default("universo-nomada")
+  tourId             String           @unique
+  name               String
+  duration           String
+  image              String
+  gradient           String           @default("from-teal-500 to-cyan-600")
+  reservation        Int              @default(100000)
+  price              Int
+  includesJson       String           @default("[]")
+  /** [{ day, title, description, activities[], image, meals: { breakfast, lunch, dinner, cocktail } }] */
+  itineraryJson      String           @default("[]")
+  /** [{ id, name, description, image }] */
+  accommodationsJson String           @default("[]")
+  active             Boolean          @default(true)
+  sortOrder          Int              @default(0)
+  departures         GroupDeparture[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@index([tenantId])
 }
