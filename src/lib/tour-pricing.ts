@@ -84,6 +84,24 @@ export function applyPromoPercent(amount: number, percent: unknown): number {
   return Math.round(n * (1 - p / 100));
 }
 
+/**
+ * Precio visible y precio tachado a partir del % de oferta.
+ * Los hoteles guardan siempre el precio de lista y `Tour.price` puede quedar
+ * desincronizado, así que manda el porcentaje. Idempotente: si `price` ya viene
+ * rebajado (hay `originalPrice` mayor), no vuelve a descontar.
+ */
+export function resolveOfferPricing(
+  price: number,
+  originalPrice: number | null | undefined,
+  promoDiscountPercent: unknown,
+): { price: number; originalPrice: number | null } {
+  const percent = clampPromoDiscountPercent(promoDiscountPercent);
+  const original = originalPrice != null && originalPrice > 0 ? originalPrice : null;
+  if (percent <= 0) return { price, originalPrice: original };
+  const list = original != null && original > price ? original : price;
+  return { price: applyPromoPercent(list, percent), originalPrice: list };
+}
+
 export function scalePassengerPrices(
   prices: PassengerTypePrices,
   percent: unknown,

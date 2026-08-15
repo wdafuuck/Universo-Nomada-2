@@ -1,4 +1,5 @@
 import { tourToPublicContent } from "@/lib/tour-content";
+import { resolveOfferPricing } from "@/lib/tour-pricing";
 
 type DbTour = {
   tourId: string;
@@ -10,6 +11,7 @@ type DbTour = {
   category: string;
   price: number;
   originalPrice: number | null;
+  promoDiscountPercent?: number;
   duration: string;
   includesText?: string;
   excludesText?: string;
@@ -26,6 +28,7 @@ type DbTour = {
 
 export function toPublicTour(tour: DbTour) {
   const content = tourToPublicContent(tour);
+  const offer = resolveOfferPricing(tour.price, tour.originalPrice, tour.promoDiscountPercent);
   return {
     tourId: tour.tourId,
     name: tour.name,
@@ -34,8 +37,8 @@ export function toPublicTour(tour: DbTour) {
     image: tour.image,
     tag: tour.tag,
     category: tour.category,
-    price: tour.price,
-    originalPrice: tour.originalPrice,
+    price: offer.price,
+    originalPrice: offer.originalPrice,
     duration: tour.duration,
     minDepositPerPerson: tour.minDepositPerPerson ?? 0,
     ...content,
