@@ -282,10 +282,25 @@ function TravelFormPopup({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
     }
     setIsSubmitting(true);
     try {
+      // La API de leads espera nombre/mensaje: los datos del viaje van en el mensaje.
+      const detalle = [
+        `RUT/Pasaporte: ${formData.rutPasaporte}`,
+        formData.fechaViaje ? `Fecha del viaje: ${formData.fechaViaje}` : null,
+        `Cantidad de personas: ${formData.cantidadPersonas}`,
+        formData.saludRestricciones ? `Salud/restricciones: ${formData.saludRestricciones}` : null,
+      ].filter(Boolean).join("\n");
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          nombre: formData.nombreCompleto,
+          email: formData.email,
+          telefono: formData.telefono,
+          destino: formData.destino,
+          mensaje: detalle,
+          source: "cotizacion-viaje",
+          referralCode: getReferralCode(),
+        })
       });
       if (!res.ok) throw new Error("Error");
       trackGenerateLead({ source: "formulario-viaje-detallado" });
@@ -574,7 +589,7 @@ export default function LandingPage({
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, referralCode: getReferralCode() }),
+        body: JSON.stringify({ ...formData, source: "cotizacion-home", referralCode: getReferralCode() }),
       });
       if (!res.ok) throw new Error("Error");
       trackGenerateLead({ source: "cotizacion-home", value: 0 });

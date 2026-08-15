@@ -24,6 +24,18 @@ const STATUSES = [
   { value: "cancelado", label: "Cancelado", color: "bg-red-500/20 text-red-300" },
 ] as const;
 
+/** Etiqueta legible del origen del lead + color del badge. */
+function sourceBadge(source: string): { label: string; className: string } {
+  if (source === "carrito") return { label: "🛒 Compra web", className: "bg-teal/20 text-teal" };
+  if (source === "admin-manual") return { label: "Manual", className: "bg-white/10 text-white/60" };
+  if (source === "cotizacion-viaje") return { label: "📝 Cotización viaje", className: "bg-amber-500/20 text-amber-300" };
+  if (source === "cotizacion-home" || source === "web") return { label: "📝 Cotización", className: "bg-amber-500/20 text-amber-300" };
+  if (source === "ruleta-familia") return { label: "🎡 Ruleta", className: "bg-violet-500/20 text-violet-300" };
+  if (source === "registro-cuenta" || source === "popup-bienvenida") return { label: "Registro", className: "bg-sky-500/20 text-sky-300" };
+  if (source === "blog" || source === "newsletter-blog") return { label: "Newsletter", className: "bg-white/10 text-white/60" };
+  return { label: source, className: "bg-white/10 text-white/60" };
+}
+
 type Lead = {
   id: number;
   nombre: string;
@@ -335,7 +347,12 @@ export function LeadsAdmin() {
                   const deadline = balance > 0 ? balancePaymentDeadline(checkIn) : null;
                   return (
                     <tr key={lead.id} className="border-b border-white/5 hover:bg-white/5 align-top">
-                      <td className="py-3 pr-3 text-white font-medium">{lead.nombre}</td>
+                      <td className="py-3 pr-3">
+                        <p className="text-white font-medium">{lead.nombre}</p>
+                        <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${sourceBadge(lead.source).className}`}>
+                          {sourceBadge(lead.source).label}
+                        </span>
+                      </td>
                       <td className="py-3 pr-3">
                         <p className="text-teal">{lead.email}</p>
                         <p className="text-white/50 text-xs">{lead.telefono}</p>
@@ -423,7 +440,13 @@ export function LeadsAdmin() {
             <div className="sticky top-0 flex items-center justify-between p-5 border-b border-white/10 bg-[#0f1f35]">
               <div>
                 <h3 className="text-white font-bold text-lg">Editar reserva #{editing.id}</h3>
-                <p className="text-white/40 text-sm">{isTripLeadSource(editing.source) ? "Viaje de pasajero" : "Lead / cotización"}</p>
+                <p className="text-white/40 text-sm">
+                  {isTripLeadSource(editing.source) ? "Viaje de pasajero" : "Lead / cotización"}
+                  {" · "}
+                  <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${sourceBadge(editing.source).className}`}>
+                    {sourceBadge(editing.source).label}
+                  </span>
+                </p>
               </div>
               <button type="button" onClick={closeEdit} className="text-white/50 hover:text-white p-2">
                 <X className="h-5 w-5" />
