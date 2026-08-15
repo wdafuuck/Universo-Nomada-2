@@ -173,27 +173,9 @@ function TravelerPhotosPanel({
           >
             <ChevronLeft className="h-4 w-4 text-white/90" />
           </button>
-          <div className="flex gap-0.5 flex-wrap justify-center max-w-[160px]">
-            {photos.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setPhotoDirection(i > photoIndex ? 1 : -1);
-                  setPhotoIndex(i);
-                }}
-                className="flex min-h-11 min-w-11 items-center justify-center"
-                aria-label={`Foto ${i + 1}`}
-                aria-current={i === photoIndex ? "true" : undefined}
-              >
-                <span
-                  className={`block h-2 rounded-full transition-all duration-300 ${
-                    i === photoIndex ? "w-4 bg-teal-300" : "w-2 bg-white/50"
-                  }`}
-                />
-              </button>
-            ))}
-          </div>
+          <p className="text-xs font-semibold text-white/70 tabular-nums" aria-live="polite">
+            {photoIndex + 1} / {photos.length}
+          </p>
           <button
             type="button"
             onClick={() => goPhoto(1)}
@@ -391,28 +373,9 @@ export function GoogleReviewsSlider() {
                     <ChevronLeft className="h-5 w-5 text-white/80" />
                   </button>
 
-                  <div className="flex gap-0.5 max-w-[60%] flex-wrap justify-center" role="tablist" aria-label="Reseñas">
-                    {reviews.map((r, i) => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={i === current}
-                        onClick={() => {
-                          setDirection(i > current ? 1 : -1);
-                          setCurrent(i);
-                        }}
-                        className="flex min-h-11 min-w-11 items-center justify-center"
-                        aria-label={`Reseña ${i + 1}`}
-                      >
-                        <span
-                          className={`block h-2 rounded-full transition-all duration-300 ${
-                            i === current ? "w-6 bg-teal-300" : "w-2 bg-white/50"
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
+                  <p className="text-xs font-semibold text-white/70 tabular-nums" aria-live="polite">
+                    {current + 1} / {total}
+                  </p>
 
                   <button
                     type="button"

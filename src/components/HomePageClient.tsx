@@ -32,6 +32,7 @@ import { isStaffRole } from "@/lib/admin-rbac";
 import { normalizeTourCategory } from "@/lib/tour-category";
 import { tourMatchesSearch } from "@/lib/tour-search";
 import { groupToursByDestination } from "@/lib/tour-destination-groups";
+import { groupPromosByDestination } from "@/lib/tour-ofertas";
 import { DestinationTourGroup } from "@/components/DestinationTourGroup";
 import { trackGenerateLead } from "@/lib/analytics-events";
 import { PromoUrgency } from "@/components/PromoUrgency";
@@ -609,6 +610,11 @@ export default function LandingPage({
     return match?.id ?? promoTourIds[index] ?? tourList[0]?.id ?? "rapa-nui";
   };
 
+  const promoGroups = useMemo(() => groupPromosByDestination(promoList), [promoList]);
+
+  const promoDuration = (promo: (typeof promoList)[number]) =>
+    promo.duration?.trim() || (promo.tourId ? tourList.find((t) => t.id === promo.tourId)?.duration : "") || "";
+
   const filteredDestinations = useMemo(() => {
     const byCategory =
       activeFilter === "todos"
@@ -788,17 +794,19 @@ export default function LandingPage({
 
           <div
             className={
-              promoList.length === 1
+              promoGroups.length === 1
                 ? "grid grid-cols-1 gap-6"
-                : promoList.length === 2
+                : promoGroups.length === 2
                   ? "grid grid-cols-1 sm:grid-cols-2 gap-6"
                   : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
             }
           >
-            {promoList.map((promo, i) => {
-              const solo = promoList.length === 1;
+            {promoGroups.map((group, gi) => {
+              const solo = promoGroups.length === 1;
+              const lead = group.promos[0];
+              const multi = group.promos.length > 1;
               return (
-              <FadeIn key={`promo-${i}-${promo.id}`} delay={i * 0.1}>
+              <FadeIn key={group.key} delay={gi * 0.1}>
                 <motion.div
                   className={`group premium-card-lift bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden gradient-card-border ${
                     solo ? "lg:grid lg:grid-cols-2 lg:items-stretch" : ""
@@ -811,27 +819,27 @@ export default function LandingPage({
                       solo ? "h-56 sm:h-72 lg:h-full lg:min-h-[340px]" : "h-48"
                     }`}
                   >
-                    <UploadAwareImage src={promo.image} alt={promo.title} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" sizes={solo ? "100vw" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"} />
+                    <UploadAwareImage src={group.image} alt={group.title} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" sizes={solo ? "100vw" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    
+
                     {/* Badge de descuento */}
                     <div className="absolute top-4 left-4">
                       <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                        {promo.discount}
+                        {lead.discount}
                       </span>
                     </div>
-                    
+
                     {/* Emoji */}
                     <div className="absolute bottom-4 right-4">
-                      <span className="text-3xl drop-shadow-lg">{promo.emoji}</span>
+                      <span className="text-3xl drop-shadow-lg">{group.emoji}</span>
                     </div>
                   </div>
-                  
+
                   {/* Contenido */}
                   <div className={`p-5 ${solo ? "lg:p-8 lg:flex lg:flex-col lg:justify-center" : ""}`}>
-                    <h3 className={`text-gray-900 font-bold mb-1 ${solo ? "text-xl sm:text-2xl" : "text-lg"}`}>{promo.title}</h3>
-                    <p className={`text-gray-600 mb-3 ${solo ? "text-base" : "text-sm"}`}>{promo.subtitle}</p>
-                    
+                    <h3 className={`text-gray-900 font-bold mb-1 ${solo ? "text-xl sm:text-2xl" : "text-lg"}`}>{group.title}</h3>
+                    <p className={`text-gray-600 mb-3 ${solo ? "text-base" : "text-sm"}`}>{lead.subtitle}</p>
+
                     {/* Incluye */}
                     <div className="mb-3">
                       <div className="flex flex-wrap gap-1">
@@ -849,45 +857,70 @@ export default function LandingPage({
                         </span>
                       </div>
                     </div>
-                    
-                    {/* Precios */}
-                    <div className="rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-amber-50/50 border border-emerald-200/60 p-4 mb-3">
-                      <PriceOffer
-                        price={promo.discountPrice}
-                        originalPrice={promo.originalPrice}
-                        desdeLabel={t("destinations").desde}
-                        porPersonaLabel={t("destinations").porPersona}
-                        ahorrasLabel={t("priceOffer").ahorras}
-                        size={solo ? "lg" : "md"}
-                      />
-                    </div>
-                    
-                    {/* Fecha y botón */}
-                    {promo.validUntil ? (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 text-xs flex items-center gap-1">
-                        <Clock className="h-3 w-3" />{t("discounts").hasta} {promo.validUntil}
-                      </span>
-                    </div>
-                    ) : null}
-                    {promo.validUntil ? <PromoUrgency validUntil={promo.validUntil} spotsLeft={i === 0 ? 5 : undefined} /> : null}
-                    <div className={`flex flex-col gap-2 mt-3 ${solo ? "sm:flex-row" : ""}`} onClick={(e) => e.stopPropagation()}>
-                      <Link
-                        href={`/detalle-paquete/${resolvePromoTourId(promo, i)}`}
-                        className="flex flex-1 items-center justify-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl px-4 py-3 text-sm transition-all min-h-[44px] shadow-md shadow-emerald-500/20"
-                      >
-                        {t("discounts").verDetalles}
-                      </Link>
-                      <div className="flex-1">
-                        <AddToCartButton
-                          tourId={resolvePromoTourId(promo, i)}
-                          tourName={promo.subtitle}
-                          image={promo.image}
-                          basePrice={promo.discountPrice}
-                          duration={tourList.find((t) => t.id === resolvePromoTourId(promo, i))?.duration}
-                          className="rounded-xl min-h-[44px]"
-                        />
-                      </div>
+
+                    {/* Variantes de duración del mismo destino */}
+                    <div className="flex flex-col gap-3">
+                      {group.promos.map((promo, i) => {
+                        const promoTourId = resolvePromoTourId(promo, i);
+                        const duration = promoDuration(promo);
+                        return (
+                          <div
+                            key={promo.tourId ?? `${group.key}-${i}`}
+                            className="rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-amber-50/50 border border-emerald-200/60 p-4"
+                          >
+                            {multi && duration ? (
+                              <p className="font-bold text-slate-900 text-sm mb-2">{duration}</p>
+                            ) : null}
+
+                            <div className="flex items-end justify-between gap-3">
+                              <PriceOffer
+                                price={promo.discountPrice}
+                                originalPrice={promo.originalPrice}
+                                desdeLabel={t("destinations").desde}
+                                porPersonaLabel={t("destinations").porPersona}
+                                ahorrasLabel={t("priceOffer").ahorras}
+                                size={solo && !multi ? "lg" : "md"}
+                              />
+                              {!multi && duration ? (
+                                <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+                                  <Clock className="h-3.5 w-3.5 text-teal" aria-hidden />
+                                  {duration}
+                                </span>
+                              ) : null}
+                            </div>
+
+                            {promo.validUntil ? (
+                              <div className="flex items-center justify-between mt-2">
+                                <span className="text-gray-500 text-xs flex items-center gap-1">
+                                  <Clock className="h-3 w-3" aria-hidden />{t("discounts").hasta} {promo.validUntil}
+                                </span>
+                              </div>
+                            ) : null}
+                            {promo.validUntil ? (
+                              <PromoUrgency validUntil={promo.validUntil} spotsLeft={gi === 0 && i === 0 ? 5 : undefined} />
+                            ) : null}
+
+                            <div className={`flex flex-col gap-2 mt-3 ${solo && !multi ? "sm:flex-row" : ""}`} onClick={(e) => e.stopPropagation()}>
+                              <Link
+                                href={`/detalle-paquete/${promoTourId}`}
+                                className="flex flex-1 items-center justify-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl px-4 py-3 text-sm transition-all min-h-[44px] shadow-md shadow-emerald-500/20"
+                              >
+                                {t("discounts").verDetalles}
+                              </Link>
+                              <div className="flex-1">
+                                <AddToCartButton
+                                  tourId={promoTourId}
+                                  tourName={promo.subtitle}
+                                  image={promo.image}
+                                  basePrice={promo.discountPrice}
+                                  duration={duration || tourList.find((tt) => tt.id === promoTourId)?.duration}
+                                  className="rounded-xl min-h-[44px]"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </motion.div>

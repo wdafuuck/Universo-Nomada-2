@@ -11,6 +11,8 @@ export type PromoCard = {
   subtitle: string;
   discount: string;
   destination: string;
+  /** Duración del paquete (ej. "5 días") */
+  duration?: string;
   validUntil: string;
   originalPrice: number;
   discountPrice: number;
