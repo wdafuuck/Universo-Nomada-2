@@ -8,6 +8,7 @@ import { absoluteUrl } from "@/lib/site-url";
 import {
   blogSerpDescription,
   blogSerpTitle,
+  cleanBlogTitle,
   getRelatedBlogPosts,
 } from "@/lib/related-blog-posts";
 
@@ -67,14 +68,15 @@ export default async function BlogPostPage({ params }: Props) {
   const related = await getRelatedBlogPosts(slug, 3);
   const relatedPosts = related.map((p) => ({
     slug: p.slug,
-    title: getBlogField(p, "es", "title"),
+    title: cleanBlogTitle(getBlogField(p, "es", "title")),
     image: p.image,
     readTime: p.readTime,
+    category: cleanBlogTitle(getBlogField(p, "es", "category")),
   }));
 
   return (
     <>
-      <ArticleJsonLd post={post} />
+      <ArticleJsonLd post={post} relatedPosts={relatedPosts} />
       <BlogPostClient post={post} relatedPosts={relatedPosts} />
     </>
   );

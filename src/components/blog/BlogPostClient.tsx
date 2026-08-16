@@ -10,7 +10,13 @@ import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 import { buildWhatsAppUrl } from "@/lib/translations";
 
-type RelatedSummary = { slug: string; title: string; image: string; readTime: number };
+type RelatedSummary = {
+  slug: string;
+  title: string;
+  image: string;
+  readTime: number;
+  category?: string;
+};
 
 type Props = { post: BlogPost; relatedPosts?: RelatedSummary[] };
 
@@ -84,25 +90,33 @@ export function BlogPostClient({ post, relatedPosts = [] }: Props) {
         </aside>
 
         {relatedPosts.length > 0 && (
-          <section aria-labelledby="related-posts" className="mt-12">
-            <h2 id="related-posts" className="text-xl font-bold text-slate-900 mb-4">
-              También te puede interesar
+          <section aria-labelledby="related-posts" className="mt-12 pt-10 border-t border-slate-100">
+            <h2 id="related-posts" className="text-xl font-bold text-slate-900 mb-2">
+              Artículos relacionados
             </h2>
+            <p className="text-sm text-slate-500 mb-5">
+              Más guías para planificar y viajar con tranquilidad.
+            </p>
             <ul className="grid gap-4 sm:grid-cols-3 list-none p-0 m-0">
               {relatedPosts.map((r) => (
                 <li key={r.slug}>
                   <Link
                     href={`/blog/${r.slug}`}
-                    className="group block rounded-xl border border-slate-200 overflow-hidden hover:border-teal/40 transition-colors"
+                    className="group flex flex-col h-full rounded-xl border border-slate-200 overflow-hidden hover:border-teal/40 hover:shadow-md transition-all"
                   >
-                    <div className="relative h-28 w-full">
-                      <UploadAwareImage src={r.image} alt={r.title} fill className="object-cover" sizes="240px" />
+                    <div className="relative h-32 w-full shrink-0">
+                      <UploadAwareImage src={r.image} alt={r.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="240px" />
                     </div>
-                    <div className="p-3">
-                      <p className="text-sm font-semibold text-slate-900 leading-snug group-hover:text-teal line-clamp-2">
+                    <div className="p-3 flex flex-col flex-1">
+                      {r.category ? (
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-ink mb-1 line-clamp-1">
+                          {r.category}
+                        </p>
+                      ) : null}
+                      <p className="text-sm font-semibold text-slate-900 leading-snug group-hover:text-teal line-clamp-3">
                         {r.title}
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">{r.readTime} min</p>
+                      <p className="text-xs text-slate-500 mt-auto pt-2">{r.readTime} min de lectura →</p>
                     </div>
                   </Link>
                 </li>

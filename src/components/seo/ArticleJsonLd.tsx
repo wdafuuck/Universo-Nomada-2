@@ -1,16 +1,18 @@
 import type { BlogPost } from "@/lib/blog-posts";
 import { getBlogField } from "@/lib/blog-posts";
+import { cleanBlogTitle } from "@/lib/related-blog-posts";
 import { absoluteUrl } from "@/lib/site-url";
 
-type Props = { post: BlogPost };
+type RelatedSummary = { slug: string; title: string };
 
-export function ArticleJsonLd({ post }: Props) {
-  const title = getBlogField(post, "es", "title");
+type Props = { post: BlogPost; relatedPosts?: RelatedSummary[] };
+
+export function ArticleJsonLd({ post, relatedPosts = [] }: Props) {
+  const title = cleanBlogTitle(getBlogField(post, "es", "title"));
   const description = getBlogField(post, "es", "excerpt");
   const url = absoluteUrl(`/blog/${post.slug}`);
 
-  const data = {
-    "@context": "https://schema.org",
+  const article = {
     "@type": "Article",
     headline: title,
     description,
@@ -32,6 +34,26 @@ export function ArticleJsonLd({ post }: Props) {
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     url,
+  };
+
+  const graph: Record<string, unknown>[] = [article];
+
+  if (relatedPosts.length > 0) {
+    graph.push({
+      "@type": "ItemList",
+      name: "Artículos relacionados",
+      itemListElement: relatedPosts.map((r, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        url: absoluteUrl(`/blog/${r.slug}`),
+        name: r.title,
+      })),
+    });
+  }
+
+  const data = {
+    "@context": "https://schema.org",
+    "@graph": graph,
   };
 
   return (
