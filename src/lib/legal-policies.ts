@@ -199,7 +199,7 @@ export const SECURITY_POLICY: PolicyDocument = {
       title: "5. Documentos de viaje",
       bullets: [
         "Los PDF de viaje se almacenan en servidor con acceso restringido al titular de la reserva autenticado.",
-        "Expiración automática de descarga 90 días (3 meses) después del fin del viaje.",
+        "Expiración automática de descarga 7 días después del fin del viaje.",
         "Solo administradores autorizados pueden subir o eliminar documentos.",
       ],
     },
@@ -276,7 +276,7 @@ export const PRIVACY_POLICY: PolicyDocument = {
       title: "5. Conservación",
       bullets: [
         "Datos de reserva: mientras dure la relación comercial y plazos legales posteriores.",
-        "Documentos de viaje descargables: hasta 90 días (3 meses) después del fin del viaje.",
+        "Documentos de viaje descargables: hasta 7 días después del fin del viaje.",
         "Códigos OTP: minutos; no se almacenan en texto plano.",
         "Carrito abandonado: hasta completar compra o solicitud de eliminación.",
       ],

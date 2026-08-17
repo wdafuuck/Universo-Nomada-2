@@ -40,7 +40,7 @@ function applyRetentionNote(
   const { retention, retentionDays } = data;
   if (!retention?.tripEnded) {
     setRetentionNote(
-      `El pasajero podrá descargar estos archivos hasta ${retentionDays ?? 90} días después de la fecha de fin del viaje.`,
+      `El pasajero podrá descargar estos archivos hasta ${retentionDays ?? 7} días después de la fecha de fin del viaje.`,
     );
   } else if (retention.available && retention.daysRemaining != null) {
     setRetentionNote(

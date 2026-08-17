@@ -73,7 +73,7 @@ function TripDocuments({ leadId }: { leadId: string | number }) {
       {daysRemaining != null && daysRemaining > 0 && (
         <p className="text-xs text-slate-500">
           Disponibles para descarga por {daysRemaining} día{daysRemaining !== 1 ? "s" : ""} más
-          (se eliminan 3 meses después de finalizar el viaje).
+          (se eliminan 7 días después de finalizar el viaje).
         </p>
       )}
       <ul className="space-y-2">

@@ -9,7 +9,7 @@ function authorize(request: NextRequest): boolean {
   return auth === `Bearer ${secret}`;
 }
 
-/** Elimina documentos de viaje vencidos (90 días / 3 meses post-viaje). */
+/** Elimina documentos de viaje vencidos (7 días post-viaje). */
 export async function GET(request: NextRequest) {
   if (!authorize(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
