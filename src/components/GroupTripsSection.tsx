@@ -161,13 +161,22 @@ export function GroupTripsSection({ tourList, groupTourMeta }: Props) {
         ) : trips.length === 0 ? (
           <GroupTripsComingSoon g={g} />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div
+            className={
+              trips.length === 1
+                ? "grid grid-cols-1 gap-8"
+                : trips.length === 2
+                  ? "grid grid-cols-1 sm:grid-cols-2 gap-8"
+                  : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+            }
+          >
             {trips.map((trip, i) => (
               <TripCard
                 key={trip.name}
                 trip={trip}
                 delay={i * 0.15}
                 borderClass={borderColor(trip.name)}
+                solo={trips.length === 1}
                 g={g}
                 discountsLabel={t("discounts").verDetalles}
                 desdeLabel={t("destinations").desde}
@@ -188,6 +197,7 @@ function TripCard({
   trip,
   delay,
   borderClass,
+  solo = false,
   g,
   discountsLabel,
   desdeLabel,
@@ -199,6 +209,7 @@ function TripCard({
   trip: GroupTrip & { originalPrice?: number | null };
   delay: number;
   borderClass: string;
+  solo?: boolean;
   g: Record<string, string>;
   discountsLabel: string;
   desdeLabel: string;
@@ -215,7 +226,9 @@ function TripCard({
     <GravityReveal delay={delay}>
       <motion.div
         whileHover={{ y: -8, transition: gravitySpring }}
-        className={`group relative bg-white/95 backdrop-blur-md rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-500 overflow-hidden border-2 premium-card-lift ${borderClass}`}
+        className={`group relative bg-white/95 backdrop-blur-md rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-500 overflow-hidden border-2 premium-card-lift ${borderClass} ${
+          solo ? "lg:grid lg:grid-cols-2 lg:items-stretch" : ""
+        }`}
       >
         <div className="absolute top-4 left-4 z-20">
           <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
@@ -223,8 +236,18 @@ function TripCard({
           </span>
         </div>
 
-        <div className="relative h-80 overflow-hidden rounded-t-2xl">
-          <Image src={image} alt={trip.name} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 1024px) 100vw, 33vw" />
+        <div
+          className={`relative overflow-hidden ${
+            solo ? "h-56 sm:h-72 lg:h-full lg:min-h-[340px] lg:rounded-l-2xl lg:rounded-tr-none" : "h-80 rounded-t-2xl"
+          }`}
+        >
+          <Image
+            src={image}
+            alt={trip.name}
+            fill
+            className="object-cover object-center transition-transform duration-700 group-hover:scale-110"
+            sizes={solo ? "100vw" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"}
+          />
           <div className={`absolute inset-0 bg-gradient-to-t ${trip.gradient} via-transparent to-transparent opacity-80`} />
           <div className="absolute top-4 right-4">
             <span className="bg-white/90 backdrop-blur-md text-gray-900 text-xs font-bold px-3 py-1.5 rounded-full">
@@ -232,7 +255,7 @@ function TripCard({
             </span>
           </div>
           <div className="absolute bottom-4 left-4">
-            <h3 className="text-white font-black text-2xl mb-1">{trip.name}</h3>
+            <h3 className={`text-white font-black mb-1 ${solo ? "text-2xl sm:text-3xl" : "text-2xl"}`}>{trip.name}</h3>
             <div className="flex items-center gap-2">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
@@ -244,7 +267,7 @@ function TripCard({
           </div>
         </div>
 
-        <div className="p-6">
+        <div className={`p-6 ${solo ? "lg:p-8 lg:flex lg:flex-col lg:justify-center" : ""}`}>
           <div className="mb-4">
             <div className="flex items-center gap-2 text-gray-600 text-sm mb-3">
               <CalendarDays className="h-4 w-4 text-red-500" />
@@ -299,7 +322,7 @@ function TripCard({
                 desdeLabel={desdeLabel}
                 porPersonaLabel={porPersonaLabel}
                 ahorrasLabel={ahorrasLabel}
-                size="md"
+                size={solo ? "lg" : "md"}
               />
               <p className="text-xs font-bold text-black mt-2 bg-white inline-block px-2.5 py-1 rounded-full border border-slate-200">
                 {g.reservationFrom} {formatCLP(trip.reservation)}
