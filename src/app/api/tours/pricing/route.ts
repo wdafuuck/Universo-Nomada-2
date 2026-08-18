@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getDefaultPricing, normalizePricingConfig, type TourPricingConfig } from "@/lib/tour-pricing";
+import { effectivePromoDiscountPercent } from "@/lib/promo-schedule";
 
 function parseConfig(tourId: string, tourName: string, basePrice: number, tiersJson: string): TourPricingConfig {
   try {
@@ -23,10 +24,16 @@ export async function GET(request: NextRequest) {
         db.tourPricing.findUnique({ where: { tourId } }),
         db.tour.findUnique({
           where: { tourId },
-          select: { promoDiscountPercent: true, name: true, price: true },
+          select: {
+            promoDiscountPercent: true,
+            promoStartsAt: true,
+            promoEndsAt: true,
+            name: true,
+            price: true,
+          },
         }),
       ]);
-      const promoDiscountPercent = Number(tour?.promoDiscountPercent) || 0;
+      const promoDiscountPercent = tour ? effectivePromoDiscountPercent(tour) : 0;
       if (row) {
         const config = parseConfig(row.tourId, row.tourName, row.basePrice, row.tiersJson);
         return NextResponse.json({
@@ -42,9 +49,9 @@ export async function GET(request: NextRequest) {
     const all = await db.tourPricing.findMany({ orderBy: { tourName: "asc" } });
     const tours = await db.tour.findMany({
       where: { tourId: { in: all.map((r) => r.tourId) } },
-      select: { tourId: true, promoDiscountPercent: true },
+      select: { tourId: true, promoDiscountPercent: true, promoStartsAt: true, promoEndsAt: true },
     });
-    const promoByTour = new Map(tours.map((t) => [t.tourId, t.promoDiscountPercent || 0]));
+    const promoByTour = new Map(tours.map((t) => [t.tourId, effectivePromoDiscountPercent(t)]));
     return NextResponse.json({
       configs: all.map((r) => ({
         ...parseConfig(r.tourId, r.tourName, r.basePrice, r.tiersJson),

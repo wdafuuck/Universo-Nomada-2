@@ -1,5 +1,6 @@
 import { tourToPublicContent } from "@/lib/tour-content";
 import { resolveOfferPricing } from "@/lib/tour-pricing";
+import { effectivePromoDiscountPercent } from "@/lib/promo-schedule";
 
 type DbTour = {
   tourId: string;
@@ -12,6 +13,8 @@ type DbTour = {
   price: number;
   originalPrice: number | null;
   promoDiscountPercent?: number;
+  promoStartsAt?: Date | string | null;
+  promoEndsAt?: Date | string | null;
   duration: string;
   includesText?: string;
   excludesText?: string;
@@ -28,14 +31,19 @@ type DbTour = {
 
 export function toPublicTour(tour: DbTour) {
   const content = tourToPublicContent(tour);
-  const offer = resolveOfferPricing(tour.price, tour.originalPrice, tour.promoDiscountPercent);
+  const percent = effectivePromoDiscountPercent(tour);
+  const offer = resolveOfferPricing(tour.price, tour.originalPrice, percent);
+  const tag =
+    percent > 0
+      ? tour.tag
+      : tour.tag.replace(/\s*\d{1,2}\s*%\s*OFF\s*/gi, " ").replace(/\s+/g, " ").trim();
   return {
     tourId: tour.tourId,
     name: tour.name,
     subtitle: tour.subtitle,
     description: tour.description,
     image: tour.image,
-    tag: tour.tag,
+    tag,
     category: tour.category,
     price: offer.price,
     originalPrice: offer.originalPrice,

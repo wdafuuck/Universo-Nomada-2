@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-session";
+import { parsePromoScheduleFromBody } from "@/lib/promo-schedule";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const { tourId } = await params;
     const body = await request.json();
     const price = Number(body.price) || 0;
+    const schedule = parsePromoScheduleFromBody(body);
+    if (schedule.error) {
+      return NextResponse.json({ error: schedule.error }, { status: 400 });
+    }
 
     const tour = await db.tour.update({
       where: { tourId },
@@ -75,6 +80,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
         promoDiscountPercent: body.showInOfertas
           ? Math.min(90, Math.max(0, Math.round(Number(body.promoDiscountPercent) || 0)))
           : 0,
+        promoStartsAt: schedule.promoStartsAt,
+        promoEndsAt: schedule.promoEndsAt,
         active: body.active !== false,
         sortOrder: body.sortOrder ?? 0,
       },

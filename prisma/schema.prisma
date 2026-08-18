@@ -312,6 +312,10 @@ model Tour {
   promoTitle           String   @default("")
   /** % OFF de oferta: se aplica a todos los hoteles y ocupaciones (1/2/3+) */
   promoDiscountPercent Int      @default(0)
+  /** Inicio programado de la oferta (hora Chile). Null = ya está vigente. */
+  promoStartsAt        DateTime?
+  /** Término programado: al llegar a esta hora sale de Ofertas y vuelve el precio real. */
+  promoEndsAt          DateTime?
   active               Boolean  @default(true)
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())

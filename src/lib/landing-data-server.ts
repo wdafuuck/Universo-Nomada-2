@@ -8,6 +8,7 @@ import {
   getActiveGroupTourIds,
 } from "@/lib/group-trips-visibility";
 import { tourToPromoCard } from "@/lib/tour-ofertas";
+import { isTourInOfertasNow } from "@/lib/promo-schedule";
 import type { TourCardData } from "@/components/TourCard";
 import type { PromoCard } from "@/hooks/use-tours";
 
@@ -65,7 +66,7 @@ async function loadLandingInitialData(): Promise<LandingInitialData> {
   ]);
 
   const visible = filterToursByGroupVisibility(tours, activeGroupIds);
-  const ofertas = tours.filter((t) => t.showInOfertas).map(tourToPromoCard);
+  const ofertas = tours.filter((t) => isTourInOfertasNow(t)).map(tourToPromoCard);
 
   return {
     heroImages: slides.map((s) => s.imageUrl).filter(Boolean),
@@ -74,7 +75,7 @@ async function loadLandingInitialData(): Promise<LandingInitialData> {
   };
 }
 
-const cachedLanding = unstable_cache(loadLandingInitialData, ["landing-initial-v1"], {
+const cachedLanding = unstable_cache(loadLandingInitialData, ["landing-initial-v2"], {
   revalidate: 30,
 });
 

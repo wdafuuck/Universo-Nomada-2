@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { DEFAULT_TOURS } from "@/lib/default-tours";
 import { requireAdmin } from "@/lib/auth-session";
+import { parsePromoScheduleFromBody } from "@/lib/promo-schedule";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const schedule = parsePromoScheduleFromBody(body);
+    if (schedule.error) {
+      return NextResponse.json({ error: schedule.error }, { status: 400 });
+    }
+
     const tour = await db.tour.create({
       data: {
         tourId: slug,
@@ -85,6 +91,8 @@ export async function POST(request: NextRequest) {
         promoDiscountPercent: showInOfertas
           ? Math.min(90, Math.max(0, Math.round(Number(body.promoDiscountPercent) || 0)))
           : 0,
+        promoStartsAt: schedule.promoStartsAt,
+        promoEndsAt: schedule.promoEndsAt,
         active: active !== false,
         sortOrder: sortOrder ?? 99,
       },

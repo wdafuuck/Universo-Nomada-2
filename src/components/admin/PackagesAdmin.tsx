@@ -24,6 +24,11 @@ import {
 } from "@/lib/tour-pricing";
 import { TOUR_CATEGORIES, normalizeTourCategory, tourCategoryLabel } from "@/lib/tour-category";
 import { isGroupTourId } from "@/lib/tour-pricing";
+import {
+  promoScheduleStatus,
+  toChileDateTimeLocal,
+  toDate,
+} from "@/lib/promo-schedule";
 
 export type TourRecord = {
   tourId: string;
@@ -51,6 +56,8 @@ export type TourRecord = {
   showInOfertas: boolean;
   promoTitle: string;
   promoDiscountPercent: number;
+  promoStartsAt: string | null;
+  promoEndsAt: string | null;
   active: boolean;
   sortOrder: number;
 };
@@ -72,6 +79,8 @@ const emptyTour = (): Partial<TourRecord> & { tourId: string } => ({
   showInOfertas: false,
   promoTitle: "",
   promoDiscountPercent: 0,
+  promoStartsAt: null,
+  promoEndsAt: null,
   active: true,
   sortOrder: 99,
 });
@@ -128,7 +137,7 @@ export function PackagesAdmin() {
           setPricingConfig({
             ...ensureOccupancyTiers(data.config, basePrice),
             promoDiscountPercent: clampPromoDiscountPercent(
-              data.config.promoDiscountPercent ?? promoPercent,
+              promoPercent || data.config.promoDiscountPercent,
             ),
           });
           return;
@@ -262,6 +271,14 @@ export function PackagesAdmin() {
       toast.error("Si el paquete es visible en Ofertas, el título de la oferta es obligatorio");
       return;
     }
+    if (editing.showInOfertas) {
+      const start = toDate(editing.promoStartsAt);
+      const end = toDate(editing.promoEndsAt);
+      if (start && end && start >= end) {
+        toast.error("La fecha de inicio debe ser anterior al término de la oferta");
+        return;
+      }
+    }
 
     const slug = editing.tourId.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     if (!slug) {
@@ -285,15 +302,15 @@ export function PackagesAdmin() {
       const listPrice = pricingConfig
         ? getListDisplayPricePerPerson(pricingConfig)
         : Number(editing.price) || 0;
-      const salePrice = applyPromoPercent(listPrice, percent);
 
-      // En DB: price = lo que ve el cliente; originalPrice = tachado si hay %.
-      // Los hoteles guardan siempre el precio real (lista).
+      // Precio de lista en DB; el % de oferta se aplica al leer, solo dentro de la ventana.
       const payload = {
         ...editing,
         tourId: slug,
         promoDiscountPercent: percent,
-        price: percent > 0 ? salePrice : listPrice,
+        promoStartsAt: editing.showInOfertas ? editing.promoStartsAt || null : null,
+        promoEndsAt: editing.showInOfertas ? editing.promoEndsAt || null : null,
+        price: listPrice,
         originalPrice: percent > 0 ? listPrice : (editing.originalPrice ?? null),
         tag: percent > 0 ? `${percent}% OFF` : (editing.tag ?? ""),
       };
@@ -606,6 +623,8 @@ export function PackagesAdmin() {
                           showInOfertas: false,
                           promoTitle: "",
                           promoDiscountPercent: 0,
+                          promoStartsAt: null,
+                          promoEndsAt: null,
                           tag: editing.tag?.includes("% OFF") ? "" : editing.tag,
                         });
                         if (pricingConfig) {
@@ -625,7 +644,7 @@ export function PackagesAdmin() {
                   <span>
                     <span className="text-white font-medium text-sm">Visible en sector Ofertas</span>
                     <span className="block text-white/40 text-xs mt-0.5">
-                      Aparece en Ofertas de la home. El nombre del programa pasa a ser el subtítulo.
+                      Aparece en Ofertas de la home. Puedes programar inicio y término (hora Chile); si no pones fechas, queda visible de inmediato.
                     </span>
                   </span>
                 </label>
@@ -642,6 +661,50 @@ export function PackagesAdmin() {
                       <p className="text-white/30 text-[10px] mt-1">
                         Subtítulo en la web: <span className="text-white/50">{editing.name || "nombre del programa"}</span>
                       </p>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-white/40 text-xs">Inicio de la oferta (opcional)</label>
+                        <Input
+                          type="datetime-local"
+                          value={toChileDateTimeLocal(editing.promoStartsAt)}
+                          onChange={(e) =>
+                            setEditing({ ...editing, promoStartsAt: e.target.value || null })
+                          }
+                          className="mt-1 bg-white/5 border-white/10 text-white"
+                        />
+                        <p className="text-white/30 text-[10px] mt-1">
+                          Hora Chile. Vacío = empieza al guardar.
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-white/40 text-xs">Término de la oferta (opcional)</label>
+                        <Input
+                          type="datetime-local"
+                          value={toChileDateTimeLocal(editing.promoEndsAt)}
+                          onChange={(e) =>
+                            setEditing({ ...editing, promoEndsAt: e.target.value || null })
+                          }
+                          className="mt-1 bg-white/5 border-white/10 text-white"
+                        />
+                        <p className="text-white/30 text-[10px] mt-1">
+                          Al llegar a esta hora sale de Ofertas y vuelve el precio real.
+                        </p>
+                      </div>
+                      {(() => {
+                        const st = promoScheduleStatus(editing.promoStartsAt, editing.promoEndsAt);
+                        const color =
+                          st.key === "programada"
+                            ? "text-sky-300"
+                            : st.key === "finalizada"
+                              ? "text-white/40"
+                              : "text-amber-300";
+                        return (
+                          <p className={`sm:col-span-2 text-xs font-semibold ${color}`}>
+                            {st.label}
+                          </p>
+                        );
+                      })()}
                     </div>
                     <div>
                       <label className="text-white/70 text-xs font-medium">
@@ -780,14 +843,23 @@ export function PackagesAdmin() {
               )}
               {tour.showInOfertas && (
                 <span className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                  Ofertas{tour.promoDiscountPercent > 0 ? ` −${tour.promoDiscountPercent}%` : ""}
+                  {promoScheduleStatus(tour.promoStartsAt, tour.promoEndsAt).key === "programada"
+                    ? "Programada"
+                    : promoScheduleStatus(tour.promoStartsAt, tour.promoEndsAt).key === "finalizada"
+                      ? "Oferta vencida"
+                      : `Ofertas${tour.promoDiscountPercent > 0 ? ` −${tour.promoDiscountPercent}%` : ""}`}
                 </span>
               )}
             </div>
             <CardContent className="p-4">
               <h4 className="text-white font-bold">{tour.name}</h4>
               {tour.showInOfertas && tour.promoTitle ? (
-                <p className="text-amber-300/90 text-xs mt-0.5">Oferta: {tour.promoTitle}</p>
+                <p className="text-amber-300/90 text-xs mt-0.5">
+                  Oferta: {tour.promoTitle}
+                  {promoScheduleStatus(tour.promoStartsAt, tour.promoEndsAt).key !== "sin_fechas"
+                    ? ` · ${promoScheduleStatus(tour.promoStartsAt, tour.promoEndsAt).label}`
+                    : ""}
+                </p>
               ) : null}
               <p className="text-white/40 text-xs">{tour.tourId} · {tourCategoryLabel(tour.category, tour.tourId)}</p>
               <div className="flex items-baseline gap-2 mt-2">

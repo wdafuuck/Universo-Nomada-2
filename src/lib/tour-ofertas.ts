@@ -1,6 +1,7 @@
 import type { PromoCard } from "@/hooks/use-tours";
 import { cleanDestinationName, tourIdStem } from "@/lib/tour-destination-groups";
-import { clampPromoDiscountPercent, resolveOfferPricing } from "@/lib/tour-pricing";
+import { resolveOfferPricing } from "@/lib/tour-pricing";
+import { effectivePromoDiscountPercent, formatPromoEndLabel } from "@/lib/promo-schedule";
 
 export type TourOfertasRow = {
   tourId: string;
@@ -14,6 +15,8 @@ export type TourOfertasRow = {
   promoDiscountPercent: number;
   showInOfertas: boolean;
   promoTitle: string;
+  promoStartsAt?: Date | string | null;
+  promoEndsAt?: Date | string | null;
   sortOrder: number;
 };
 
@@ -32,7 +35,7 @@ function discountLabel(percent: number, price: number, originalPrice: number | n
 export function tourToPromoCard(tour: TourOfertasRow): PromoCard {
   const title = tour.promoTitle.trim() || tour.name;
   const subtitle = tour.promoTitle.trim() ? tour.name : tour.subtitle || tour.name;
-  const percent = clampPromoDiscountPercent(tour.promoDiscountPercent);
+  const percent = effectivePromoDiscountPercent(tour);
   const offer = resolveOfferPricing(tour.price, tour.originalPrice, percent);
 
   return {
@@ -43,7 +46,7 @@ export function tourToPromoCard(tour: TourOfertasRow): PromoCard {
     discount: discountLabel(percent, offer.price, offer.originalPrice, tour.tag),
     destination: tour.subtitle || tour.name,
     duration: tour.duration,
-    validUntil: "",
+    validUntil: formatPromoEndLabel(tour.promoEndsAt),
     originalPrice: offer.originalPrice ?? offer.price,
     discountPrice: offer.price,
     emoji: "🔥",
