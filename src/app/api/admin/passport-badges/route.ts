@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-session";
-import { DEFAULT_PASSPORT_BADGES } from "@/lib/default-passport-badges";
-
-async function ensureSeeded() {
-  const count = await db.passportBadge.count();
-  if (count === 0) {
-    for (const b of DEFAULT_PASSPORT_BADGES) {
-      await db.passportBadge.create({ data: b });
-    }
-  }
-}
+import { ensureDefaultPassportBadges } from "@/lib/ensure-passport-badges";
 
 export async function GET() {
   try {
-    await ensureSeeded();
+    await ensureDefaultPassportBadges();
     const badges = await db.passportBadge.findMany({
       orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Pencil, User, Plane, FileText } from "lucide-react";
+import { Plus, Pencil, User, Plane, FileText, Award, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,12 +23,24 @@ type UserTrip = {
   _count: { documents: number };
 };
 
+type UserBadge = {
+  id: number;
+  badgeId: number;
+  name: string;
+  emoji: string;
+  image: string;
+  destination: string;
+  earnedAt: string;
+  leadId: number | null;
+};
+
 type RegisteredUser = {
   id: string;
   email: string;
   name: string | null;
   emailVerifiedAt: string | null;
   createdAt: string;
+  passportBadges: UserBadge[];
   leads: UserTrip[];
 };
 
@@ -61,6 +73,7 @@ export function MembersAdmin() {
   const [saving, setSaving] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: "", email: "" });
+  const [syncingBadges, setSyncingBadges] = useState(false);
 
   const [clientForm, setClientForm] = useState({
     name: "",
@@ -87,7 +100,10 @@ export function MembersAdmin() {
       const res = await fetch("/api/admin/users", { credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-      const nextUsers = (data.users ?? []) as RegisteredUser[];
+      const nextUsers = ((data.users ?? []) as RegisteredUser[]).map((u) => ({
+        ...u,
+        passportBadges: u.passportBadges ?? [],
+      }));
       setUsers(nextUsers);
       setSelected((prev) => {
         if (!prev) return prev;
@@ -244,6 +260,40 @@ export function MembersAdmin() {
       toast.error(e instanceof Error ? e.message : "Error");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const syncBadges = async (user: RegisteredUser) => {
+    setSyncingBadges(true);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync-badges", sendEmail: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Error");
+      const n = (data.newlyAwarded as { name: string; emoji: string }[] | undefined)?.length ?? 0;
+      if (n > 0) {
+        const names = (data.newlyAwarded as { name: string; emoji: string }[])
+          .map((b) => `${b.emoji} ${b.name}`)
+          .join(", ");
+        toast.success(`Nuevas insignias: ${names}`);
+      } else {
+        toast.success(
+          data.earnedCount
+            ? `Sin cambios · ya tiene ${data.earnedCount} insignia${data.earnedCount !== 1 ? "s" : ""}`
+            : "Sin insignias nuevas (¿viaje terminado y destinos en el título?)",
+        );
+      }
+      const next = await load();
+      const fresh = next.find((u) => u.id === user.id);
+      if (fresh) setSelected(fresh);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSyncingBadges(false);
     }
   };
 
@@ -492,7 +542,13 @@ export function MembersAdmin() {
                 <p className="text-white/40 text-xs mt-1">
                   Registro: {new Date(user.createdAt).toLocaleDateString("es-CL")}
                   · {user.leads.length} viaje{user.leads.length !== 1 ? "s" : ""}
+                  · {user.passportBadges?.length ?? 0} insignia{(user.passportBadges?.length ?? 0) !== 1 ? "s" : ""}
                 </p>
+                {(user.passportBadges?.length ?? 0) > 0 && (
+                  <p className="text-white/50 text-xs mt-1 truncate" title={user.passportBadges.map((b) => b.name).join(", ")}>
+                    {user.passportBadges.map((b) => b.emoji || "🏅").join(" ")}
+                  </p>
+                )}
               </button>
             ))}
           </div>
@@ -517,6 +573,15 @@ export function MembersAdmin() {
                       className="border-white/10 text-white bg-white/5 rounded-xl"
                     >
                       <Pencil className="h-4 w-4 mr-1" /> Cambiar correo
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => void syncBadges(selected)}
+                      disabled={syncingBadges}
+                      className="border-white/10 text-white bg-white/5 rounded-xl"
+                    >
+                      <RefreshCw className={`h-4 w-4 mr-1 ${syncingBadges ? "animate-spin" : ""}`} />
+                      {syncingBadges ? "Calculando..." : "Actualizar insignias"}
                     </Button>
                     <Button
                       onClick={() => openNewTrip(selected)}
@@ -570,6 +635,43 @@ export function MembersAdmin() {
                     </div>
                   </div>
                 )}
+
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-white font-semibold text-sm flex items-center gap-2">
+                      <Award className="h-4 w-4 text-teal" />
+                      Pasaporte · {selected.passportBadges?.length ?? 0} insignia
+                      {(selected.passportBadges?.length ?? 0) !== 1 ? "s" : ""}
+                    </h4>
+                  </div>
+                  <p className="text-white/40 text-xs">
+                    Se otorgan al terminar el viaje si el título/destino coincide con una insignia
+                    (ej. «Rio de Janeiro, Ilha Grande e Iguazu» → varias).
+                  </p>
+                  {(selected.passportBadges?.length ?? 0) === 0 ? (
+                    <p className="text-white/30 text-sm">Aún sin insignias. Usa «Actualizar insignias» si el viaje ya terminó.</p>
+                  ) : (
+                    <ul className="grid sm:grid-cols-2 gap-2">
+                      {selected.passportBadges.map((b) => (
+                        <li
+                          key={b.id}
+                          className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2"
+                        >
+                          <span className="text-xl shrink-0" aria-hidden>
+                            {b.emoji || "🏅"}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-white text-sm font-medium truncate">{b.name}</p>
+                            <p className="text-white/40 text-xs">
+                              {new Date(b.earnedAt).toLocaleDateString("es-CL")}
+                              {b.destination ? ` · ${b.destination}` : ""}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
 
                 {showNewTrip && (
                   <div className="rounded-xl border border-teal/30 bg-teal/5 p-4 space-y-3">

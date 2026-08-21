@@ -97,6 +97,17 @@ export function collectTripText(trip: MemberTrip, cartJson?: string | null): str
   return norm(parts.join(" "));
 }
 
+/** Partes del título (multi-destino: "Rio, Ilha Grande e Iguazu"). */
+export function splitTripTitleSegments(haystack: string): string[] {
+  const full = norm(haystack);
+  if (!full) return [];
+  const parts = full
+    .split(/\s*(?:,|;|\/|\||\+| e | y | and |&\s*)\s*/)
+    .map((p) => p.trim())
+    .filter((p) => p.length >= 3);
+  return parts.length > 0 ? [full, ...parts] : [full];
+}
+
 export function badgeMatchesTrip(
   badge: PassportBadgeDef,
   trip: MemberTrip,
@@ -114,16 +125,34 @@ export function badgeMatchesTrip(
     .map(norm)
     .filter((t) => t.length >= 3);
 
-  // Frase completa (ej. "rapa nui")
-  if (phrases.some((term) => haystack.includes(term))) return true;
+  const segments = splitTripTitleSegments(haystack);
+
+  // Frase completa en título o en cada tramo (ej. "iguazu" en "... e iguazu")
+  for (const segment of segments) {
+    if (phrases.some((term) => segment.includes(term))) return true;
+  }
 
   // Tokens significativos (ej. insignia "Cataratas del Iguazú" ↔ viaje "Iguazú 5D/4N")
   const badgeTokens = new Set<string>();
   for (const p of phrases) {
     for (const tok of significantTokens(p)) badgeTokens.add(tok);
   }
-  const tripTokens = significantTokens(haystack);
-  return tripTokens.some((t) => badgeTokens.has(t));
+  // Destinos cortos explícitos en matchTerms / destination / slug (ej. "rio")
+  for (const p of phrases) {
+    const words = p.split(" ").filter((t) => t.length >= 3 && !STOP.has(t));
+    // Solo palabras sueltas de matchTerms cortos (frase de 1 palabra)
+    if (words.length === 1) badgeTokens.add(words[0]!);
+  }
+  const tripTokens = new Set<string>();
+  for (const segment of segments) {
+    for (const tok of significantTokens(segment)) tripTokens.add(tok);
+    const words = segment.split(" ").filter((t) => t.length >= 3 && !STOP.has(t));
+    if (words.length === 1) tripTokens.add(words[0]!);
+  }
+  for (const t of tripTokens) {
+    if (badgeTokens.has(t)) return true;
+  }
+  return false;
 }
 
 /** Viajes que cuentan para insignias (pasados y no cancelados). */

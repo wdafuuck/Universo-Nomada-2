@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-session";
 import { updateUserEmailWithMerge } from "@/lib/merge-users";
+import { syncPassportBadgesForUser } from "@/lib/passport-award";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -47,5 +48,47 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       : 500;
     console.error("[admin/users PATCH]", e);
     return NextResponse.json({ error: message }, { status });
+  }
+}
+
+/** Recalcula insignias del cliente según títulos de viajes terminados. */
+export async function POST(request: NextRequest, { params }: Params) {
+  const admin = await requireAdmin(request);
+  if (!admin) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+  const { id } = await params;
+  if (!id) return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    if (body?.action !== "sync-badges") {
+      return NextResponse.json({ error: "Acción no soportada" }, { status: 400 });
+    }
+
+    const user = await db.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    if (!user || user.role !== "user") {
+      return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
+    }
+
+    const result = await syncPassportBadgesForUser(user.id, user.email, {
+      sendEmail: body.sendEmail !== false,
+      customerName: user.name ?? undefined,
+    });
+
+    return NextResponse.json({
+      earnedCount: result.earned.length,
+      newlyAwarded: result.newlyAwarded.map((b) => ({
+        id: b.id,
+        name: b.name,
+        emoji: b.emoji,
+      })),
+      emailSent: result.emailSent,
+    });
+  } catch (e) {
+    console.error("[admin/users POST sync-badges]", e);
+    return NextResponse.json({ error: "Error al sincronizar insignias" }, { status: 500 });
   }
 }

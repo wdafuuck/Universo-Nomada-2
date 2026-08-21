@@ -27,6 +27,24 @@ export async function GET() {
         name: true,
         emailVerifiedAt: true,
         createdAt: true,
+        passportBadges: {
+          where: { badge: { active: true } },
+          orderBy: { earnedAt: "desc" },
+          select: {
+            id: true,
+            earnedAt: true,
+            leadId: true,
+            badge: {
+              select: {
+                id: true,
+                name: true,
+                emoji: true,
+                image: true,
+                destination: true,
+              },
+            },
+          },
+        },
         leads: {
           where: { source: { in: [...TRIP_SOURCES] } },
           select: {
@@ -66,6 +84,16 @@ export async function GET() {
     return NextResponse.json({
       users: users.map((user) => ({
         ...user,
+        passportBadges: user.passportBadges.map((a) => ({
+          id: a.id,
+          earnedAt: a.earnedAt,
+          leadId: a.leadId,
+          name: a.badge.name,
+          emoji: a.badge.emoji,
+          image: a.badge.image,
+          destination: a.badge.destination,
+          badgeId: a.badge.id,
+        })),
         leads: user.leads.map((lead) => ({
           ...lead,
           _count: { documents: docCountByLead.get(lead.id) ?? 0 },
