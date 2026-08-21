@@ -34,6 +34,7 @@ export async function GET() {
             destino: true,
             status: true,
             source: true,
+            email: true,
             cartTotal: true,
             amountDue: true,
             tripEndDate: true,

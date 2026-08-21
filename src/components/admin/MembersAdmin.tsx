@@ -15,6 +15,7 @@ type UserTrip = {
   destino: string | null;
   status: string;
   source: string;
+  email: string;
   cartTotal: number | null;
   amountDue: number | null;
   tripEndDate: string | null;
@@ -58,6 +59,8 @@ export function MembersAdmin() {
   const [showNewTrip, setShowNewTrip] = useState(false);
   const [showNewClient, setShowNewClient] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({ name: "", email: "" });
 
   const [clientForm, setClientForm] = useState({
     name: "",
@@ -182,10 +185,73 @@ export function MembersAdmin() {
     }
   };
 
+  const openEditProfile = (user: RegisteredUser) => {
+    setEditingProfile(true);
+    setShowNewTrip(false);
+    setProfileForm({ name: user.name ?? "", email: user.email });
+  };
+
+  const saveProfile = async () => {
+    if (!selected) return;
+    if (!profileForm.email.trim()) {
+      toast.error("Indica el correo");
+      return;
+    }
+    const emailChanged =
+      profileForm.email.trim().toLowerCase() !== selected.email.toLowerCase();
+    if (emailChanged) {
+      const other = users.find(
+        (u) =>
+          u.id !== selected.id &&
+          u.email.toLowerCase() === profileForm.email.trim().toLowerCase(),
+      );
+      if (other) {
+        const ok = confirm(
+          `Ya existe otro cliente con ${profileForm.email.trim()}.\n\n` +
+            `Se unirán todos los viajes e información en una sola cuenta (${selected.name || selected.email}).\n\n` +
+            `¿Continuar?`,
+        );
+        if (!ok) return;
+      }
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/users/${selected.id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: profileForm.name.trim(),
+          email: profileForm.email.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Error");
+
+      if (data.merged) {
+        toast.success(
+          `Correo actualizado y cuentas unificadas${data.mergedFromEmail ? ` (se absorbió ${data.mergedFromEmail})` : ""}`,
+        );
+      } else {
+        toast.success("Datos del cliente actualizados (también en sus viajes)");
+      }
+      setEditingProfile(false);
+      const next = await load();
+      const fresh = next.find((u) => u.id === selected.id);
+      if (fresh) setSelected(fresh);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openNewTrip = (user: RegisteredUser) => {
     setSelected(user);
     setShowNewTrip(true);
     setEditingTripId(null);
+    setEditingProfile(false);
     setTripForm({
       destino: "",
       status: "reservado",
@@ -408,7 +474,13 @@ export function MembersAdmin() {
               <button
                 key={user.id}
                 type="button"
-                onClick={() => { setSelected(user); setShowNewTrip(false); setShowNewClient(false); setEditingTripId(null); }}
+                onClick={() => {
+                  setSelected(user);
+                  setShowNewTrip(false);
+                  setShowNewClient(false);
+                  setEditingTripId(null);
+                  setEditingProfile(false);
+                }}
                 className={`w-full text-left p-4 rounded-2xl border transition-all ${
                   selected?.id === user.id
                     ? "border-teal/50 bg-teal/10"
@@ -438,13 +510,66 @@ export function MembersAdmin() {
                     <h3 className="text-white font-bold text-lg">{selected.name || selected.email}</h3>
                     <p className="text-white/50 text-sm">{selected.email}</p>
                   </div>
-                  <Button
-                    onClick={() => openNewTrip(selected)}
-                    className="bg-teal text-[#070f1a] font-bold rounded-xl"
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Agregar viaje manual
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => openEditProfile(selected)}
+                      className="border-white/10 text-white bg-white/5 rounded-xl"
+                    >
+                      <Pencil className="h-4 w-4 mr-1" /> Cambiar correo
+                    </Button>
+                    <Button
+                      onClick={() => openNewTrip(selected)}
+                      className="bg-teal text-[#070f1a] font-bold rounded-xl"
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Agregar viaje manual
+                    </Button>
+                  </div>
                 </div>
+
+                {editingProfile && (
+                  <div className="rounded-xl border border-teal/30 bg-teal/5 p-4 space-y-3">
+                    <h4 className="text-white font-semibold text-sm">Editar nombre y correo</h4>
+                    <p className="text-white/40 text-xs">
+                      Al cambiar el correo se actualiza también en todos sus viajes. Si ya existe otra cuenta con ese correo, se unen en una sola.
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-white/40 text-xs">Nombre</label>
+                        <Input
+                          value={profileForm.name}
+                          onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                          className="mt-1 bg-white/5 border-white/10 text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white/40 text-xs">Correo</label>
+                        <Input
+                          type="email"
+                          value={profileForm.email}
+                          onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                          className="mt-1 bg-white/5 border-white/10 text-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => void saveProfile()}
+                        disabled={saving}
+                        className="bg-teal text-[#070f1a] font-bold rounded-xl"
+                      >
+                        {saving ? "Guardando..." : "Guardar"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setEditingProfile(false)}
+                        className="border-white/10 text-white bg-white/5 rounded-xl"
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {showNewTrip && (
                   <div className="rounded-xl border border-teal/30 bg-teal/5 p-4 space-y-3">
@@ -513,6 +638,9 @@ export function MembersAdmin() {
                             </p>
                             <p className="text-white/40 text-xs mt-0.5 capitalize">
                               {trip.status.replace(/_/g, " ")} · {trip.source === "admin-manual" ? "Manual" : "Web"}
+                              {trip.email && trip.email.toLowerCase() !== selected.email.toLowerCase()
+                                ? ` · ⚠ viaje: ${trip.email}`
+                                : ""}
                               {trip.cartTotal ? ` · Total $${trip.cartTotal.toLocaleString("es-CL")}` : ""}
                               {trip.cartTotal != null && trip.amountDue != null && trip.cartTotal > 0 && (
                                 trip.amountDue >= trip.cartTotal

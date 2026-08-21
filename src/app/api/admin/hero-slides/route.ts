@@ -2,8 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { DEFAULT_HERO_SLIDES } from "@/lib/default-hero-slides";
 import { requireAdmin } from "@/lib/auth-session";
+import { parsePromoDateInput } from "@/lib/promo-schedule";
 
 export const dynamic = "force-dynamic";
+
+function parseHeroSchedule(body: { startsAt?: unknown; endsAt?: unknown }) {
+  const startsAt =
+    body.startsAt === null || body.startsAt === ""
+      ? null
+      : parsePromoDateInput(body.startsAt);
+  const endsAt =
+    body.endsAt === null || body.endsAt === ""
+      ? null
+      : parsePromoDateInput(body.endsAt);
+  if (startsAt && endsAt && startsAt >= endsAt) {
+    return { error: "La fecha de inicio debe ser anterior al término del banner." as const };
+  }
+  return { startsAt, endsAt };
+}
 
 async function ensureSeeded() {
   const count = await db.heroSlide.count();
@@ -39,12 +55,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "La imagen es obligatoria" }, { status: 400 });
     }
 
+    const schedule = parseHeroSchedule(body);
+    if ("error" in schedule && schedule.error) {
+      return NextResponse.json({ error: schedule.error }, { status: 400 });
+    }
+
     const slide = await db.heroSlide.create({
       data: {
         imageUrl,
         label: body.label ?? "",
         active: body.active !== false,
         sortOrder: body.sortOrder ?? 99,
+        startsAt: schedule.startsAt ?? null,
+        endsAt: schedule.endsAt ?? null,
       },
     });
     return NextResponse.json({ slide }, { status: 201 });

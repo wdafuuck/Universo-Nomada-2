@@ -97,6 +97,19 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     data: updateData,
   });
 
+  // Si se corrige el email del viaje y tiene cuenta, sincronizar (y fusionar si ya existe).
+  if (body.email !== undefined && existing.userId) {
+    const nextEmail = normalizeEmail(String(body.email));
+    if (nextEmail && nextEmail !== existing.email) {
+      try {
+        const { updateUserEmailWithMerge } = await import("@/lib/merge-users");
+        await updateUserEmailWithMerge(existing.userId, nextEmail);
+      } catch (err) {
+        console.error("[admin/leads] sync user email", err);
+      }
+    }
+  }
+
   if (body.status !== undefined && body.status !== existing.status) {
     await db.leadEvent.create({
       data: {
