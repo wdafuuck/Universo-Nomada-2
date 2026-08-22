@@ -50,7 +50,7 @@ export function PromoOfferCard({
     >
       <div
         className={`relative overflow-hidden ${
-          compact ? "h-44 sm:h-auto sm:min-h-[200px] sm:max-h-[260px]" : "h-48"
+          compact ? "h-44 sm:h-full sm:min-h-0 sm:self-stretch" : "h-48"
         }`}
       >
         <UploadAwareImage
