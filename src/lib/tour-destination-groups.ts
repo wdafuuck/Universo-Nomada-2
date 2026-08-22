@@ -52,8 +52,27 @@ export function cleanDestinationName(name: string): string {
 export function tourIdStem(tourId: string): string {
   return tourId
     .replace(/^group-/, "")
+    .replace(/-copy(-\d+)?$/i, "")
     .replace(/-\d+d(?:ias?)?(?:-\d+n(?:oches?)?)?$/i, "")
     .replace(/-\d+$/i, "");
+}
+
+/**
+ * Clave de destino compartida (ofertas y catálogo).
+ * Prioriza nombre limpio; unifica aliases / stems (`cusco-machupicchu-copy` ↔ cusco).
+ */
+export function destinationBaseKey(name: string, tourId?: string | null): string {
+  const cleaned = cleanDestinationName(name);
+  const nameKey = cleaned ? slugify(cleaned) : "";
+  const stem = tourId ? tourIdStem(tourId) : "";
+  const nameCanon = nameKey ? canonicalizeDestinationKey(nameKey) : "";
+  const stemCanon = stem ? canonicalizeDestinationKey(stem) : "";
+
+  if (nameCanon && stemCanon && nameCanon === stemCanon) return nameCanon;
+  if (nameCanon && stem && DESTINATION_ALIASES[stem]) return stemCanon;
+  if (stemCanon && DESTINATION_ALIASES[stem]) return stemCanon;
+  if (nameCanon) return nameCanon;
+  return stemCanon || nameKey || slugify(tourId || name) || "destino";
 }
 
 function destinationGroupKey(tour: TourCardData): string {
@@ -63,29 +82,9 @@ function destinationGroupKey(tour: TourCardData): string {
 
   let baseKey: string;
   if (tour.id.startsWith("group-")) {
-    baseKey = tour.id.replace(/^group-/, "");
+    baseKey = destinationBaseKey(tour.name, tour.id.replace(/^group-/, ""));
   } else {
-    /**
-     * Como en admin de Rocío: agrupar por nombre limpio.
-     * El stem del tourId (y aliases) solo unifica variantes cuando el nombre
-     * ya mapea al mismo destino canónico o no hay nombre usable.
-     */
-    const cleaned = cleanDestinationName(tour.name);
-    const nameKey = cleaned ? slugify(cleaned) : "";
-    const stem = tourIdStem(tour.id);
-    const nameCanon = nameKey ? canonicalizeDestinationKey(nameKey) : "";
-    const stemCanon = stem ? canonicalizeDestinationKey(stem) : "";
-
-    if (nameCanon && stemCanon && nameCanon === stemCanon) {
-      baseKey = nameCanon;
-    } else if (nameCanon && DESTINATION_ALIASES[stem]) {
-      // Variante con nombre distinto pero mismo stem alias (ej. Uyuni 5/7)
-      baseKey = stemCanon;
-    } else if (nameCanon) {
-      baseKey = nameCanon;
-    } else {
-      baseKey = stemCanon || slugify(tour.subtitle) || tour.id;
-    }
+    baseKey = destinationBaseKey(tour.name, tour.id);
   }
 
   return `${canonicalizeDestinationKey(baseKey)}::${typeSuffix}`;

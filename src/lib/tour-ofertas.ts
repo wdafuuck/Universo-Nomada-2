@@ -1,5 +1,8 @@
 import type { PromoCard } from "@/hooks/use-tours";
-import { cleanDestinationName, tourIdStem } from "@/lib/tour-destination-groups";
+import {
+  cleanDestinationName,
+  destinationBaseKey,
+} from "@/lib/tour-destination-groups";
 import { resolveOfferPricing } from "@/lib/tour-pricing";
 import { effectivePromoDiscountPercent, formatPromoEndLabel } from "@/lib/promo-schedule";
 
@@ -66,12 +69,9 @@ export type PromoDestinationGroup = {
 };
 
 function promoGroupKey(promo: PromoCard): string {
-  if (promo.tourId) return tourIdStem(promo.tourId);
-  return cleanDestinationName(promo.subtitle || promo.title)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .replace(/[^a-z0-9]+/g, "-");
+  // subtitle suele ser el nombre del paquete cuando hay promoTitle editorial
+  const nameSource = promo.subtitle || promo.destination || promo.title;
+  return destinationBaseKey(nameSource, promo.tourId);
 }
 
 function promoDurationDays(promo: PromoCard): number {

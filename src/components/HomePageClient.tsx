@@ -852,8 +852,12 @@ export default function LandingPage({
 
                   {/* Contenido */}
                   <div className={`p-5 ${solo ? "lg:p-8 lg:flex lg:flex-col lg:justify-center" : ""}`}>
-                    <h3 className={`text-gray-900 font-bold mb-1 ${solo ? "text-xl sm:text-2xl" : "text-lg"}`}>{group.title}</h3>
-                    <p className={`text-gray-600 mb-3 ${solo ? "text-base" : "text-sm"}`}>{lead.subtitle}</p>
+                    <h3 className={`text-gray-900 font-bold mb-1 ${solo ? "text-xl sm:text-2xl" : "text-lg"}`}>
+                      {multi ? group.destinationName : group.title}
+                    </h3>
+                    <p className={`text-gray-600 mb-3 ${solo ? "text-base" : "text-sm"}`}>
+                      {multi ? group.title : lead.subtitle}
+                    </p>
 
                     {/* Incluye */}
                     <div className="mb-3">
