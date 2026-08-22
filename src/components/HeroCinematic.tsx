@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { FlowField } from "@/components/motion/FlowField";
 import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { WAVE_COLORS } from "@/components/WildlifeBackground";
+import { useHeroSiteContent } from "@/hooks/use-hero-site-content";
 
 type HeroCinematicProps = {
   onPlanTrip: () => void;
@@ -24,6 +25,12 @@ export function HeroCinematic({
 }: HeroCinematicProps) {
   const { t } = useLanguage();
   const h = t("hero");
+  const copy = useHeroSiteContent({
+    line1: h.line1,
+    line2: h.line2,
+    subtitle: h.subtitle,
+  });
+  const hideCopy = copy.hideCopy;
   const [slide, setSlide] = useState(0);
   const [images, setImages] = useState<string[]>(initialImages);
   const [readyExtra, setReadyExtra] = useState(false);
@@ -72,6 +79,8 @@ export function HeroCinematic({
         ? slides.map((_, i) => i)
         : [0];
 
+  const titleForAlt = copy.line1 || h.line1;
+
   return (
     <section
       id="inicio"
@@ -118,7 +127,7 @@ export function HeroCinematic({
                     src={optimizedSrc}
                     alt={
                       i === slide
-                        ? `${h.line1} — destino turístico Universo Nómada`
+                        ? `${titleForAlt} — destino turístico Universo Nómada`
                         : ""
                     }
                     className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
@@ -132,7 +141,7 @@ export function HeroCinematic({
                     src={src}
                     alt={
                       i === slide
-                        ? `${h.line1} — destino turístico Universo Nómada`
+                        ? `${titleForAlt} — destino turístico Universo Nómada`
                         : ""
                     }
                     fill
@@ -145,8 +154,17 @@ export function HeroCinematic({
               </div>
             );
           })}
-          <div className="absolute inset-0 bg-linear-to-b from-black/25 via-black/5 to-black/55" />
-          <div className="absolute inset-0 bg-linear-to-r from-navy/25 via-transparent to-teal/10 mix-blend-overlay" />
+          {/* Con foto que ya trae texto: overlays más suaves para no tapar el mensaje */}
+          <div
+            className={`absolute inset-0 bg-linear-to-b ${
+              hideCopy
+                ? "from-black/10 via-transparent to-black/35"
+                : "from-black/25 via-black/5 to-black/55"
+            }`}
+          />
+          {!hideCopy && (
+            <div className="absolute inset-0 bg-linear-to-r from-navy/25 via-transparent to-teal/10 mix-blend-overlay" />
+          )}
         </div>
 
         <div className="absolute top-1/2 right-4 sm:right-8 z-20 flex flex-col gap-1 -translate-y-1/2">
@@ -168,24 +186,46 @@ export function HeroCinematic({
           ))}
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 z-10 bg-linear-to-t from-black/70 via-black/35 to-transparent pt-28 sm:pt-36 pb-10 sm:pb-14">
+        <div
+          className={`absolute inset-x-0 bottom-0 z-10 ${
+            hideCopy
+              ? "bg-linear-to-t from-black/50 via-black/15 to-transparent pt-16 sm:pt-20 pb-10 sm:pb-14"
+              : "bg-linear-to-t from-black/70 via-black/35 to-transparent pt-28 sm:pt-36 pb-10 sm:pb-14"
+          }`}
+        >
           <div className="w-full max-w-4xl mx-auto px-5 sm:px-8 text-center">
-            <h1 className="text-white leading-[1.08] tracking-tight">
-              <span className="hero-title-line block text-3xl sm:text-5xl md:text-6xl font-bold drop-shadow-2xl">
-                {h.line1}
-              </span>
-              {h.line2 ? (
-                <span className="hero-title-line block text-3xl sm:text-5xl md:text-6xl font-bold text-white/95 mt-1 sm:mt-2 drop-shadow-2xl">
-                  {h.line2}
-                </span>
-              ) : null}
-            </h1>
+            {!hideCopy && (
+              <>
+                <h1 className="text-white leading-[1.08] tracking-tight">
+                  <span className="hero-title-line block text-3xl sm:text-5xl md:text-6xl font-bold drop-shadow-2xl">
+                    {copy.line1}
+                  </span>
+                  {copy.line2 ? (
+                    <span className="hero-title-line block text-3xl sm:text-5xl md:text-6xl font-bold text-white/95 mt-1 sm:mt-2 drop-shadow-2xl">
+                      {copy.line2}
+                    </span>
+                  ) : null}
+                </h1>
 
-            <p className="mt-4 sm:mt-5 text-white/90 text-base sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto">
-              {h.subtitle}
-            </p>
+                {copy.subtitle ? (
+                  <p className="mt-4 sm:mt-5 text-white/90 text-base sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto">
+                    {copy.subtitle}
+                  </p>
+                ) : null}
+              </>
+            )}
 
-            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 max-w-xl sm:max-w-2xl mx-auto w-full">
+            {/* h1 oculto visualmente para a11y/SEO cuando la foto lleva el mensaje */}
+            {hideCopy && (
+              <h1 className="sr-only">
+                {copy.line1}
+                {copy.line2 ? ` ${copy.line2}` : ""}
+              </h1>
+            )}
+
+            <div
+              className={`${hideCopy ? "mt-0" : "mt-6 sm:mt-8"} flex flex-col sm:flex-row gap-3 max-w-xl sm:max-w-2xl mx-auto w-full`}
+            >
               <a href="#destinos" className="flex-1">
                 <span className="hero-cta-glow flex w-full min-h-13 sm:min-h-14 rounded-full bg-linear-to-r from-amber to-orange-500 hover:from-amber-dark hover:to-orange-600 text-white font-bold text-base sm:text-lg px-6 sm:px-8 py-4 shadow-2xl shadow-amber/30 items-center justify-center transition-all">
                   {h.ctaWhatsapp}
@@ -198,9 +238,11 @@ export function HeroCinematic({
               </button>
             </div>
 
-            <p className="mt-5 sm:mt-6 text-white/75 text-sm" suppressHydrationWarning>
-              {h.trust}
-            </p>
+            {!hideCopy && (
+              <p className="mt-5 sm:mt-6 text-white/75 text-sm" suppressHydrationWarning>
+                {h.trust}
+              </p>
+            )}
 
             <div className="mt-5 sm:mt-6 text-white/70 flex flex-col items-center gap-1">
               <span className="text-xs tracking-[0.25em] uppercase" suppressHydrationWarning>

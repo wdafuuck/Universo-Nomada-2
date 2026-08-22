@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { UploadAwareImage } from "@/components/UploadAwareImage";
+import { HeroCopyAdmin } from "@/components/admin/HeroCopyAdmin";
 import {
   isPromoWindowActive,
   toChileDateTimeLocal,
@@ -234,6 +235,8 @@ export function HeroSlidesAdmin() {
 
   return (
     <div className="space-y-6">
+      <HeroCopyAdmin />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-white font-bold text-lg flex items-center gap-2">
