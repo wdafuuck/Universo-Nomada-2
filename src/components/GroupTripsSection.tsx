@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useMemo, useEffect, useState } from "react";
-import { CalendarDays, MessageCircle, Sparkles, Star } from "lucide-react";
+import { CalendarDays, MessageCircle, Sparkles } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { type GroupTrip } from "@/lib/group-trips";
 import {
@@ -255,15 +255,7 @@ function TripCard({
             </span>
           </div>
           <div className="absolute bottom-4 left-4">
-            <h3 className={`text-white font-black mb-1 ${solo ? "text-2xl sm:text-3xl" : "text-2xl"}`}>{trip.name}</h3>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <span className="text-white/90 text-sm">(4.9)</span>
-            </div>
+            <h3 className={`text-white font-black ${solo ? "text-2xl sm:text-3xl" : "text-2xl"}`}>{trip.name}</h3>
           </div>
         </div>
 
