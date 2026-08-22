@@ -1,11 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 import { getRelatedTours } from "@/lib/related-tours";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 
 type Props = { tourId: string };
 
-export function RelatedToursSection({ tourId }: Props) {
-  const related = getRelatedTours(tourId, 4);
+export async function RelatedToursSection({ tourId }: Props) {
+  const related = await getRelatedTours(tourId, 4);
   if (related.length === 0) return null;
 
   return (
@@ -25,7 +25,7 @@ export function RelatedToursSection({ tourId }: Props) {
                 className="group block rounded-xl overflow-hidden border border-gray-700 hover:border-teal/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal"
               >
                 <div className="relative h-36">
-                  <Image
+                  <UploadAwareImage
                     src={tour.image}
                     alt={tour.name}
                     fill
