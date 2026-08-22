@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
-import { mkdir, readFile, stat, writeFile } from "fs/promises";
+import { mkdir, readFile, stat, unlink, writeFile } from "fs/promises";
 import path from "path";
 import { isAllowedPublicImagePath } from "@/lib/image-optimize";
+import {
+  contentTypeFromExt,
+  getImgCacheDir,
+  isValidWebpBuffer,
+  resolvePublicImagePath,
+} from "@/lib/public-image-path";
 
 export const runtime = "nodejs";
-
-function cacheRoot(): string {
-  if (process.env.IMG_CACHE_DIR?.trim()) return process.env.IMG_CACHE_DIR.trim();
-  const uploadRoot =
-    process.env.UPLOAD_DIR?.trim() || path.join(process.cwd(), "public", "uploads");
-  return path.join(uploadRoot, ".img-cache");
-}
 
 function cacheKey(src: string, width: number, quality: number, mtimeMs: number): string {
   return createHash("sha1")
     .update(`${src}|${width}|${quality}|${mtimeMs}`)
     .digest("hex");
+}
+
+async function serveOriginal(filePath: string, sourceStat: Awaited<ReturnType<typeof stat>>) {
+  const raw = await readFile(filePath);
+  const ext = path.extname(filePath);
+  return new NextResponse(new Uint8Array(raw), {
+    status: 200,
+    headers: {
+      "Content-Type": contentTypeFromExt(ext),
+      "Cache-Control": "public, max-age=86400",
+      "X-Img-Cache": "ORIGINAL",
+      ETag: `"${Number(sourceStat.size)}-${Math.floor(Number(sourceStat.mtimeMs))}"`,
+    },
+  });
 }
 
 /**
@@ -34,15 +47,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "src inválido" }, { status: 400 });
   }
 
-  let filePath = path.join(process.cwd(), "public", src.replace(/^\//, ""));
-  try {
-    await stat(filePath);
-  } catch {
-    if (src.startsWith("/uploads/")) {
-      const uploadRoot =
-        process.env.UPLOAD_DIR?.trim() || path.join(process.cwd(), "public", "uploads");
-      filePath = path.join(uploadRoot, path.basename(src));
-    }
+  const filePath = resolvePublicImagePath(src);
+  if (!filePath) {
+    return NextResponse.json({ error: "src inválido" }, { status: 400 });
   }
 
   let sourceStat;
@@ -53,19 +60,22 @@ export async function GET(request: NextRequest) {
   }
 
   const key = cacheKey(src, width, quality, sourceStat.mtimeMs);
-  const cacheDir = cacheRoot();
+  const cacheDir = getImgCacheDir();
   const cachePath = path.join(cacheDir, `${key}.webp`);
 
   try {
     const cached = await readFile(cachePath);
-    return new NextResponse(cached, {
-      status: 200,
-      headers: {
-        "Content-Type": "image/webp",
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "X-Img-Cache": "HIT",
-      },
-    });
+    if (isValidWebpBuffer(cached)) {
+      return new NextResponse(new Uint8Array(cached), {
+        status: 200,
+        headers: {
+          "Content-Type": "image/webp",
+          "Cache-Control": "public, max-age=31536000, immutable",
+          "X-Img-Cache": "HIT",
+        },
+      });
+    }
+    await unlink(cachePath).catch(() => {});
   } catch {
     // miss
   }
@@ -95,7 +105,12 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[api/img]", e);
-    return NextResponse.json({ error: "Error al optimizar" }, { status: 500 });
+    console.error("[api/img] fallback original", filePath, e);
+    try {
+      return await serveOriginal(filePath, sourceStat);
+    } catch (readErr) {
+      console.error("[api/img]", readErr);
+      return NextResponse.json({ error: "Error al optimizar" }, { status: 500 });
+    }
   }
 }

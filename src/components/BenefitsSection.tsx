@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import Image from "next/image";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Gift, ArrowRight } from "lucide-react";
@@ -10,6 +9,7 @@ import { WAVE_COLORS } from "@/components/WildlifeBackground";
 import { FlowField } from "@/components/motion/FlowField";
 import { staggerContainer, antiGravityRise } from "@/lib/motion-presets";
 import { ScrollParallax } from "@/components/motion/ScrollParallax";
+import { UploadAwareImage } from "@/components/UploadAwareImage";
 
 type PartnerLogo = {
   id: number;
@@ -17,6 +17,19 @@ type PartnerLogo = {
   imageUrl: string;
   linkUrl: string;
 };
+
+function partnerLogoLayout(count: number) {
+  if (count <= 2) {
+    return { minCol: 180, logoH: 80, gap: "2.75rem", maxW: "max-w-2xl" };
+  }
+  if (count <= 4) {
+    return { minCol: 150, logoH: 68, gap: "2rem", maxW: "max-w-4xl" };
+  }
+  if (count <= 6) {
+    return { minCol: 120, logoH: 56, gap: "1.5rem", maxW: "max-w-5xl" };
+  }
+  return { minCol: 96, logoH: 48, gap: "1rem", maxW: "max-w-6xl" };
+}
 
 export function BenefitsSection() {
   const { t } = useLanguage();
@@ -29,6 +42,7 @@ export function BenefitsSection() {
   };
   const [logos, setLogos] = useState<PartnerLogo[]>([]);
   const ref = useRef(null);
+  const layout = useMemo(() => partnerLogoLayout(logos.length), [logos.length]);
 
   useEffect(() => {
     fetch("/api/benefit-partner-logos")
@@ -79,16 +93,25 @@ export function BenefitsSection() {
             <p className="text-center text-slate-400 text-xs font-semibold uppercase tracking-widest mb-8">
               {copy.partnersLabel}
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
+            <div
+              className={`grid items-center justify-items-center w-full mx-auto ${layout.maxW}`}
+              style={{
+                gridTemplateColumns: `repeat(auto-fit, minmax(${layout.minCol}px, 1fr))`,
+                gap: layout.gap,
+              }}
+            >
               {logos.map((logo) => {
                 const img = (
-                  <div className="relative h-14 w-28 sm:h-16 sm:w-32 rounded-lg px-2 py-1 opacity-90 hover:opacity-100 transition-opacity duration-300">
-                    <Image
+                  <div
+                    className="relative w-full rounded-lg px-3 py-2 opacity-90 hover:opacity-100 transition-opacity duration-300"
+                    style={{ height: layout.logoH }}
+                  >
+                    <UploadAwareImage
                       src={logo.imageUrl}
                       alt={logo.name || "Aliado"}
                       fill
                       className="object-contain"
-                      sizes="128px"
+                      sizes={`(max-width: 640px) 45vw, ${layout.minCol}px`}
                     />
                   </div>
                 );
@@ -99,13 +122,17 @@ export function BenefitsSection() {
                       href={logo.linkUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="shrink-0"
+                      className="w-full max-w-[220px]"
                     >
                       {img}
                     </a>
                   );
                 }
-                return <div key={logo.id} className="shrink-0">{img}</div>;
+                return (
+                  <div key={logo.id} className="w-full max-w-[220px]">
+                    {img}
+                  </div>
+                );
               })}
             </div>
           </motion.div>

@@ -23,8 +23,6 @@ import { HeroCinematic } from "@/components/HeroCinematic";
 import { WaveSeparator } from "@/components/WaveDivider";
 import { WAVE_COLORS } from "@/components/WildlifeBackground";
 import { TourCard } from "@/components/TourCard";
-import { PriceOffer } from "@/components/PriceOffer";
-import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { ContextualWhatsApp } from "@/components/ContextualWhatsApp";
 import { MobileStickyBar } from "@/components/MobileStickyBar";
 import { ReferralCapture, getReferralCode } from "@/components/ReferralCapture";
@@ -35,8 +33,7 @@ import { groupToursByDestination } from "@/lib/tour-destination-groups";
 import { groupPromosByDestination } from "@/lib/tour-ofertas";
 import { DestinationTourGroup } from "@/components/DestinationTourGroup";
 import { trackGenerateLead } from "@/lib/analytics-events";
-import { PromoUrgency } from "@/components/PromoUrgency";
-import { AddToCartButton } from "@/components/AddToCartButton";
+import { PromoOfferCard } from "@/components/PromoOfferCard";
 import { MemberAuthDialog } from "@/components/MemberAuthDialog";
 import { useCart } from "@/contexts/CartContext";
 import { useCartStore } from "@/stores/cart-store";
@@ -809,143 +806,32 @@ export default function LandingPage({
 
           <div
             className={
-              promoGroups.length === 1
-                ? "grid grid-cols-1 gap-6"
-                : promoGroups.length === 2
-                  ? "grid grid-cols-1 sm:grid-cols-2 gap-6"
-                  : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              promoGroups.length <= 2
+                ? promoGroups.length === 1
+                  ? "max-w-4xl mx-auto grid grid-cols-1 gap-5"
+                  : "max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-5"
+                : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
             }
           >
-            {promoGroups.map((group, gi) => {
-              const solo = promoGroups.length === 1;
-              const lead = group.promos[0];
-              const multi = group.promos.length > 1;
-              return (
+            {promoGroups.map((group, gi) => (
               <FadeIn key={group.key} delay={gi * 0.1}>
-                <motion.div
-                  className={`group premium-card-lift bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden gradient-card-border ${
-                    solo ? "lg:grid lg:grid-cols-2 lg:items-stretch" : ""
-                  }`}
-                  whileHover={{ y: -8, transition: gravitySpring }}
-                >
-                  {/* Imagen */}
-                  <div
-                    className={`relative overflow-hidden ${
-                      solo ? "h-56 sm:h-72 lg:h-full lg:min-h-[340px]" : "h-48"
-                    }`}
-                  >
-                    <UploadAwareImage src={group.image} alt={group.title} fill className="object-cover object-center transition-transform duration-700 group-hover:scale-110" sizes={solo ? "100vw" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                    {/* Badge de descuento */}
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg">
-                        {lead.discount}
-                      </span>
-                    </div>
-
-                    {/* Emoji */}
-                    <div className="absolute bottom-4 right-4">
-                      <span className="text-3xl drop-shadow-lg">{group.emoji}</span>
-                    </div>
-                  </div>
-
-                  {/* Contenido */}
-                  <div className={`p-5 ${solo ? "lg:p-8 lg:flex lg:flex-col lg:justify-center" : ""}`}>
-                    <h3 className={`text-gray-900 font-bold mb-1 ${solo ? "text-xl sm:text-2xl" : "text-lg"}`}>
-                      {multi ? group.destinationName : group.title}
-                    </h3>
-                    <p className={`text-gray-600 mb-3 ${solo ? "text-base" : "text-sm"}`}>
-                      {multi ? group.title : lead.subtitle}
-                    </p>
-
-                    {/* Incluye */}
-                    <div className="mb-3">
-                      <div className="flex flex-wrap gap-1">
-                        <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium">
-                          ✈️ Vuelo
-                        </span>
-                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
-                          🏨 Hotel
-                        </span>
-                        <span className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full font-medium">
-                          🎯 Tour
-                        </span>
-                        <span className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full font-medium">
-                          👥 Guías Locales
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Variantes de duración del mismo destino */}
-                    <div className="flex flex-col gap-3">
-                      {group.promos.map((promo, i) => {
-                        const promoTourId = resolvePromoTourId(promo, i);
-                        const duration = promoDuration(promo);
-                        return (
-                          <div
-                            key={promo.tourId ?? `${group.key}-${i}`}
-                            className="rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-amber-50/50 border border-emerald-200/60 p-4"
-                          >
-                            {multi && duration ? (
-                              <p className="font-bold text-slate-900 text-sm mb-2">{duration}</p>
-                            ) : null}
-
-                            <div className="flex items-end justify-between gap-3">
-                              <PriceOffer
-                                price={promo.discountPrice}
-                                originalPrice={promo.originalPrice}
-                                desdeLabel={t("destinations").desde}
-                                porPersonaLabel={t("destinations").porPersona}
-                                ahorrasLabel={t("priceOffer").ahorras}
-                                size={solo && !multi ? "lg" : "md"}
-                              />
-                              {!multi && duration ? (
-                                <span className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-                                  <Clock className="h-3.5 w-3.5 text-teal" aria-hidden />
-                                  {duration}
-                                </span>
-                              ) : null}
-                            </div>
-
-                            {promo.validUntil ? (
-                              <div className="flex items-center justify-between mt-2">
-                                <span className="text-gray-500 text-xs flex items-center gap-1">
-                                  <Clock className="h-3 w-3" aria-hidden />{t("discounts").hasta} {promo.validUntil}
-                                </span>
-                              </div>
-                            ) : null}
-                            {promo.validUntil ? (
-                              <PromoUrgency validUntil={promo.validUntil} spotsLeft={gi === 0 && i === 0 ? 5 : undefined} />
-                            ) : null}
-
-                            <div className={`flex flex-col gap-2 mt-3 ${solo && !multi ? "sm:flex-row" : ""}`} onClick={(e) => e.stopPropagation()}>
-                              <Link
-                                href={`/detalle-paquete/${promoTourId}`}
-                                className="flex flex-1 items-center justify-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl px-4 py-3 text-sm transition-all min-h-[44px] shadow-md shadow-emerald-500/20"
-                              >
-                                {t("discounts").verDetalles}
-                              </Link>
-                              <div className="flex-1">
-                                <AddToCartButton
-                                  tourId={promoTourId}
-                                  tourName={promo.subtitle}
-                                  image={promo.image}
-                                  basePrice={promo.discountPrice}
-                                  duration={duration || tourList.find((tt) => tt.id === promoTourId)?.duration}
-                                  className="rounded-xl min-h-[44px]"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </motion.div>
+                <PromoOfferCard
+                  group={group}
+                  layout={promoGroups.length <= 2 ? "compact" : "grid"}
+                  groupIndex={gi}
+                  labels={{
+                    verDetalles: t("discounts").verDetalles,
+                    hasta: t("discounts").hasta,
+                    desde: t("destinations").desde,
+                    porPersona: t("destinations").porPersona,
+                    ahorras: t("priceOffer").ahorras,
+                  }}
+                  resolveTourId={resolvePromoTourId}
+                  getDuration={promoDuration}
+                  tourList={tourList}
+                />
               </FadeIn>
-              );
-            })}
+            ))}
           </div>
         </div>
       </section>

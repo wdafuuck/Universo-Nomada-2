@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image, { type ImageLoaderProps, type ImageProps } from "next/image";
 
 function isUploadSrc(src: ImageProps["src"]): boolean {
@@ -16,22 +17,31 @@ function mediaLoader({ src, width, quality }: ImageLoaderProps): string {
     const q = quality ?? 72;
     return `/api/img?src=${encodeURIComponent(src)}&w=${width}&q=${q}`;
   }
-  // Fallback next/image default-style
   return `/_next/image?url=${encodeURIComponent(String(src))}&w=${width}&q=${quality ?? 75}`;
 }
 
 /**
  * next/image optimizer no lee bien /uploads en prod (Caddy sirve el disco).
  * Para /uploads e /images usamos /api/img (sharp → WebP).
+ * Si /api/img falla, cae al archivo directo en /uploads (Caddy).
  */
 export function UploadAwareImage({
   unoptimized,
   src,
   alt,
   quality,
+  onError,
   ...rest
 }: ImageProps) {
-  const useMediaApi = isLocalPublicSrc(src) && unoptimized !== true;
+  const [useDirectSrc, setUseDirectSrc] = useState(false);
+  const useMediaApi = isLocalPublicSrc(src) && unoptimized !== true && !useDirectSrc;
+
+  const handleError: NonNullable<ImageProps["onError"]> = (event) => {
+    if (isLocalPublicSrc(src) && !useDirectSrc) {
+      setUseDirectSrc(true);
+    }
+    onError?.(event);
+  };
 
   if (useMediaApi) {
     return (
@@ -41,6 +51,7 @@ export function UploadAwareImage({
         loader={mediaLoader}
         unoptimized={false}
         quality={quality ?? (isUploadSrc(src) ? 72 : 75)}
+        onError={handleError}
         {...rest}
       />
     );
@@ -50,8 +61,9 @@ export function UploadAwareImage({
     <Image
       src={src}
       alt={alt}
-      unoptimized={unoptimized ?? false}
+      unoptimized={useDirectSrc || unoptimized === true}
       quality={quality ?? 75}
+      onError={onError}
       {...rest}
     />
   );
