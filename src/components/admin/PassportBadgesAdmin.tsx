@@ -187,8 +187,9 @@ export function PassportBadgesAdmin() {
           <h2 className="text-white font-bold text-xl flex items-center gap-2">
             <Stamp className="h-5 w-5 text-teal" /> Pasaporte Nómada — Insignias
           </h2>
-          <p className="text-white/40 text-sm mt-1">
-            Subí la insignia, ajustá zoom y centro, y guardá con nombre + descripción.
+          <p className="text-white/40 text-sm mt-1 max-w-2xl">
+            Subí la imagen y el nombre. El sistema asocia viajes por el nombre (ej. «iguazu» →
+            Cataratas del Iguazú) o por alias opcionales — no crea insignias nuevas solo.
           </p>
         </div>
         <Button

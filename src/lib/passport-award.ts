@@ -13,8 +13,7 @@ import {
 import { sendPassportBadgeEmail } from "@/lib/email/passport-badge-email";
 
 async function loadActiveBadgeDefs(): Promise<PassportBadgeDef[]> {
-  const { ensureDefaultPassportBadges } = await import("@/lib/ensure-passport-badges");
-  await ensureDefaultPassportBadges();
+  // Solo insignias activas creadas/gestionadas en admin — no auto-crear.
   const rows = await db.passportBadge.findMany({
     where: { active: true },
     orderBy: [{ sortOrder: "asc" }, { id: "asc" }],

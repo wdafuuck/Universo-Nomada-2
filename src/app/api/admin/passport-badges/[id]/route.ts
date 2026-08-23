@@ -37,9 +37,17 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
   try {
     const { id } = await params;
-    await db.passportBadge.delete({ where: { id: Number(id) } });
+    const badgeId = Number(id);
+    if (!Number.isFinite(badgeId)) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+    }
+    await db.passportBadge.delete({ where: { id: badgeId } });
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Error al eliminar insignia" }, { status: 500 });
+  } catch (e) {
+    console.error("[admin/passport-badges DELETE]", e);
+    return NextResponse.json(
+      { error: "Error al eliminar insignia" },
+      { status: 500 },
+    );
   }
 }

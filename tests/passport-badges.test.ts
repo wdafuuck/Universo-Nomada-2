@@ -31,6 +31,7 @@ function trip(partial: Partial<MemberTrip> & { destino: string }): MemberTrip {
   } as MemberTrip;
 }
 
+/** Solo las insignias que el admin tiene creadas (no se inventan nuevas). */
 const badges: PassportBadgeDef[] = [
   {
     id: 1,
@@ -40,47 +41,36 @@ const badges: PassportBadgeDef[] = [
     description: "",
     image: "",
     emoji: "🇧🇷",
-    matchTerms: ["rio de janeiro", "rio-de-janeiro"],
-  },
-  {
-    id: 2,
-    slug: "ilha-grande",
-    name: "Ilha Grande",
-    destination: "Ilha Grande",
-    description: "",
-    image: "",
-    emoji: "🏝️",
-    matchTerms: ["ilha grande", "ilha-grande"],
+    matchTerms: ["rio de janeiro", "rio"],
   },
   {
     id: 3,
-    slug: "iguazu",
+    slug: "cataratas-iguazu",
     name: "Cataratas del Iguazú",
-    destination: "Iguazú",
+    destination: "Cataratas del Iguazú",
     description: "",
     image: "",
     emoji: "💧",
-    matchTerms: ["iguazu", "iguazú", "cataratas"],
+    // Sin matchTerms explícitos: el matching usa tokens del nombre (iguazu)
+    matchTerms: [],
   },
 ];
 
 describe("passport multi-destino", () => {
-  it("otorga varias insignias desde un título compuesto", () => {
+  it("asocia Río e Iguazú desde un título compuesto sin crear insignias nuevas", () => {
     const t = trip({
       destino: "Rio de Janeiro, Ilha Grande e Iguazu",
     });
     const earned = computeEarnedBadges(badges, [t]);
+    // Ilha Grande no está en el catálogo admin → no se otorga
     expect(earned.map((b) => b.slug).sort()).toEqual([
-      "iguazu",
-      "ilha-grande",
+      "cataratas-iguazu",
       "rio-de-janeiro",
     ]);
   });
 
-  it("matchTerms detecta cada destino", () => {
-    const t = trip({ destino: "rio de janeiro, ilha grande e iguazu" });
-    expect(badgeMatchesTrip(badges[0]!, t)).toBe(true);
+  it("«iguazu» en el viaje matchea la insignia Cataratas del Iguazú", () => {
+    const t = trip({ destino: "Paquete Iguazu 5D/4N" });
     expect(badgeMatchesTrip(badges[1]!, t)).toBe(true);
-    expect(badgeMatchesTrip(badges[2]!, t)).toBe(true);
   });
 });

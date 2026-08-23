@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-session";
-import { ensureDefaultPassportBadges } from "@/lib/ensure-passport-badges";
 
 export async function GET() {
   try {
-    await ensureDefaultPassportBadges();
     const badges = await db.passportBadge.findMany({
       orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
     });
