@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth-session";
 import { parseCampaignContent } from "@/lib/email/campaign-templates-data";
 import { renderCampaignEmail } from "@/lib/email/campaign-render";
+import { logoUrl } from "@/lib/email/templates";
 
 export async function POST(request: NextRequest) {
   if (!(await requireAdmin(request))) {
@@ -15,10 +16,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Asunto y título obligatorios" }, { status: 400 });
     }
 
-    const origin = request.nextUrl.origin;
     const preview = renderCampaignEmail(content, {
       recipientName: body.previewName ? String(body.previewName) : "María",
-      logoSrc: `${origin}/images/logo-un.png`,
+      // Siempre URL pública — request.origin detrás de Caddy suele ser 127.0.0.1
+      logoSrc: logoUrl(),
     });
 
     return NextResponse.json({

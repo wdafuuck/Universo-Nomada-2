@@ -1,4 +1,5 @@
 import { emailLogoSrc } from "@/lib/email/email-logo";
+import { SITE_URL } from "@/lib/site-url";
 
 export type ReservationLineItem = {
   tourName: string;
@@ -11,11 +12,11 @@ export type ReservationLineItem = {
 };
 
 export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://universonomada.cl").replace(/\/$/, "");
+  return SITE_URL;
 }
 
 export function logoUrl(): string {
-  return `${siteUrl()}/images/logo-un.png`;
+  return `${SITE_URL}/images/logo-un.png`;
 }
 
 export function formatCLP(n: number): string {
@@ -86,7 +87,7 @@ type EmailLayoutOptions = {
   preheader: string;
   title: string;
   bodyHtml: string;
-  /** URL absoluta del logo (vista previa en navegador). Si no se pasa, usa CID inline para SMTP. */
+  /** URL absoluta del logo. Por defecto: logo público en universonomada.cl */
   logoSrc?: string;
 };
 

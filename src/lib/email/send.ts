@@ -1,5 +1,4 @@
 import nodemailer from "nodemailer";
-import { resendLogoAttachment, smtpLogoAttachment } from "@/lib/email/email-logo";
 
 type SendEmailInput = {
   to: string;
@@ -18,7 +17,7 @@ async function sendViaResend(input: SendEmailInput, from: string): Promise<SendE
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) return null;
 
-  const logo = resendLogoAttachment();
+  // Logo va por URL pública en el HTML (no CID) — más fiable en clientes y preview.
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -31,7 +30,6 @@ async function sendViaResend(input: SendEmailInput, from: string): Promise<SendE
       subject: input.subject,
       html: input.html,
       text: input.text,
-      ...(logo ? { attachments: [logo] } : {}),
     }),
   });
 
@@ -69,7 +67,6 @@ async function sendViaSmtp(input: SendEmailInput, from: string): Promise<SendEma
     subject: input.subject,
     html: input.html,
     text: input.text,
-    attachments: [smtpLogoAttachment()],
   });
 
   return { ok: true };
@@ -84,7 +81,6 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
   const from = emailFrom();
 
   try {
-    // Prioridad: Resend → si falla o no está, SMTP → si no hay config, skip (dev)
     const resend = await sendViaResend(input, from);
     if (resend?.ok) return resend;
     if (resend && !resend.ok) {
@@ -95,7 +91,6 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     if (smtp?.ok) return smtp;
     if (smtp && !smtp.ok) return smtp;
 
-    // Resend configurado pero falló, y no hay SMTP
     if (resend && !resend.ok) return resend;
 
     console.log("[email:skip] Configura SMTP_HOST/SMTP_USER/SMTP_PASS o RESEND_API_KEY");
