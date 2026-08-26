@@ -3,11 +3,12 @@
 # Uso: deploy/run-cron-job.sh abandoned-cart
 #      deploy/run-cron-job.sh cleanup-trip-documents
 #      deploy/run-cron-job.sh passport-badges
+#      deploy/run-cron-job.sh destination-news
 set -euo pipefail
 
 JOB="${1:-}"
 if [[ -z "$JOB" ]]; then
-  echo "uso: $0 <abandoned-cart|cleanup-trip-documents|passport-badges>" >&2
+  echo "uso: $0 <abandoned-cart|cleanup-trip-documents|passport-badges|destination-news>" >&2
   exit 1
 fi
 
@@ -35,6 +36,9 @@ case "$JOB" in
   passport-badges)
     PATH_JOB=/api/cron/passport-badges
     ;;
+  destination-news)
+    PATH_JOB=/api/cron/destination-news
+    ;;
   *)
     echo "job desconocido: $JOB" >&2
     exit 1
@@ -42,3 +46,4 @@ case "$JOB" in
 esac
 
 curl -fsS -H "Authorization: Bearer ${SECRET}" "https://universonomada.cl${PATH_JOB}"
+echo

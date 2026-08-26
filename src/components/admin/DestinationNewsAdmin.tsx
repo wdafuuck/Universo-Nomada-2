@@ -27,6 +27,7 @@ function SeverityIcon({ s }: { s: DestinationNewsItem["severity"] }) {
 
 export function DestinationNewsAdmin() {
   const [report, setReport] = useState<DestinationNewsReport | null>(null);
+  const [geminiConfigured, setGeminiConfigured] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -35,12 +36,13 @@ export function DestinationNewsAdmin() {
     else setLoading(true);
     try {
       const res = await fetch(
-        refresh ? "/api/admin/destination-news?refresh=1" : "/api/admin/destination-news",
+        refresh ? "/api/admin/destination-news" : "/api/admin/destination-news",
         { credentials: "include", method: refresh ? "POST" : "GET" },
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error");
       setReport(data.report);
+      setGeminiConfigured(Boolean(data.geminiConfigured));
       if (refresh) toast.success("Briefing actualizado");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo cargar");
@@ -80,6 +82,19 @@ export function DestinationNewsAdmin() {
           Actualizar ahora
         </Button>
       </div>
+
+      {geminiConfigured === false && (
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100 text-sm">
+          Falta <code className="text-xs">GEMINI_API_KEY</code> en el servidor. Sin ella el briefing
+          usa modo básico. Se configura en el <code className="text-xs">.env</code> de producción
+          (Google AI Studio).
+        </div>
+      )}
+      {geminiConfigured === true && (
+        <div className="rounded-2xl border border-teal/30 bg-teal/10 px-4 py-2 text-teal text-xs font-semibold">
+          Gemini conectado — el reporte usa IA + búsqueda web
+        </div>
+      )}
 
       {loading && !report ? (
         <div className="text-white/40 py-16 text-center flex items-center justify-center gap-2">

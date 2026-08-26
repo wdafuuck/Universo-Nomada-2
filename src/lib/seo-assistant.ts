@@ -1,7 +1,13 @@
 import { SITE_URL } from "@/lib/site-url";
 
 /** Free-tier friendly models; first that responds wins. */
-const GEMINI_MODELS = ["gemini-flash-latest", "gemini-2.0-flash"] as const;
+const GEMINI_MODELS = [
+  "gemini-3.5-flash",
+  "gemini-flash-latest",
+  "gemini-3.5-flash-lite",
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+] as const;
 
 export type CompetitorSnapshot = {
   url: string;
@@ -95,17 +101,45 @@ export async function fetchCompetitorSnapshot(rawUrl: string): Promise<Competito
   }
 }
 
+/** True si hay API key Gemini en el entorno del proceso. */
+export function isGeminiConfigured(): boolean {
+  return Boolean(
+    process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_GEMINI_API_KEY?.trim(),
+  );
+}
+
 export async function callGeminiFree(prompt: string): Promise<{ text: string; provider: "gemini" | "rules" }> {
+  return callGeminiGenerate(prompt, { withGoogleSearch: false, maxOutputTokens: 2048, temperature: 0.6 });
+}
+
+/** Gemini con Google Search (mejor para briefing de noticias/operativo). */
+export async function callGeminiWithSearch(
+  prompt: string,
+): Promise<{ text: string; provider: "gemini" | "rules" }> {
+  return callGeminiGenerate(prompt, { withGoogleSearch: true, maxOutputTokens: 4096, temperature: 0.35 });
+}
+
+async function callGeminiGenerate(
+  prompt: string,
+  opts: { withGoogleSearch: boolean; maxOutputTokens: number; temperature: number },
+): Promise<{ text: string; provider: "gemini" | "rules" }> {
   const key = process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_GEMINI_API_KEY?.trim();
   if (!key) {
     return { text: buildRulesFallback(prompt, "missing_key"), provider: "rules" };
   }
 
-  const body = JSON.stringify({
+  const payload: Record<string, unknown> = {
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.6, maxOutputTokens: 2048 },
-  });
+    generationConfig: {
+      temperature: opts.temperature,
+      maxOutputTokens: opts.maxOutputTokens,
+    },
+  };
+  if (opts.withGoogleSearch) {
+    payload.tools = [{ google_search: {} }];
+  }
 
+  const body = JSON.stringify(payload);
   let lastReason: "api_error" | "quota" | "empty" = "api_error";
 
   for (const model of GEMINI_MODELS) {
@@ -115,13 +149,17 @@ export async function callGeminiFree(prompt: string): Promise<{ text: string; pr
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body,
-        signal: AbortSignal.timeout(45000),
+        signal: AbortSignal.timeout(opts.withGoogleSearch ? 90000 : 45000),
       });
 
       if (!res.ok) {
         const err = await res.text().catch(() => "");
         console.error("[seo-ai] Gemini error", model, res.status, err.slice(0, 300));
         if (res.status === 429) lastReason = "quota";
+        // Si grounding falla en un modelo, reintenta sin search en el mismo modelo
+        if (opts.withGoogleSearch && res.status >= 400) {
+          continue;
+        }
         continue;
       }
 
@@ -137,6 +175,15 @@ export async function callGeminiFree(prompt: string): Promise<{ text: string; pr
     } catch (e) {
       console.error("[seo-ai] Gemini fail", model, e);
     }
+  }
+
+  // Fallback: si search falló, intentar una pasada sin search
+  if (opts.withGoogleSearch) {
+    return callGeminiGenerate(prompt, {
+      withGoogleSearch: false,
+      maxOutputTokens: opts.maxOutputTokens,
+      temperature: opts.temperature,
+    });
   }
 
   return { text: buildRulesFallback(prompt, lastReason), provider: "rules" };

@@ -149,7 +149,7 @@ npm run db:seed-group-trips
 | Ruta | Frecuencia | Header |
 |------|------------|--------|
 | `/api/cron/abandoned-cart` | Cada hora | `Authorization: Bearer $CRON_SECRET` |
-| `/api/cron/passport-badges` | Cada día (o cada hora) | Marca viajes terminados como `viajo` y otorga insignias |
+| `/api/cron/destination-news` | Diario 07:00 Chile | Briefing interno destinos (Gemini) |
 
 ## Monitoreo
 

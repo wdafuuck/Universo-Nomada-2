@@ -60,7 +60,10 @@ describe("admin rbac", () => {
   it("filtra tabs por rol", () => {
     expect(tabsForRole("ops")).toContain("leads");
     expect(tabsForRole("ops")).not.toContain("plataforma");
+    expect(tabsForRole("ops")).not.toContain("noticias");
+    expect(canAccessTab("admin", "noticias")).toBe(true);
     expect(canAccessTab("marketing", "blog")).toBe(true);
+    expect(canAccessTab("marketing", "noticias")).toBe(false);
     expect(canAccessTab("finance", "blog")).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { callGeminiFree } from "@/lib/seo-assistant";
+import { callGeminiWithSearch } from "@/lib/seo-assistant";
 
 export type DestinationNewsItem = {
   destination: string;
@@ -171,7 +171,7 @@ Responde SOLO JSON válido con esta forma:
 
 Máximo 12 items. Si no hay alertas fuertes, incluye 4–6 items "info" útiles (temporada, tips de confirmación). No inventes URLs. Sé específico con nombres de lugares.`;
 
-  const { text, provider } = await callGeminiFree(prompt);
+  const { text, provider } = await callGeminiWithSearch(prompt);
   if (provider === "rules") return rulesFallback(destinations);
 
   const parsed = parseReportJson(text, destinations);
