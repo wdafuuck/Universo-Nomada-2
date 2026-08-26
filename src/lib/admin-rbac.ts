@@ -13,6 +13,7 @@ export type AdminTabId =
   | "contenido"
   | "blog"
   | "anuncios"
+  | "noticias"
   | "clientes"
   | "leads"
   | "beneficios"
@@ -31,6 +32,7 @@ const ALL_TABS: AdminTabId[] = [
   "contenido",
   "blog",
   "anuncios",
+  "noticias",
   "clientes",
   "leads",
   "beneficios",

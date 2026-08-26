@@ -42,7 +42,7 @@ export function SeasonalLandingPage({ landing }: { landing: SeasonalLanding }) {
             ahorrasLabel="Ahorras"
             size="lg"
           />
-          <PromoUrgency validUntil={landing.validUntil} spotsLeft={6} />
+          <PromoUrgency validUntil={landing.validUntil} />
         </div>
 
         <ul className="space-y-3">

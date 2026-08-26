@@ -138,7 +138,7 @@ export function PromoOfferCard({
                     </div>
                   </div>
                   {promo.validUntil && groupIndex === 0 && i === 0 ? (
-                    <PromoUrgency validUntil={promo.validUntil} spotsLeft={5} />
+                    <PromoUrgency validUntil={promo.validUntil} />
                   ) : null}
                 </div>
               );
@@ -179,7 +179,7 @@ export function PromoOfferCard({
                   </div>
                 ) : null}
                 {promo.validUntil ? (
-                  <PromoUrgency validUntil={promo.validUntil} spotsLeft={groupIndex === 0 && i === 0 ? 5 : undefined} />
+                  <PromoUrgency validUntil={promo.validUntil} />
                 ) : null}
 
                 <div className="flex flex-col gap-2 mt-3" onClick={(e) => e.stopPropagation()}>

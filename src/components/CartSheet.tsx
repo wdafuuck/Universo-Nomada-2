@@ -415,8 +415,8 @@ export function CartSheet({ open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 px-6 sm:px-8 pt-6 pb-8">
-        <SheetHeader className="px-0 pt-0 pb-4 pr-10 space-y-1">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 px-0 pt-6 pb-0 h-full overflow-hidden">
+        <SheetHeader className="px-6 sm:px-8 pt-0 pb-4 pr-12 space-y-1 shrink-0">
           <SheetTitle className="flex items-center gap-2.5 text-lg">
             <ShoppingBag className="h-5 w-5 text-teal shrink-0" />
             {c.myCart}
@@ -426,8 +426,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
           </SheetDescription>
         </SheetHeader>
 
-        <>
-            <div className="flex-1 overflow-y-auto py-2 space-y-4 -mx-1 px-1">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 sm:px-8 space-y-4 pb-4">
               {items.length === 0 ? (
                 <div className="text-center py-12 text-slate-400">
                   <ShoppingBag className="h-12 w-12 mx-auto mb-3 opacity-30" />
@@ -480,7 +479,6 @@ export function CartSheet({ open, onOpenChange }: Props) {
                 })}
                 </AnimatePresence>
               )}
-            </div>
 
             {items.length > 0 && (
               <div className="border-t border-slate-100 pt-6 mt-2 space-y-5">
@@ -662,47 +660,50 @@ export function CartSheet({ open, onOpenChange }: Props) {
                   checked={availabilityAcknowledged}
                   onCheckedChange={setAvailabilityAcknowledged}
                 />
-
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={gravitySpring}
-                  className="flex gap-3 pt-1"
-                >
-                  <Button onClick={handleConfirm} disabled={processing || loadingPricing}
-                    className="flex-1 bg-gradient-to-r from-amber to-orange-500 hover:from-amber-dark hover:to-orange-600 text-white font-bold rounded-xl h-12 gap-2 text-sm sm:text-base shadow-lg shadow-amber/25 transition-transform hover:scale-[1.01] active:scale-[0.99]">
-                    {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                    {paymentMethod === "transferencia"
-                      ? (c.confirmTransfer ?? "Confirmar reserva y ver datos")
-                      : (c.payWithCard ?? "Pagar con tarjeta")}
-                  </Button>
-                  <a
-                    href={helpWhatsAppUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={c.needHelp ?? "¿Necesitas ayuda? Contacta a un agente"}
-                    className="inline-flex shrink-0 items-center justify-center rounded-xl h-12 w-12 border-2 border-[#25D366] text-[#128C7E] hover:bg-[#25D366]/10 transition-colors"
-                  >
-                    <MessageCircle className="h-5 w-5" />
-                  </a>
-                </motion.div>
-                <p className="text-center pt-1">
-                  <a
-                    href={helpWhatsAppUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium text-[#128C7E] hover:text-[#075E54] hover:underline leading-relaxed"
-                  >
-                    {c.needHelp ?? "¿Necesitas ayuda? Contacta a un agente"}
-                  </a>
-                </p>
-
-                <Button variant="outline" onClick={() => clearCart()} className="w-full rounded-xl h-11">
-                  {c.clear}
-                </Button>
               </div>
             )}
-          </>
+        </div>
+
+        {items.length > 0 && (
+          <div className="shrink-0 border-t border-slate-200 bg-white px-6 sm:px-8 py-4 space-y-3 shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={gravitySpring}
+              className="flex gap-3"
+            >
+              <Button onClick={handleConfirm} disabled={processing || loadingPricing}
+                className="flex-1 bg-gradient-to-r from-amber to-orange-500 hover:from-amber-dark hover:to-orange-600 text-white font-bold rounded-xl h-12 gap-2 text-sm sm:text-base shadow-lg shadow-amber/25 transition-transform hover:scale-[1.01] active:scale-[0.99]">
+                {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                {paymentMethod === "transferencia"
+                  ? (c.confirmTransfer ?? "Confirmar reserva y ver datos")
+                  : (c.payWithCard ?? "Pagar con tarjeta")}
+              </Button>
+              <a
+                href={helpWhatsAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={c.needHelp ?? "¿Necesitas ayuda? Contacta a un agente"}
+                className="inline-flex shrink-0 items-center justify-center rounded-xl h-12 w-12 border-2 border-[#25D366] text-[#128C7E] hover:bg-[#25D366]/10 transition-colors"
+              >
+                <MessageCircle className="h-5 w-5" />
+              </a>
+            </motion.div>
+            <p className="text-center">
+              <a
+                href={helpWhatsAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-[#128C7E] hover:text-[#075E54] hover:underline leading-relaxed"
+              >
+                {c.needHelp ?? "¿Necesitas ayuda? Contacta a un agente"}
+              </a>
+            </p>
+            <Button variant="outline" onClick={() => clearCart()} className="w-full rounded-xl h-11">
+              {c.clear}
+            </Button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

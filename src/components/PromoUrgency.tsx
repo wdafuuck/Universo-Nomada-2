@@ -5,7 +5,6 @@ import { Clock } from "lucide-react";
 
 type Props = {
   validUntil: string;
-  spotsLeft?: number;
 };
 
 function parseEndDate(validUntil: string): Date {
@@ -20,10 +19,23 @@ function parseEndDate(validUntil: string): Date {
     const year = Number(match[3]);
     return new Date(year, month, day, 23, 59, 59);
   }
+  // Formato corto tipo "30 ago" / "30 ago, 11:59 p. m." (año actual)
+  const short = validUntil.match(/(\d{1,2})\s+(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)/i);
+  if (short) {
+    const map: Record<string, number> = {
+      ene: 0, feb: 1, mar: 2, abr: 3, may: 4, jun: 5,
+      jul: 6, ago: 7, sep: 8, oct: 9, nov: 10, dic: 11,
+    };
+    const day = Number(short[1]);
+    const month = map[short[2]!.toLowerCase()] ?? 11;
+    const year = new Date().getFullYear();
+    return new Date(year, month, day, 23, 59, 59);
+  }
   return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 }
 
-export function PromoUrgency({ validUntil, spotsLeft }: Props) {
+/** Urgencia de promo: solo countdown. Sin “cupos” inventados. */
+export function PromoUrgency({ validUntil }: Props) {
   const [remaining, setRemaining] = useState("");
 
   useEffect(() => {
@@ -49,11 +61,6 @@ export function PromoUrgency({ validUntil, spotsLeft }: Props) {
         <Clock className="h-3 w-3" />
         Termina en {remaining}
       </span>
-      {spotsLeft !== undefined && spotsLeft <= 8 && (
-        <span className="text-xs font-bold text-amber-800 bg-amber-100 px-2 py-1 rounded-full">
-          ¡Solo {spotsLeft} cupos!
-        </span>
-      )}
     </div>
   );
 }

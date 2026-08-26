@@ -23,6 +23,7 @@ import {
   LineChart,
   ShoppingCart,
   Server,
+  Newspaper,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminThemeProvider, useAdminTheme } from "@/contexts/AdminThemeContext";
@@ -33,6 +34,7 @@ export type AdminTab = AdminTabId;
 
 const TABS: { id: AdminTab; label: string; desc: string; icon: typeof MapPin }[] = [
   { id: "dashboard", label: "Inicio", desc: "Resumen general", icon: LayoutDashboard },
+  { id: "noticias", label: "Noticias", desc: "Briefing interno destinos", icon: Newspaper },
   { id: "trafico", label: "Tráfico & SEO", desc: "Métricas e IA", icon: LineChart },
   { id: "portada", label: "Banner principal", desc: "Fotos y texto del inicio", icon: ImageIcon },
   { id: "paquetes", label: "Paquetes", desc: "Precios, fotos y ofertas", icon: MapPin },

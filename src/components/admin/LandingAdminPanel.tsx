@@ -44,6 +44,10 @@ const PassportBadgesAdmin = dynamic(
   () => import("@/components/admin/PassportBadgesAdmin").then((m) => ({ default: m.PassportBadgesAdmin })),
   { loading: () => <div className="text-white/40 py-12 text-center">Cargando pasaporte...</div> }
 );
+const DestinationNewsAdmin = dynamic(
+  () => import("@/components/admin/DestinationNewsAdmin").then((m) => ({ default: m.DestinationNewsAdmin })),
+  { loading: () => <div className="text-white/40 py-12 text-center">Cargando noticias...</div> }
+);
 const MembersAdmin = dynamic(
   () => import("@/components/admin/MembersAdmin").then((m) => ({ default: m.MembersAdmin })),
   { loading: () => <div className="text-white/40 py-12 text-center">Cargando clientes...</div> }
@@ -183,6 +187,7 @@ export function LandingAdminPanel({ onClose, role = "admin" }: { onClose: () => 
       {activeTab === "contenido" && <SiteContentAdmin />}
       {activeTab === "blog" && <BlogAdmin />}
       {activeTab === "anuncios" && <CampaignsAdmin />}
+      {activeTab === "noticias" && <DestinationNewsAdmin />}
       {activeTab === "beneficios" && <NomadBenefitsAdmin />}
       {activeTab === "pasaporte" && <PassportBadgesAdmin />}
       {activeTab === "abandonos" && <AbandonedCartsAdmin />}

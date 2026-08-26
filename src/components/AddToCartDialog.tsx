@@ -88,6 +88,7 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
     options: [],
     additionalActivities: [],
   });
+  const [optionalToursReady, setOptionalToursReady] = useState(false);
   const [selectedIncludedTours, setSelectedIncludedTours] = useState<string[]>([]);
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [selectedTourAddons, setSelectedTourAddons] = useState<Record<string, string[]>>({});
@@ -286,10 +287,14 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
   }, [checkIn, checkOut, passengers.adults, passengers.children, checkAvailability]);
 
   useEffect(() => {
-    if (!open || !tour) return;
+    if (!open || !tour) {
+      setOptionalToursReady(false);
+      return;
+    }
     const tourId = tour.tourId;
     const preselectedIds = [...(tour.preselectedOptionalTours ?? [])];
     let cancelled = false;
+    setOptionalToursReady(false);
 
     fetch(`/api/tours/${encodeURIComponent(tourId)}`)
       .then((r) => r.json())
@@ -305,11 +310,13 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
         setSelectedIncludedTours(
           pickCount > 0 ? preselected.slice(0, pickCount) : preselected,
         );
+        setOptionalToursReady(true);
       })
       .catch(() => {
         if (cancelled) return;
         setOptionalConfig({ pickCount: 0, options: [], additionalActivities: [] });
         setSelectedIncludedTours([]);
+        setOptionalToursReady(true);
       });
 
     return () => {
@@ -562,9 +569,15 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
       toast.error(c.flightContactAcceptRequired ?? "Debes aceptar para continuar");
       return;
     }
-    if (currentStep === "accommodation" && !canContinueAccommodation) {
-      toast.error(c.selectAccommodation);
-      return;
+    if (currentStep === "accommodation") {
+      if (!optionalToursReady) {
+        toast.message("Cargando tours del paquete…");
+        return;
+      }
+      if (!canContinueAccommodation) {
+        toast.error(c.selectAccommodation);
+        return;
+      }
     }
     if (currentStep === "includedTours" && !canContinueIncludedTours) {
       if (selectedIncludedTours.length < optionalConfig.pickCount) {
@@ -1269,8 +1282,21 @@ export function AddToCartDialog({ tour, open, onOpenChange, onAdded }: Props) {
                 </Button>
               )}
               {currentStep !== "checkout" ? (
-                <Button type="button" onClick={goNext} className="flex-1 bg-teal text-white rounded-xl h-12">
-                  {c.continue ?? "Continuar"} <ChevronRight className="h-4 w-4 ml-1" />
+                <Button
+                  type="button"
+                  onClick={goNext}
+                  disabled={currentStep === "accommodation" && !optionalToursReady}
+                  className="flex-1 bg-teal text-white rounded-xl h-12"
+                >
+                  {currentStep === "accommodation" && !optionalToursReady ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cargando tours…
+                    </>
+                  ) : (
+                    <>
+                      {c.continue ?? "Continuar"} <ChevronRight className="h-4 w-4 ml-1" />
+                    </>
+                  )}
                 </Button>
               ) : (
                 <Button onClick={handleAdd} className="flex-1 bg-gradient-to-r from-amber to-orange-500 hover:from-amber-dark hover:to-orange-600 text-white font-bold rounded-xl h-12">
