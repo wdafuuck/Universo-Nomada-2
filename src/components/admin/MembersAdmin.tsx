@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Pencil, User, Plane, FileText, Award, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Pencil, User, Plane, FileText, Award, RefreshCw, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TripDocumentsEditor } from "@/components/admin/TripDocumentsEditor";
 import { TripPaymentEditor } from "@/components/admin/TripPaymentEditor";
+import { ClientsTravelCalendar } from "@/components/admin/ClientsTravelCalendar";
 import type { EditableCartLine } from "@/lib/admin-lead-edit";
 import { checkOutFromCheckIn, parseTourDuration } from "@/lib/tour-duration";
 
@@ -20,6 +21,8 @@ type UserTrip = {
   amountDue: number | null;
   tripEndDate: string | null;
   createdAt: string;
+  checkIn?: string | null;
+  checkOut?: string | null;
   _count: { documents: number };
 };
 
@@ -42,7 +45,14 @@ type RegisteredUser = {
   createdAt: string;
   passportBadges: UserBadge[];
   leads: UserTrip[];
+  nextTripStart?: string | null;
+  nextTripEnd?: string | null;
+  nextTripDestino?: string | null;
+  nextTripStartMs?: number | null;
 };
+
+type SortMode = "upcoming" | "created";
+type ViewMode = "list" | "calendar";
 
 const STATUSES = [
   { value: "reservado", label: "Reservado" },
@@ -63,6 +73,20 @@ const emptyCartLine = (): EditableCartLine => ({
   passengers: { adults: 2, children: 0, infants: 0 },
 });
 
+function formatTripRange(start?: string | null, end?: string | null): string {
+  if (!start) return "";
+  const a = new Date(start + "T12:00:00").toLocaleDateString("es-CL", {
+    day: "numeric",
+    month: "short",
+  });
+  if (!end || end === start) return a;
+  const b = new Date(end + "T12:00:00").toLocaleDateString("es-CL", {
+    day: "numeric",
+    month: "short",
+  });
+  return `${a} → ${b}`;
+}
+
 export function MembersAdmin() {
   const [users, setUsers] = useState<RegisteredUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +98,8 @@ export function MembersAdmin() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: "", email: "" });
   const [syncingBadges, setSyncingBadges] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("upcoming");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   const [clientForm, setClientForm] = useState({
     name: "",
@@ -93,6 +119,26 @@ export function MembersAdmin() {
     amountDue: "",
     cartItems: [emptyCartLine()],
   });
+
+  const sortedUsers = useMemo(() => {
+    const list = [...users];
+    if (sortMode === "created") {
+      return list.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+    }
+    // Próximos a viajar primero; sin fecha al final
+    return list.sort((a, b) => {
+      const am = a.nextTripStartMs;
+      const bm = b.nextTripStartMs;
+      if (am == null && bm == null) {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (am == null) return 1;
+      if (bm == null) return -1;
+      return am - bm;
+    });
+  }, [users, sortMode]);
 
   const load = async () => {
     setLoading(true);
@@ -376,16 +422,58 @@ export function MembersAdmin() {
             <User className="h-5 w-5 text-teal" /> Clientes ({users.length})
           </h2>
           <p className="text-white/40 text-sm mt-1">
-            Registrados en la web o creados manualmente. Gestiona viajes y documentos.
+            Ordená por próximo viaje o por registro. El calendario muestra quién viaja cada día.
           </p>
         </div>
-        <Button
-          onClick={openNewClient}
-          className="bg-teal text-[#070f1a] font-bold rounded-xl shrink-0"
-        >
-          <Plus className="h-4 w-4 mr-1" /> Agregar cliente manual
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setViewMode((v) => (v === "calendar" ? "list" : "calendar"))}
+            className={`rounded-xl border-white/15 ${
+              viewMode === "calendar"
+                ? "bg-teal text-[#070f1a] border-teal font-bold"
+                : "text-white bg-white/5"
+            }`}
+          >
+            <CalendarDays className="h-4 w-4 mr-1" />
+            {viewMode === "calendar" ? "Ver lista" : "Ver calendario"}
+          </Button>
+          <Button
+            onClick={openNewClient}
+            className="bg-teal text-[#070f1a] font-bold rounded-xl shrink-0"
+          >
+            <Plus className="h-4 w-4 mr-1" /> Agregar cliente manual
+          </Button>
+        </div>
       </div>
+
+      {viewMode === "list" && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setSortMode("upcoming")}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+              sortMode === "upcoming"
+                ? "bg-teal text-[#070f1a]"
+                : "bg-white/5 text-white/60 hover:bg-white/10"
+            }`}
+          >
+            Próximos a viajar
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortMode("created")}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+              sortMode === "created"
+                ? "bg-teal text-[#070f1a]"
+                : "bg-white/5 text-white/60 hover:bg-white/10"
+            }`}
+          >
+            Últimos creados
+          </button>
+        </div>
+      )}
 
       {showNewClient && (
         <div className="rounded-2xl border border-teal/30 bg-teal/5 p-5 space-y-4">
@@ -510,7 +598,21 @@ export function MembersAdmin() {
         </div>
       )}
 
-      {users.length === 0 && !showNewClient ? (
+      {viewMode === "calendar" ? (
+        <ClientsTravelCalendar
+          users={users}
+          onSelectUser={(userId) => {
+            const u = users.find((x) => x.id === userId);
+            if (!u) return;
+            setSelected(u);
+            setViewMode("list");
+            setShowNewTrip(false);
+            setShowNewClient(false);
+            setEditingTripId(null);
+            setEditingProfile(false);
+          }}
+        />
+      ) : users.length === 0 && !showNewClient ? (
         <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center space-y-4">
           <p className="text-white/40">Aún no hay clientes. Puedes agregar uno manualmente.</p>
           <Button onClick={openNewClient} className="bg-teal text-[#070f1a] font-bold rounded-xl">
@@ -520,7 +622,7 @@ export function MembersAdmin() {
       ) : users.length > 0 ? (
         <div className="grid lg:grid-cols-5 gap-4">
           <div className="lg:col-span-2 space-y-2 max-h-[70vh] overflow-y-auto">
-            {users.map((user) => (
+            {sortedUsers.map((user) => (
               <button
                 key={user.id}
                 type="button"
@@ -539,6 +641,14 @@ export function MembersAdmin() {
               >
                 <p className="text-white font-semibold">{user.name || "Sin nombre"}</p>
                 <p className="text-teal text-sm truncate">{user.email}</p>
+                {user.nextTripStart ? (
+                  <p className="text-amber-200/90 text-xs mt-1.5 font-medium">
+                    Próximo: {formatTripRange(user.nextTripStart, user.nextTripEnd)}
+                    {user.nextTripDestino ? ` · ${user.nextTripDestino}` : ""}
+                  </p>
+                ) : (
+                  <p className="text-white/30 text-xs mt-1.5">Sin viaje próximo con fecha</p>
+                )}
                 <p className="text-white/40 text-xs mt-1">
                   Registro: {new Date(user.createdAt).toLocaleDateString("es-CL")}
                   · {user.leads.length} viaje{user.leads.length !== 1 ? "s" : ""}
@@ -750,6 +860,11 @@ export function MembersAdmin() {
                                   : ` · Saldo $${Math.max(0, trip.cartTotal - trip.amountDue).toLocaleString("es-CL")}`
                               )}
                             </p>
+                            {trip.checkIn ? (
+                              <p className="text-amber-200/80 text-xs mt-1">
+                                Viaje: {formatTripRange(trip.checkIn, trip.checkOut)}
+                              </p>
+                            ) : null}
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-white/40 flex items-center gap-1">

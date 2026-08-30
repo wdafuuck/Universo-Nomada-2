@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin-lead-edit";
 import { checkOutFromCheckIn } from "@/lib/tour-duration";
 import { getRequestTenantId } from "@/lib/tenant";
+import { leadTripDates, nextUpcomingLead } from "@/lib/admin-client-trips";
 
 export async function GET() {
   const admin = await requireAdmin();
@@ -56,6 +57,7 @@ export async function GET() {
             cartTotal: true,
             amountDue: true,
             tripEndDate: true,
+            cartJson: true,
             createdAt: true,
           },
           orderBy: { createdAt: "desc" },
@@ -82,23 +84,55 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      users: users.map((user) => ({
-        ...user,
-        passportBadges: user.passportBadges.map((a) => ({
-          id: a.id,
-          earnedAt: a.earnedAt,
-          leadId: a.leadId,
-          name: a.badge.name,
-          emoji: a.badge.emoji,
-          image: a.badge.image,
-          destination: a.badge.destination,
-          badgeId: a.badge.id,
-        })),
-        leads: user.leads.map((lead) => ({
-          ...lead,
-          _count: { documents: docCountByLead.get(lead.id) ?? 0 },
-        })),
-      })),
+      users: users.map((user) => {
+        const leads = user.leads.map((lead) => {
+          const dates = leadTripDates(lead);
+          return {
+            id: lead.id,
+            destino: lead.destino,
+            status: lead.status,
+            source: lead.source,
+            email: lead.email,
+            cartTotal: lead.cartTotal,
+            amountDue: lead.amountDue,
+            tripEndDate: lead.tripEndDate,
+            createdAt: lead.createdAt,
+            checkIn: dates.checkIn,
+            checkOut: dates.checkOut,
+            _count: { documents: docCountByLead.get(lead.id) ?? 0 },
+          };
+        });
+        const next = nextUpcomingLead(
+          user.leads.map((l) => ({
+            status: l.status,
+            destino: l.destino,
+            cartJson: l.cartJson,
+            tripEndDate: l.tripEndDate,
+          })),
+        );
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          emailVerifiedAt: user.emailVerifiedAt,
+          createdAt: user.createdAt,
+          passportBadges: user.passportBadges.map((a) => ({
+            id: a.id,
+            earnedAt: a.earnedAt,
+            leadId: a.leadId,
+            name: a.badge.name,
+            emoji: a.badge.emoji,
+            image: a.badge.image,
+            destination: a.badge.destination,
+            badgeId: a.badge.id,
+          })),
+          leads,
+          nextTripStart: next?.checkIn ?? null,
+          nextTripEnd: next?.checkOut ?? null,
+          nextTripDestino: next?.destino ?? null,
+          nextTripStartMs: next?.tripStartMs ?? null,
+        };
+      }),
     });
   } catch (e) {
     console.error("[admin/users]", e);
