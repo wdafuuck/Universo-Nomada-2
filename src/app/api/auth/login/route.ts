@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { setSessionCookie } from "@/lib/auth-session";
 import { guardPublicApi } from "@/lib/api-guard";
+import { clientIp } from "@/lib/rate-limit";
+import { checkLoginLockout, clearLoginLockout, recordLoginFailure } from "@/lib/auth-lockout";
 import { readJsonBody, sanitizeEmail } from "@/lib/security";
 import { hashPassword, isLegacyPasswordHash, verifyPassword } from "@/lib/password";
 
 export async function POST(request: NextRequest) {
   try {
-    const blocked = guardPublicApi(request, { key: "login", limit: 20, requireJson: true });
+    const ip = clientIp(request);
+    const blocked = guardPublicApi(request, { key: "login", limit: 15, requireJson: true });
     if (blocked) return blocked;
 
     const parsed = await readJsonBody<{ email?: string; password?: string }>(request);
@@ -21,16 +24,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email y contraseña son obligatorios" }, { status: 400 });
     }
 
+    const lock = checkLoginLockout(email, ip);
+    if (lock.locked) {
+      return NextResponse.json(
+        { error: "Demasiados intentos fallidos. Espera 15 minutos e intenta de nuevo." },
+        { status: 429, headers: { "Retry-After": String(lock.retryAfterSec) } },
+      );
+    }
+
     const user = await db.user.findUnique({ where: { email } });
 
     if (!user || !user.password) {
+      const fail = recordLoginFailure(email, ip);
+      if (fail.locked) {
+        return NextResponse.json(
+          { error: "Demasiados intentos fallidos. Espera 15 minutos e intenta de nuevo." },
+          { status: 429, headers: { "Retry-After": String(fail.retryAfterSec) } },
+        );
+      }
       return NextResponse.json({ error: "Email o contraseña incorrectos" }, { status: 401 });
     }
 
     const ok = await verifyPassword(String(password), user.password);
     if (!ok) {
+      const fail = recordLoginFailure(email, ip);
+      if (fail.locked) {
+        return NextResponse.json(
+          { error: "Demasiados intentos fallidos. Espera 15 minutos e intenta de nuevo." },
+          { status: 429, headers: { "Retry-After": String(fail.retryAfterSec) } },
+        );
+      }
       return NextResponse.json({ error: "Email o contraseña incorrectos" }, { status: 401 });
     }
+
+    clearLoginLockout(email, ip);
 
     if (isLegacyPasswordHash(user.password)) {
       await db.user.update({

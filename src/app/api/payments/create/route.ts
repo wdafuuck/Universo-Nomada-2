@@ -7,10 +7,14 @@ import {
   type PaymentItem,
 } from "@/lib/payments";
 import { db } from "@/lib/db";
+import { guardPublicApi } from "@/lib/api-guard";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  const blocked = guardPublicApi(request, { key: "payments-create", limit: 10, requireJson: true });
+  if (blocked) return blocked;
+
   const available = listConfiguredCardProviders();
   if (available.length === 0 && !getPaymentProvider()) {
     return NextResponse.json(

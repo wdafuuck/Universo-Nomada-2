@@ -1,9 +1,36 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isScannerPath } from "@/lib/security";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 function isSensitiveUploadPath(pathname: string): boolean {
   return /\.(pdf|doc|docx|xls|xlsx|zip|rar|7z|csv)$/i.test(pathname.split("?")[0]);
+}
+
+/** Rutas API exentas del rate limit global (webhooks, cron, health). */
+function isApiRateLimitExempt(pathname: string): boolean {
+  if (pathname === "/api/health") return true;
+  if (pathname.startsWith("/api/cron/")) return true;
+  if (pathname === "/api/payments/mercadopago/webhook") return true;
+  if (pathname === "/api/payments/sumup/return") return true;
+  if (pathname === "/api/payments/transbank/return") return true;
+  return false;
+}
+
+function apiRateLimitResponse(ip: string, pathname: string): NextResponse | null {
+  if (!pathname.startsWith("/api/") || isApiRateLimitExempt(pathname)) return null;
+
+  const isAdmin = pathname.startsWith("/api/admin/");
+  const bucket = isAdmin ? `api-admin:${ip}` : `api-global:${ip}`;
+  const limit = isAdmin ? 180 : 120;
+
+  if (!rateLimit(bucket, limit, 60_000)) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Intenta de nuevo en un momento." },
+      { status: 429, headers: { "Retry-After": "60" } },
+    );
+  }
+  return null;
 }
 
 export function middleware(request: NextRequest) {
@@ -16,6 +43,9 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith("/uploads/") && /\.(php|exe|sh|bat|js|html)$/i.test(pathname)) {
     return new NextResponse(null, { status: 403 });
   }
+
+  const limited = apiRateLimitResponse(clientIp(request), pathname);
+  if (limited) return limited;
 
   // PDF/docs → API Node (firma o sesión). Evita crypto en Edge.
   if (pathname.startsWith("/uploads/") && isSensitiveUploadPath(pathname)) {

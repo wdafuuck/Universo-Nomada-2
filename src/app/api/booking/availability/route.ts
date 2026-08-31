@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkBookingAvailability } from "@/lib/booking-api";
+import { guardPublicApi } from "@/lib/api-guard";
 
 export async function POST(request: NextRequest) {
   try {
+    const blocked = guardPublicApi(request, {
+      key: "booking-availability",
+      limit: 20,
+      requireJson: true,
+    });
+    if (blocked) return blocked;
+
     const body = await request.json();
     const { hotelIds, checkIn, checkOut, adults, children } = body;
 

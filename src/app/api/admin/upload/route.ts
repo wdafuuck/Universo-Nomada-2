@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import path from "path";
 import { requireAdmin } from "@/lib/auth-session";
+import { guardAdminApi } from "@/lib/api-guard";
 import { ensureUploadsDir } from "@/lib/uploads-dir";
 import { optimizeImageBuffer, formatBytes, type OptimizePurpose } from "@/lib/image-optimize";
+import { isImageMime, isPdfMime, validateUploadBuffer } from "@/lib/upload-mime";
 
 const IMAGE_MAX_INPUT = 25 * 1024 * 1024;
 const PDF_MAX = 15 * 1024 * 1024;
@@ -21,6 +23,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  const adminBlocked = guardAdminApi(request, "admin-upload");
+  if (adminBlocked) return adminBlocked;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -30,12 +35,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No se envió archivo" }, { status: 400 });
     }
 
-    const isPdf = file.type === "application/pdf";
-    const isImage = file.type.startsWith("image/");
-
-    if (!isPdf && !isImage) {
-      return NextResponse.json({ error: "Solo imágenes JPG, PNG, WebP, GIF o PDF" }, { status: 400 });
+    const raw = Buffer.from(await file.arrayBuffer());
+    const mimeCheck = validateUploadBuffer(raw, file.type);
+    if (!mimeCheck.ok) {
+      return NextResponse.json({ error: mimeCheck.error }, { status: 400 });
     }
+
+    const isPdf = isPdfMime(mimeCheck.mime);
+    const isImage = isImageMime(mimeCheck.mime);
 
     const sensitive = isPdf || purpose === "private" || purpose === "document";
 
@@ -51,7 +58,6 @@ export async function POST(request: NextRequest) {
     }
 
     const uploadDir = await ensureUploadsDir();
-    const raw = Buffer.from(await file.arrayBuffer());
 
     if (isPdf) {
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`;

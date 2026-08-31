@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { resolveFlightSearch } from "@/lib/flight-resolver";
 import { parseTourDuration } from "@/lib/tour-duration";
+import { guardPublicApi } from "@/lib/api-guard";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
+    const blocked = guardPublicApi(request, { key: "flights-search", limit: 15, requireJson: true });
+    if (blocked) return blocked;
+
     const body = await request.json();
     const { tourId, departDate, returnDate, adults } = body;
 

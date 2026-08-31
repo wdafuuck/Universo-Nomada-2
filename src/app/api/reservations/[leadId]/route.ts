@@ -4,6 +4,7 @@ import { leadToConfirmation } from "@/lib/reservation-confirmation";
 import { getSessionFromRequest, requireAdmin } from "@/lib/auth-session";
 import { verifyReservationAccessToken } from "@/lib/reservation-access";
 import { normalizeEmail } from "@/lib/otp-auth";
+import { guardPublicApi } from "@/lib/api-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,9 @@ type Params = { params: Promise<{ leadId: string }> };
 
 export async function GET(request: NextRequest, { params }: Params) {
   try {
+    const blocked = guardPublicApi(request, { key: "reservations", limit: 30 });
+    if (blocked) return blocked;
+
     const { leadId } = await params;
     const id = Number(leadId);
     if (!Number.isFinite(id)) {
