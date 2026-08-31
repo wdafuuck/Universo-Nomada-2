@@ -35,9 +35,22 @@ systemctl reload caddy
 
 ### Login (contraseña admin)
 
-- **5 intentos fallidos** → bloqueo **15 minutos** (por email e IP)
+- **5 intentos fallidos** → bloqueo **15 minutos** (por email e IP) ✅ activo
 - Rate limit adicional: 15 req/min por IP
-- Código: `src/lib/auth-lockout.ts` + `src/app/api/auth/login/route.ts`
+- Código: `src/lib/auth-lockout.ts`
+
+### Anti-bot (equivalente Turnstile + Wordfence)
+
+- **Cloudflare Turnstile** en login, registro, checkout, cotizaciones y OTP
+- **Honeypot** invisible en todos los formularios públicos
+- Bloqueo de user-agents de escaneo (sqlmap, nikto, etc.) en APIs
+- Configurar en `.env`:
+  ```bash
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY=...
+  TURNSTILE_SECRET_KEY=...
+  ```
+- Obtener keys gratis: [Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
+- Sin keys configuradas: honeypot + rate limits siguen activos; Turnstile se omite
 
 ### OTP (clientes)
 

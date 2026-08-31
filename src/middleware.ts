@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isScannerPath } from "@/lib/security";
+import { isSuspiciousApiBot } from "@/lib/bot-guard";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 function isSensitiveUploadPath(pathname: string): boolean {
@@ -46,6 +47,15 @@ export function middleware(request: NextRequest) {
 
   const limited = apiRateLimitResponse(clientIp(request), pathname);
   if (limited) return limited;
+
+  if (
+    pathname.startsWith("/api/") &&
+    !isApiRateLimitExempt(pathname) &&
+    (request.method === "POST" || request.method === "PUT" || request.method === "PATCH") &&
+    isSuspiciousApiBot(request)
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   // PDF/docs → API Node (firma o sesión). Evita crypto en Edge.
   if (pathname.startsWith("/uploads/") && isSensitiveUploadPath(pathname)) {

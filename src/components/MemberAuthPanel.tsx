@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { getReferralCode } from "@/components/ReferralCapture";
+import { AntiBotFields } from "@/components/AntiBotFields";
+import { useAntiBot } from "@/hooks/useAntiBot";
 
 type AuthStep = "main" | "code";
 type AuthFlow = "register" | "login";
@@ -36,6 +38,7 @@ export function MemberAuthPanel({ onSuccess, compact, initialEmail, initialFlow 
   const [loginEmail, setLoginEmail] = useState(initialEmail ?? "");
 
   const [pendingName, setPendingName] = useState("");
+  const antiBot = useAntiBot();
 
   useEffect(() => {
     if (initialEmail) {
@@ -50,10 +53,13 @@ export function MemberAuthPanel({ onSuccess, compact, initialEmail, initialFlow 
   }, [initialFlow]);
 
   const sendOtp = async (email: string) => {
+    const botErr = antiBot.validate();
+    if (botErr) throw new Error(botErr);
+
     const res = await fetch("/api/auth/otp/request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, ...antiBot.payload() }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Error");
@@ -75,6 +81,12 @@ export function MemberAuthPanel({ onSuccess, compact, initialEmail, initialFlow 
       return;
     }
 
+    const botErr = antiBot.validate();
+    if (botErr) {
+      toast.error(botErr);
+      return;
+    }
+
     setLoading(true);
     try {
       const leadRes = await fetch("/api/leads", {
@@ -87,6 +99,7 @@ export function MemberAuthPanel({ onSuccess, compact, initialEmail, initialFlow 
           mensaje: `[CUENTA NÓMADA] RUT/Pasaporte: ${rut}`,
           source: "registro-cuenta",
           referralCode: getReferralCode(),
+          ...antiBot.payload(),
         }),
       });
       if (!leadRes.ok) {
@@ -216,6 +229,12 @@ export function MemberAuthPanel({ onSuccess, compact, initialEmail, initialFlow 
 
   return (
     <div className={`space-y-6 ${compact ? "w-full" : "w-full max-w-md"}`}>
+      <AntiBotFields
+        honeypot={antiBot.honeypot}
+        onHoneypotChange={antiBot.setHoneypot}
+        onTurnstileToken={antiBot.setTurnstileToken}
+        onTurnstileExpire={() => antiBot.setTurnstileToken("")}
+      />
       {/* Registrarse */}
       <form onSubmit={handleRegister} className="space-y-3 rounded-2xl border border-teal/20 bg-teal/5 p-4 relative z-10">
         <div>

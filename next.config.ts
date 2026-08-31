@@ -8,12 +8,12 @@ const forceHttps =
 
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https: https://www.googletagmanager.com https://www.google-analytics.com https://www.facebook.com",
   "font-src 'self' data: https:",
-  "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://www.google.com https://www.facebook.com https://api.sumup.com https://api.mercadopago.com https://*.liteapi.travel",
-  "frame-src 'self' https://www.googletagmanager.com https://*.sumup.com https://*.mercadopago.com https://www.facebook.com",
+  "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://www.google.com https://www.facebook.com https://api.sumup.com https://api.mercadopago.com https://*.liteapi.travel https://challenges.cloudflare.com",
+  "frame-src 'self' https://www.googletagmanager.com https://*.sumup.com https://*.mercadopago.com https://www.facebook.com https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://wa.me https://*.sumup.com https://*.mercadopago.com",

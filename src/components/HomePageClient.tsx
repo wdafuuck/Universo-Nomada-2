@@ -35,6 +35,8 @@ import { DestinationTourGroup } from "@/components/DestinationTourGroup";
 import { trackGenerateLead } from "@/lib/analytics-events";
 import { PromoOfferCard } from "@/components/PromoOfferCard";
 import { MemberAuthDialog } from "@/components/MemberAuthDialog";
+import { AntiBotFields } from "@/components/AntiBotFields";
+import { useAntiBot } from "@/hooks/useAntiBot";
 import { useCart } from "@/contexts/CartContext";
 import { useCartStore } from "@/stores/cart-store";
 import { useLandingData } from "@/hooks/use-landing-data";
@@ -163,13 +165,21 @@ function AuthDialog({ isOpen, onClose, onLogin }: {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const antiBot = useAntiBot();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const botErr = antiBot.validate();
+    if (botErr) {
+      toast.error(botErr);
+      return;
+    }
     setLoading(true);
     try {
       const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
-      const body = mode === "login" ? { email: form.email, password: form.password } : form;
+      const body = mode === "login"
+        ? { email: form.email, password: form.password, ...antiBot.payload() }
+        : { ...form, ...antiBot.payload() };
       const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error");
@@ -235,6 +245,12 @@ function AuthDialog({ isOpen, onClose, onLogin }: {
                   </button>
                 </div>
               </div>
+              <AntiBotFields
+                honeypot={antiBot.honeypot}
+                onHoneypotChange={antiBot.setHoneypot}
+                onTurnstileToken={antiBot.setTurnstileToken}
+                onTurnstileExpire={() => antiBot.setTurnstileToken("")}
+              />
               <Button type="submit" disabled={loading}
                 className="w-full bg-teal hover:bg-teal-dark text-navy font-bold rounded-full h-12 shadow-lg shadow-teal/20 transition-all hover:scale-[1.02]">
                 {loading ? "Cargando..." : mode === "login" ? "Iniciar Sesion" : "Crear Cuenta"}
@@ -270,11 +286,17 @@ function TravelFormPopup({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
     saludRestricciones: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const antiBot = useAntiBot();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombreCompleto || !formData.rutPasaporte || !formData.telefono || !formData.email) {
       toast.error("Completa los campos obligatorios");
+      return;
+    }
+    const botErr = antiBot.validate();
+    if (botErr) {
+      toast.error(botErr);
       return;
     }
     setIsSubmitting(true);
@@ -297,6 +319,7 @@ function TravelFormPopup({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           mensaje: detalle,
           source: "cotizacion-viaje",
           referralCode: getReferralCode(),
+          ...antiBot.payload(),
         })
       });
       if (!res.ok) throw new Error("Error");
@@ -448,6 +471,13 @@ function TravelFormPopup({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                 </div>
               </div>
 
+              <AntiBotFields
+                honeypot={antiBot.honeypot}
+                onHoneypotChange={antiBot.setHoneypot}
+                onTurnstileToken={antiBot.setTurnstileToken}
+                onTurnstileExpire={() => antiBot.setTurnstileToken("")}
+              />
+
               <div className="flex items-center gap-4">
                 <Button
                   type="submit"
@@ -512,6 +542,7 @@ export default function LandingPage({
   const [destinationSearch, setDestinationSearch] = useState("");
   const [formData, setFormData] = useState({ nombre: "", email: "", telefono: "", destino: "", mensaje: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const contactAntiBot = useAntiBot();
   const [navScrolled, setNavScrolled] = useState(false);
   const [contentRefresh, setContentRefresh] = useState(0);
   const [user, setUser] = useState<{ id: string; email: string; name: string | null; role: string } | null>(null);
@@ -581,12 +612,14 @@ export default function LandingPage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nombre || !formData.email || !formData.telefono) { toast.error("Completa los campos obligatorios"); return; }
+    const botErr = contactAntiBot.validate();
+    if (botErr) { toast.error(botErr); return; }
     setIsSubmitting(true);
     try {
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, source: "cotizacion-home", referralCode: getReferralCode() }),
+        body: JSON.stringify({ ...formData, source: "cotizacion-home", referralCode: getReferralCode(), ...contactAntiBot.payload() }),
       });
       if (!res.ok) throw new Error("Error");
       trackGenerateLead({ source: "cotizacion-home", value: 0 });
@@ -1036,6 +1069,12 @@ export default function LandingPage({
                       <Textarea id="mensaje" placeholder="Cuentanos sobre tu viaje sonado..." value={formData.mensaje} onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
                         className="rounded-xl bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-teal min-h-[100px] resize-none" />
                     </div>
+                    <AntiBotFields
+                      honeypot={contactAntiBot.honeypot}
+                      onHoneypotChange={contactAntiBot.setHoneypot}
+                      onTurnstileToken={contactAntiBot.setTurnstileToken}
+                      onTurnstileExpire={() => contactAntiBot.setTurnstileToken("")}
+                    />
                     <Button type="submit" disabled={isSubmitting}
                       className="w-full bg-teal hover:bg-teal-dark text-navy font-bold text-lg rounded-full h-14 shadow-lg shadow-teal/20 transition-all hover:scale-[1.02] active:scale-[0.98]">
                       {isSubmitting ? t("contacto").enviando : <span className="flex items-center gap-2"><Send className="h-5 w-5" />{t("contacto").enviar}</span>}

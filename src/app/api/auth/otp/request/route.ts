@@ -13,16 +13,26 @@ import {
 
 import { guardPublicApi } from "@/lib/api-guard";
 import { readJsonBody } from "@/lib/security";
+import { enforceBotProtection } from "@/lib/bot-guard";
+import { clientIp } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
     const blocked = guardPublicApi(request, { key: "otp-req", limit: 5, requireJson: true });
     if (blocked) return blocked;
 
-    const parsed = await readJsonBody<{ email?: string }>(request);
+    const parsed = await readJsonBody<{ email?: string; turnstileToken?: string; _hp?: string }>(request);
     if ("error" in parsed) {
       return NextResponse.json({ error: parsed.error }, { status: parsed.status });
     }
+
+    const botBlocked = await enforceBotProtection({
+      honeypot: parsed.data._hp,
+      turnstileToken: parsed.data.turnstileToken,
+      ip: clientIp(request),
+    });
+    if (botBlocked) return botBlocked;
+
     const email = normalizeEmail(parsed.data.email ?? "");
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Ingresa un correo válido" }, { status: 400 });

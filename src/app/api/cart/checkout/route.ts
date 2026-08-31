@@ -4,6 +4,8 @@ import { getSessionFromRequest } from "@/lib/auth-session";
 import { normalizeEmail } from "@/lib/otp-auth";
 import { totalPassengers } from "@/lib/tour-pricing";
 import { guardPublicApi } from "@/lib/api-guard";
+import { enforceBotProtection } from "@/lib/bot-guard";
+import { clientIp } from "@/lib/rate-limit";
 import { taxSummary, type PaymentItem, resolveCardPaymentProvider, allowedCardProviders, isCardProviderAllowed } from "@/lib/payments";
 import { notifyNewLead } from "@/lib/notify";
 import { BANK_TRANSFER } from "@/lib/bank-transfer";
@@ -39,6 +41,8 @@ type CheckoutBody = {
   rouletteGiftTour?: string;
   paymentMethod?: "card" | "sumup" | "mercadopago" | "transferencia";
   paymentPlan?: "total" | "deposito";
+  turnstileToken?: string;
+  _hp?: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -47,6 +51,14 @@ export async function POST(request: NextRequest) {
     if (blocked) return blocked;
 
     const body = (await request.json()) as CheckoutBody;
+
+    const botBlocked = await enforceBotProtection({
+      honeypot: body._hp,
+      turnstileToken: body.turnstileToken,
+      ip: clientIp(request),
+    });
+    if (botBlocked) return botBlocked;
+
     const {
       items: rawItems,
       contact,

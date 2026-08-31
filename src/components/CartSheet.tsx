@@ -30,6 +30,8 @@ import type { ReservationConfirmation } from "@/lib/reservation-confirmation";
 import { trackBeginCheckout, trackPurchase } from "@/lib/analytics-events";
 import { CheckoutTrustBar, PaymentMethodBadges } from "@/components/CheckoutTrustBar";
 import { AvailabilityDisclaimer } from "@/components/AvailabilityDisclaimer";
+import { AntiBotFields } from "@/components/AntiBotFields";
+import { useAntiBot } from "@/hooks/useAntiBot";
 import { gravitySpring } from "@/lib/motion-presets";
 
 const STORAGE_KEY = "un-last-reservation";
@@ -112,6 +114,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
   const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>("total");
   const [availabilityAcknowledged, setAvailabilityAcknowledged] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const antiBot = useAntiBot();
   const [discountInput, setDiscountInput] = useState("");
   const [appliedDiscountCode, setAppliedDiscountCode] = useState<string | null>(null);
   const [applyingDiscount, setApplyingDiscount] = useState(false);
@@ -330,6 +333,12 @@ export function CartSheet({ open, onOpenChange }: Props) {
       return;
     }
 
+    const botErr = antiBot.validate();
+    if (botErr) {
+      toast.error(botErr);
+      return;
+    }
+
     setProcessing(true);
     try {
       const checkoutRes = await fetch("/api/cart/checkout", {
@@ -348,6 +357,7 @@ export function CartSheet({ open, onOpenChange }: Props) {
             email: payerEmail ?? "carrito@universonomada.cl",
             telefono: payerPhone ?? "pendiente",
           },
+          ...antiBot.payload(),
         }),
       });
       const checkoutData = await checkoutRes.json();
@@ -666,6 +676,12 @@ export function CartSheet({ open, onOpenChange }: Props) {
 
         {items.length > 0 && (
           <div className="shrink-0 border-t border-slate-200 bg-white px-6 sm:px-8 py-4 space-y-3 shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
+            <AntiBotFields
+              honeypot={antiBot.honeypot}
+              onHoneypotChange={antiBot.setHoneypot}
+              onTurnstileToken={antiBot.setTurnstileToken}
+              onTurnstileExpire={() => antiBot.setTurnstileToken("")}
+            />
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}

@@ -177,6 +177,8 @@ export const SECURITY_POLICY: PolicyDocument = {
         "Autenticación de miembros mediante OTP por correo (códigos de un solo uso con expiración).",
         "Rate limiting por IP en login, registro, checkout, pagos, disponibilidad hotelera, reservas, búsqueda de vuelos, ruleta, leads y campañas.",
         "Bloqueo tras 5 intentos fallidos de login (15 minutos) por email e IP.",
+        "Cloudflare Turnstile anti-bot en login, checkout, cotizaciones y OTP (cuando está configurado).",
+        "Campo honeypot invisible en formularios públicos para bloquear bots automáticos.",
         "Rate limit global en todas las APIs (120/min) y capa admin (180/min) vía middleware.",
         "Validación de archivos subidos por magic bytes (JPEG, PNG, WebP, GIF, PDF); sin ejecución de PHP ni plugins.",
         "Validación de origen (Origin/Referer) en endpoints sensibles en producción.",

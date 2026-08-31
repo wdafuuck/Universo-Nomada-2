@@ -5,6 +5,7 @@ import { guardPublicApi } from "@/lib/api-guard";
 import { clientIp } from "@/lib/rate-limit";
 import { checkLoginLockout, clearLoginLockout, recordLoginFailure } from "@/lib/auth-lockout";
 import { readJsonBody, sanitizeEmail } from "@/lib/security";
+import { enforceBotProtection } from "@/lib/bot-guard";
 import { hashPassword, isLegacyPasswordHash, verifyPassword } from "@/lib/password";
 
 export async function POST(request: NextRequest) {
@@ -13,10 +14,23 @@ export async function POST(request: NextRequest) {
     const blocked = guardPublicApi(request, { key: "login", limit: 15, requireJson: true });
     if (blocked) return blocked;
 
-    const parsed = await readJsonBody<{ email?: string; password?: string }>(request);
+    const parsed = await readJsonBody<{
+      email?: string;
+      password?: string;
+      turnstileToken?: string;
+      _hp?: string;
+    }>(request);
     if ("error" in parsed) {
       return NextResponse.json({ error: parsed.error }, { status: parsed.status });
     }
+
+    const botBlocked = await enforceBotProtection({
+      honeypot: parsed.data._hp,
+      turnstileToken: parsed.data.turnstileToken,
+      ip,
+    });
+    if (botBlocked) return botBlocked;
+
     const { email: rawEmail, password } = parsed.data;
 
     const email = sanitizeEmail(rawEmail);
