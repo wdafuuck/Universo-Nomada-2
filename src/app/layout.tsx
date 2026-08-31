@@ -13,6 +13,7 @@ import { PageAmbient } from "@/components/motion/PageAmbient";
 import { SkipLink } from "@/components/a11y/SkipLink";
 import { CookieConsent } from "@/components/a11y/CookieConsent";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { SiteCopyrightFooter } from "@/components/SiteCopyrightFooter";
 import { pageMetadata, siteVerificationMetadata } from "@/lib/seo-metadata";
 import { SEO_DEFAULT_KEYWORDS } from "@/lib/seo-config";
 import { SITE_URL } from "@/lib/site-url";
@@ -73,6 +74,7 @@ export default function RootLayout({
               <SkipLink />
               <PageAmbient />
               {children}
+              <SiteCopyrightFooter />
               <CookieConsent />
               <ServiceWorkerRegister />
             </CartProvider>

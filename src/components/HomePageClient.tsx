@@ -1181,7 +1181,6 @@ export default function LandingPage({
             </div>
           </div>
           <div className="border-t border-white/5 mt-10 pt-8 flex flex-col items-center gap-3 text-sm text-white/75">
-            <p>&copy; {new Date().getFullYear()} Universo Nómada®. {t("footer").copyright}</p>
             <a
               href={SERNATUR_URL}
               target="_blank"
