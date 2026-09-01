@@ -385,6 +385,22 @@ model BlogSubscriber {
   @@index([tenantId])
 }
 
+/** Comentarios / opiniones del blog público (moderación manual; no se publican solos). */
+model BlogComment {
+  id        Int      @id @default(autoincrement())
+  tenantId  String   @default("universo-nomada")
+  postSlug  String
+  postTitle String   @default("")
+  name      String
+  email     String
+  comment   String
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, postSlug])
+  @@index([createdAt])
+}
+
 model TourPricing {
   id        Int      @id @default(autoincrement())
   tenantId  String   @default("universo-nomada")

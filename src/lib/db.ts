@@ -2,7 +2,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 
 /** Incrementar cuando cambie prisma/schema.prisma para refrescar el cliente en dev. */
-const PRISMA_SCHEMA_VERSION = 19;
+const PRISMA_SCHEMA_VERSION = 20;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

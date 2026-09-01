@@ -6,6 +6,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { getBlogField, type BlogPost } from "@/lib/blog-posts";
 import { getBlogCta } from "@/lib/blog-cta";
 import { BlogNewsletter } from "@/components/BlogNewsletter";
+import { BlogSocialFollow } from "@/components/blog/BlogSocialFollow";
+import { BlogCommentForm } from "@/components/blog/BlogCommentForm";
 import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 import { buildWhatsAppUrl } from "@/lib/translations";
@@ -68,7 +70,14 @@ export function BlogPostClient({ post, relatedPosts = [] }: Props) {
           ))}
         </div>
 
+        <BlogSocialFollow
+          title={b.socialTitle}
+          description={b.socialDesc}
+          categoryLabel={category}
+        />
+
         <aside className="mt-10 p-6 rounded-2xl border border-teal/20 bg-gradient-to-br from-teal/5 to-emerald-50">
+          <p className="text-slate-800 text-lg font-bold mb-2">{b.readyTitle}</p>
           <p className="text-slate-700 text-sm leading-relaxed mb-4">{cta.blurb}</p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
@@ -89,14 +98,29 @@ export function BlogPostClient({ post, relatedPosts = [] }: Props) {
           </div>
         </aside>
 
+        <BlogCommentForm
+          postSlug={post.slug}
+          postTitle={titleEs}
+          copy={{
+            title: b.commentTitle,
+            note: b.commentNote,
+            comment: b.commentLabel,
+            name: b.commentName,
+            email: b.commentEmail,
+            submit: b.commentSubmit,
+            sending: b.commentSending,
+            ok: b.commentSuccess,
+            err: b.commentError,
+            errFields: b.commentFieldsError,
+          }}
+        />
+
         {relatedPosts.length > 0 && (
           <section aria-labelledby="related-posts" className="mt-12 pt-10 border-t border-slate-100">
             <h2 id="related-posts" className="text-xl font-bold text-slate-900 mb-2">
-              Artículos relacionados
+              {b.keepReading}
             </h2>
-            <p className="text-sm text-slate-500 mb-5">
-              Más guías para planificar y viajar con tranquilidad.
-            </p>
+            <p className="text-sm text-slate-500 mb-5">{b.keepReadingDesc}</p>
             <ul className="grid gap-4 sm:grid-cols-3 list-none p-0 m-0">
               {relatedPosts.map((r) => (
                 <li key={r.slug}>
@@ -124,18 +148,6 @@ export function BlogPostClient({ post, relatedPosts = [] }: Props) {
             </ul>
           </section>
         )}
-
-        <div className="mt-10 p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
-          <p className="text-slate-700 text-sm leading-relaxed mb-4">{b.instagramDesc}</p>
-          <a
-            href={INSTAGRAM_PROFILE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 font-semibold text-pink-700 hover:text-pink-800 text-sm"
-          >
-            <Instagram className="h-4 w-4" aria-hidden /> @universo.nomadaa — {b.instagramCta}
-          </a>
-        </div>
 
         <div className="mt-8">
           <BlogNewsletter variant="light" />

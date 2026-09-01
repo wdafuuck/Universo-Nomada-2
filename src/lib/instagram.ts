@@ -1,4 +1,5 @@
-export const INSTAGRAM_PROFILE_URL = "https://www.instagram.com/universo.nomadaa/";
+export { INSTAGRAM_PROFILE_URL } from "@/lib/social";
+
 
 export const DEFAULT_INSTAGRAM_POSTS = [
   {
