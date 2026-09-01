@@ -9,9 +9,11 @@ import { trackGenerateLead } from "@/lib/analytics-events";
 type BlogNewsletterProps = {
   variant?: "light" | "dark";
   compact?: boolean;
+  /** Si true, no muestra el bloque Instagram (p. ej. cuando el post ya tiene BlogSocialFollow). */
+  hideSocial?: boolean;
 };
 
-export function BlogNewsletter({ variant = "light", compact = false }: BlogNewsletterProps) {
+export function BlogNewsletter({ variant = "light", compact = false, hideSocial = false }: BlogNewsletterProps) {
   const { t } = useLanguage();
   const b = t("blog");
   const [email, setEmail] = useState("");
@@ -105,20 +107,22 @@ export function BlogNewsletter({ variant = "light", compact = false }: BlogNewsl
         <p className="mt-2 text-sm text-red-400">{errorMsg}</p>
       )}
 
-      <div className={`mt-5 pt-5 border-t ${isDark ? "border-white/10" : "border-slate-100"}`}>
-        <p className={`text-sm ${mutedClass} mb-3`}>{b.instagramDesc}</p>
-        <a
-          href={INSTAGRAM_PROFILE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`inline-flex items-center gap-2 text-sm font-semibold transition-colors ${
-            isDark ? "text-pink-300 hover:text-pink-200" : "text-pink-600 hover:text-pink-700"
-          }`}
-        >
-          <Instagram className="h-4 w-4" />
-          @universo.nomadaa — {b.instagramCta}
-        </a>
-      </div>
+      {!hideSocial ? (
+        <div className={`mt-5 pt-5 border-t ${isDark ? "border-white/10" : "border-slate-100"}`}>
+          <p className={`text-sm ${mutedClass} mb-3`}>{b.instagramDesc}</p>
+          <a
+            href={INSTAGRAM_PROFILE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-2 text-sm font-semibold transition-colors ${
+              isDark ? "text-pink-300 hover:text-pink-200" : "text-pink-600 hover:text-pink-700"
+            }`}
+          >
+            <Instagram className="h-4 w-4" />
+            @universo.nomadaa — {b.instagramCta}
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }

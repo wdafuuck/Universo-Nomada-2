@@ -10,6 +10,7 @@ import { BlogSocialFollow } from "@/components/blog/BlogSocialFollow";
 import { BlogCommentForm } from "@/components/blog/BlogCommentForm";
 import { UploadAwareImage } from "@/components/UploadAwareImage";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import { isContactFooterParagraph, linkifyBlogText } from "@/lib/blog-linkify";
 import { buildWhatsAppUrl } from "@/lib/translations";
 
 type RelatedSummary = {
@@ -65,19 +66,27 @@ export function BlogPostClient({ post, relatedPosts = [] }: Props) {
         </div>
 
         <div className="prose prose-slate max-w-none">
-          {content.split("\n\n").map((para, i) => (
-            <p key={i} className="text-slate-600 leading-relaxed mb-4 text-base">{para}</p>
-          ))}
+          {content
+            .split("\n\n")
+            .filter((para) => !isContactFooterParagraph(para))
+            .map((para, i) => (
+              <p key={i} className="text-slate-600 leading-relaxed mb-4 text-base">
+                {linkifyBlogText(para)}
+              </p>
+            ))}
         </div>
 
         <BlogSocialFollow
-          title={b.socialTitle}
-          description={b.socialDesc}
+          title={b.socialTitle ?? "Sigue a Universo Nómada"}
+          description={
+            b.socialDesc ??
+            "Síguenos en nuestras redes sociales y descubre videos, fotografías, nuevas aventuras y el día a día de nuestros viajes."
+          }
           categoryLabel={category}
         />
 
         <aside className="mt-10 p-6 rounded-2xl border border-teal/20 bg-gradient-to-br from-teal/5 to-emerald-50">
-          <p className="text-slate-800 text-lg font-bold mb-2">{b.readyTitle}</p>
+          <p className="text-slate-800 text-lg font-bold mb-2">{b.readyTitle ?? "¿Listo para vivirlo?"}</p>
           <p className="text-slate-700 text-sm leading-relaxed mb-4">{cta.blurb}</p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
@@ -102,25 +111,29 @@ export function BlogPostClient({ post, relatedPosts = [] }: Props) {
           postSlug={post.slug}
           postTitle={titleEs}
           copy={{
-            title: b.commentTitle,
-            note: b.commentNote,
-            comment: b.commentLabel,
-            name: b.commentName,
-            email: b.commentEmail,
-            submit: b.commentSubmit,
-            sending: b.commentSending,
-            ok: b.commentSuccess,
-            err: b.commentError,
-            errFields: b.commentFieldsError,
+            title: b.commentTitle ?? "Agregar un comentario",
+            note: b.commentNote ?? "Tu correo no se publica. Los campos con * son obligatorios.",
+            comment: b.commentLabel ?? "Comentario",
+            name: b.commentName ?? "Nombre",
+            email: b.commentEmail ?? "Correo electrónico",
+            submit: b.commentSubmit ?? "Enviar comentario",
+            sending: b.commentSending ?? "Enviando…",
+            ok:
+              b.commentSuccess ??
+              "¡Gracias! Recibimos tu comentario. El equipo de Universo Nómada te responderá si hace falta.",
+            err: b.commentError ?? "No pudimos enviar tu comentario. Intenta de nuevo en un momento.",
+            errFields: b.commentFieldsError ?? "Completa comentario, nombre y un email válido.",
           }}
         />
 
         {relatedPosts.length > 0 && (
           <section aria-labelledby="related-posts" className="mt-12 pt-10 border-t border-slate-100">
             <h2 id="related-posts" className="text-xl font-bold text-slate-900 mb-2">
-              {b.keepReading}
+              {b.keepReading ?? "Seguir leyendo"}
             </h2>
-            <p className="text-sm text-slate-500 mb-5">{b.keepReadingDesc}</p>
+            <p className="text-sm text-slate-500 mb-5">
+              {b.keepReadingDesc ?? "Más guías para planificar y viajar con tranquilidad."}
+            </p>
             <ul className="grid gap-4 sm:grid-cols-3 list-none p-0 m-0">
               {relatedPosts.map((r) => (
                 <li key={r.slug}>
@@ -150,7 +163,7 @@ export function BlogPostClient({ post, relatedPosts = [] }: Props) {
         )}
 
         <div className="mt-8">
-          <BlogNewsletter variant="light" />
+          <BlogNewsletter variant="light" hideSocial />
         </div>
       </article>
     </div>
